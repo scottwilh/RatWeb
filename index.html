@@ -1,0 +1,2908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatWeb</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: #fcebe6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* OVERLAY REGISTRO */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #fcebe6;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .auth-card {
+            background-color: #fff;
+            border: 3px solid #000;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .auth-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #8c4a4a;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .avatar-preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .avatar-preview {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            object-fit: cover;
+            background-color: #ffd8df;
+        }
+
+        .auth-card input, .auth-card textarea {
+            width: 100%;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 12px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .auth-card textarea {
+            height: 50px;
+            resize: none;
+        }
+
+        .btn-auth {
+            background-color: #b56565;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* HEADER Y ESTRUCTURA */
+        header {
+            background-color: #fbeee8;
+            border-bottom: 4px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            height: 55px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #8c4a4a;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+        }
+
+        .search-bar {
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 16px;
+            padding: 2px 8px;
+            width: 45%;
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 11px;
+            background: transparent;
+            font-family: inherit;
+        }
+
+        .user-header-profile {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .avatar-top {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            object-fit: cover;
+            background-color: #fff;
+        }
+
+        .layout {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 55px);
+        }
+
+        nav {
+            width: 75px;
+            background-color: #dbe2e6;
+            border-right: 3px solid #000;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            padding: 12px 4px;
+            border-bottom: 2px solid #c0c8cc;
+            font-weight: bold;
+            font-size: 11px;
+            color: #000;
+            cursor: pointer;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .nav-btn.active {
+            background-color: #cbd4d9;
+        }
+
+        main {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            width: calc(100% - 75px);
+        }
+
+        .section {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .section.active {
+            display: flex;
+        }
+
+        .create-box {
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 14px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .create-box input, .create-box textarea, .create-box select {
+            width: 100%;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .create-box textarea {
+            height: 45px;
+            resize: none;
+        }
+
+        .btn-publish {
+            background-color: #b56565;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 4px 10px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-publish:disabled {
+            background-color: #ccc;
+            color: #777;
+            border-color: #999;
+            cursor: not-allowed;
+        }
+
+        .forum-limit-counter {
+            font-size: 10px;
+            font-weight: bold;
+            color: #4a7c59;
+        }
+
+        .forum-limit-counter.limit-reached {
+            color: #b56565;
+        }
+
+        /* PUBLICACIÓN */
+        .post-card {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .avatar-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            object-fit: cover;
+            background-color: #fff;
+            flex-shrink: 0;
+        }
+
+        .post-bubble {
+            background-color: #ffd8df;
+            border: 2px solid #000;
+            border-radius: 14px;
+            padding: 8px;
+            flex: 1;
+            position: relative;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .post-author {
+            font-size: 11px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .post-options-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .options-menu {
+            display: none;
+            position: absolute;
+            right: 8px;
+            top: 25px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 6px;
+            z-index: 10;
+        }
+
+        .options-menu button {
+            display: block;
+            width: 100%;
+            padding: 6px 10px;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .post-content {
+            font-size: 12px;
+            color: #000;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .post-media {
+            margin-top: 6px;
+            max-width: 100%;
+            border: 2px solid #000;
+            border-radius: 8px;
+            display: block;
+            cursor: pointer;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .action-btn {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .action-btn.liked {
+            color: #b56565;
+        }
+
+        /* CAJÓN DE COMENTARIOS */
+        .replies-box {
+            display: none;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #000;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .replies-box.open {
+            display: flex;
+        }
+
+        .reply-item {
+            background-color: #fff;
+            border: 1.5px solid #000;
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .reply-user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reply-author {
+            font-weight: bold;
+            font-size: 11px;
+            color: #000;
+        }
+
+        .reply-tag {
+            font-size: 9.5px;
+            color: #8c4a4a;
+            font-weight: bold;
+        }
+
+        .reply-actions-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .reply-action-btn {
+            font-size: 10px;
+            color: #000;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .delete-comment-btn {
+            color: #b56565;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 12px;
+            background: none;
+            border: none;
+        }
+
+        .comment-media {
+            max-width: 100%;
+            max-height: 140px;
+            border: 1px solid #000;
+            border-radius: 6px;
+            margin-top: 4px;
+            display: block;
+            cursor: pointer;
+        }
+
+        .reply-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+            background: #fdf5f6;
+            border: 1.5px solid #000;
+            border-radius: 10px;
+            padding: 6px;
+        }
+
+        .reply-target-indicator {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9.5px;
+            background: #ffd8df;
+            border: 1px solid #000;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-weight: bold;
+        }
+
+        .reply-target-indicator.active {
+            display: flex;
+        }
+
+        .reply-input-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .reply-input-row input[type="text"] {
+            flex: 1;
+            border: 1px solid #000;
+            border-radius: 8px;
+            padding: 4px 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .file-label {
+            background-color: #ffd8df;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* FOROS Y ETIQUETAS */
+        .forum-card {
+            background-color: #e2f0d9;
+            border: 2px solid #000;
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .forum-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .forum-stats-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #2b5735;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #000;
+            align-self: flex-start;
+        }
+
+        .btn-join-forum {
+            background-color: #b56565;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 10.5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-join-forum.joined {
+            background-color: #dbe2e6;
+            color: #000;
+        }
+
+        .btn-delete-forum {
+            background-color: #e74c3c;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 10.5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .forum-category {
+            font-size: 10px;
+            font-weight: bold;
+            color: #4a7c59;
+            text-transform: uppercase;
+        }
+
+        .forum-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .forum-desc {
+            font-size: 11px;
+            color: #333;
+        }
+
+        .forum-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .forum-tag-badge {
+            font-size: 9px;
+            font-weight: bold;
+            background-color: #fff;
+            color: #2b5735;
+            border: 1px solid #000;
+            border-radius: 6px;
+            padding: 1px 5px;
+        }
+
+        .btn-back {
+            background-color: #dbe2e6;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-start;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .polaroid-card {
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .polaroid-img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border: 1px solid #000;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .polaroid-caption {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 4px;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .polaroid-tag {
+            font-size: 8px;
+            background: #ffd8df;
+            border: 1px solid #000;
+            border-radius: 4px;
+            padding: 1px 4px;
+            margin-top: 2px;
+        }
+
+        .polaroid-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: #e74c3c;
+            color: #fff;
+            border: 1.5px solid #000;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            z-index: 2;
+        }
+
+        .polaroid-like-btn {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 4px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .polaroid-like-btn.liked {
+            color: #b56565;
+        }
+
+        /* SELECTOR DE VISIBILIDAD DE GALERÍA */
+        .visibility-selector {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            align-items: center;
+        }
+
+        .visibility-selector label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        /* PERFIL */
+        .avatar-top {
+            cursor: pointer;
+        }
+
+        .profile-card {
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-banner {
+            height: 100px;
+            background-color: #ffd8df;
+            background-size: cover;
+            background-position: center;
+            border-bottom: 2px solid #000;
+            position: relative;
+        }
+
+        .profile-edit-banner-btn {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 3px 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .profile-avatar-row {
+            display: flex;
+            padding: 0 12px;
+            margin-top: -34px;
+        }
+
+        .profile-avatar-wrap {
+            position: relative;
+            width: 70px;
+            height: 70px;
+        }
+
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            outline: 2px solid #000;
+            object-fit: cover;
+            background-color: #fff;
+        }
+
+        .profile-edit-avatar-btn {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .profile-info {
+            padding: 10px 12px 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .profile-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .profile-display-name {
+            font-weight: bold;
+            font-size: 14px;
+            color: #000;
+        }
+
+        .profile-username {
+            font-size: 11px;
+            color: #8c4a4a;
+            font-weight: bold;
+        }
+
+        .profile-edit-pencil {
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .profile-edit-box {
+            display: none;
+            gap: 4px;
+            align-items: center;
+            margin-top: 2px;
+        }
+
+        .profile-edit-box input {
+            flex: 1;
+            border: 1.5px solid #000;
+            border-radius: 8px;
+            padding: 4px 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .profile-cooldown-note {
+            font-size: 9.5px;
+            color: #999;
+            font-style: italic;
+            min-height: 12px;
+        }
+
+        .profile-bio-input {
+            margin-top: 6px;
+            width: 100%;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 6px;
+            font-size: 11px;
+            font-family: inherit;
+            height: 55px;
+            resize: none;
+            outline: none;
+        }
+
+        .profile-stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            background: #fdf5f6;
+            border: 1.5px solid #000;
+            border-radius: 10px;
+            padding: 8px 4px;
+        }
+
+        .profile-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 9.5px;
+            font-weight: bold;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .profile-stat-item strong {
+            font-size: 14px;
+            color: #8c4a4a;
+        }
+
+        .profile-joined-note {
+            font-size: 10px;
+            color: #777;
+            margin-top: 8px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* CHAT PRIVADO */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #000;
+            border-radius: 14px;
+            background: #fff;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-toggle-bar {
+            background: #e8dff5;
+            border-bottom: 2px solid #000;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: bold;
+            gap: 6px;
+        }
+
+        .chat-toggle-actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .chat-icon-btn {
+            border: 1.5px solid #000;
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            line-height: 1.3;
+        }
+
+        .chat-icon-btn.active-toggle {
+            background: #ffd8df;
+        }
+
+        .chat-search-bar {
+            display: none;
+            padding: 6px;
+            border-bottom: 2px solid #000;
+            background: #fff;
+        }
+
+        .chat-search-bar.open {
+            display: block;
+        }
+
+        .chat-search-bar input {
+            width: 100%;
+            border: 1.5px solid #000;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .contacts-drawer {
+            display: none;
+            background: #f1f3f4;
+            border-bottom: 2px solid #000;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .contacts-drawer.open {
+            display: block;
+        }
+
+        .contact-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .contact-item.active {
+            background: #ffd8df;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff6f8;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .msg-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+        }
+
+        .msg-row.sent {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg-row.received {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .msg-bubble {
+            max-width: 100%;
+            padding: 6px 10px;
+            border: 2px solid #000;
+            border-radius: 12px;
+            font-size: 11px;
+            line-height: 1.2;
+            word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .msg-bubble.sent {
+            background-color: #ffd8df;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg-bubble.received {
+            background-color: #fff;
+            border-bottom-left-radius: 2px;
+        }
+
+        .msg-quote {
+            background: rgba(0,0,0,0.06);
+            border-left: 3px solid #b56565;
+            padding: 3px 6px;
+            margin-bottom: 4px;
+            font-size: 9.5px;
+            border-radius: 4px;
+            color: #555;
+        }
+
+        .msg-quote strong {
+            color: #8c4a4a;
+        }
+
+        .edited-tag {
+            font-size: 8.5px;
+            color: #888;
+            font-style: italic;
+            margin-left: 4px;
+        }
+
+        .read-status {
+            font-size: 9px;
+            color: #666;
+            align-self: flex-end;
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        .msg-media {
+            max-width: 100%;
+            max-height: 140px;
+            border: 1px solid #000;
+            border-radius: 6px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .voice-msg audio {
+            max-width: 190px;
+            height: 32px;
+            margin-top: 2px;
+        }
+
+        .msg-actions-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 3px;
+            font-size: 9.5px;
+        }
+
+        .msg-action-link {
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .msg-options-wrapper {
+            position: relative;
+        }
+
+        .msg-options-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 16px;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 6px;
+            z-index: 15;
+        }
+
+        .msg-options-menu.open {
+            display: block;
+        }
+
+        .msg-options-menu button {
+            display: block;
+            width: 100%;
+            padding: 6px 10px;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 10.5px;
+            cursor: pointer;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+
+        /* SELECTOR DE REACCIONES ESTILO WHATSAPP (cualquier emoji) */
+        .reaction-picker {
+            display: none;
+            position: absolute;
+            bottom: -34px;
+            right: 0;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 14px;
+            padding: 6px;
+            z-index: 20;
+            flex-direction: column;
+            gap: 4px;
+            width: 190px;
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .reaction-picker.open {
+            display: flex;
+        }
+
+        .reaction-picker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-height: 110px;
+            overflow-y: auto;
+        }
+
+        .reaction-picker-grid span {
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px;
+        }
+
+        .reaction-picker-custom {
+            display: flex;
+            gap: 4px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+            margin-top: 2px;
+        }
+
+        .reaction-picker-custom input {
+            flex: 1;
+            border: 1px solid #000;
+            border-radius: 8px;
+            padding: 2px 6px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .reaction-picker-custom button {
+            border: 1.5px solid #000;
+            background: #ffd8df;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .msg-reactions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .reaction-badge {
+            font-size: 10px;
+            background: #fff;
+            border: 1px solid #000;
+            border-radius: 10px;
+            padding: 1px 6px;
+            cursor: pointer;
+        }
+
+        .reaction-badge.mine {
+            background: #ffd8df;
+        }
+
+        .typing-indicator {
+            align-self: flex-start;
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 12px;
+            padding: 6px 10px;
+            font-size: 10.5px;
+            font-style: italic;
+            color: #777;
+        }
+
+        .chat-reply-preview {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            background: #ffd8df;
+            border: 1.5px solid #000;
+            border-radius: 8px;
+            padding: 4px 8px;
+            margin: 6px 6px 0 6px;
+            font-weight: bold;
+        }
+
+        .chat-reply-preview.active {
+            display: flex;
+        }
+
+        .chat-input-bar {
+            padding: 6px;
+            background: #fff;
+            border-top: 2px solid #000;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .chat-input-bar input[type="text"] {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .mic-btn {
+            border: 2px solid #000;
+            background: #ffd8df;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .mic-btn.recording {
+            background: #e74c3c;
+            color: #fff;
+            animation: pulse-rec 1s infinite;
+        }
+
+        @keyframes pulse-rec {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .active-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .wallpaper-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            padding: 4px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        .wallpaper-thumb {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border: 2px solid #000;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .wallpaper-none-thumb {
+            width: 100%;
+            height: 70px;
+            border: 2px dashed #000;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+            background: #f5f5f5;
+        }
+
+        .modal-viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-viewer img, .modal-viewer video {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #fff;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- OVERLAY REGISTRO -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-title">RatWeb 🐾</div>
+            <p style="font-size:11px; text-align:center;">Crea tu perfil para empezar</p>
+            
+            <div class="avatar-preview-container">
+                <img id="avatarPreview" class="avatar-preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ccc'/></svg>">
+                <label class="file-label">
+                    🖼️ Elegir foto
+                    <input type="file" id="regAvatar" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
+                </label>
+            </div>
+
+            <input type="text" id="regUsername" placeholder="@usuario (ej: @ScottWilh)">
+            <input type="text" id="regDisplayName" placeholder="Nombre visible (ej: Wilhelm Reyes)">
+            <textarea id="regBio" placeholder="Descripción de tu perfil..."></textarea>
+
+            <button class="btn-auth" onclick="registerUser()">Entrar a RatWeb</button>
+        </div>
+    </div>
+
+    <!-- ESTRUCTURA PRINCIPAL -->
+    <header>
+        <div class="logo-text">RatWeb</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch()">
+        </div>
+        <div class="user-header-profile">
+            <img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav>
+            <div class="nav-btn active" id="btn-menu" onclick="showSection('menu')">Menú</div>
+            <div class="nav-btn" id="btn-foros" onclick="showSection('foros')">Foros</div>
+            <div class="nav-btn" id="btn-galeria" onclick="showSection('galeria')">Galería</div>
+            <div class="nav-btn" id="btn-social" onclick="showSection('social')">Social</div>
+        </nav>
+
+        <main>
+            <!-- 1. MENÚ PRINCIPAL -->
+            <div id="menu" class="section active">
+                <div class="create-box">
+                    <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="file-label">
+                            📷 Adjuntar
+                            <input type="file" id="postMedia" accept="image/*,video/*" style="display: none;">
+                        </label>
+                        <button class="btn-publish" onclick="createPost('main')">Publicar</button>
+                    </div>
+                </div>
+                <div id="feedList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- 2. FOROS CON ETIQUETAS -->
+            <div id="foros" class="section">
+                <div class="create-box">
+                    <span style="font-weight: bold; font-size: 11px;">🧀 Nuevo Foro</span>
+                    <span id="forumCounter" class="forum-limit-counter"></span>
+                    <input type="text" id="forumTitle" placeholder="Título">
+                    <input type="text" id="forumCategory" placeholder="Categoría">
+                    <input type="text" id="forumTags" placeholder="Etiquetas (ej: comida, queso, snacks)">
+                    <textarea id="forumDesc" placeholder="Descripción..."></textarea>
+                    <button class="btn-publish" id="createForumBtn" onclick="createForum()">Crear</button>
+                </div>
+                <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+            <div id="forumView" class="section">
+                <button class="btn-back" onclick="showSection('foros')">⬅ Volver</button>
+                <div id="forumHeader" class="forum-card" style="cursor: default;"></div>
+                <div class="create-box">
+                    <textarea id="forumPostText" placeholder="Publica en este foro... 🧀"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="file-label">
+                            📷 Adjuntar
+                            <input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;">
+                        </label>
+                        <button class="btn-publish" onclick="createPost('forum')">Publicar</button>
+                    </div>
+                </div>
+                <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- 3. GALERÍA -->
+            <div id="galeria" class="section">
+                <div class="create-box">
+                    <span style="font-weight: bold; font-size: 11px;">🖼️ Subir a la Galería</span>
+                    <input type="text" id="galleryTitle" placeholder="Título">
+                    <select id="galleryCategory">
+                        <option value="Ilustración">🎨 Ilustración</option>
+                        <option value="Boceto">✏️ Boceto</option>
+                        <option value="Fanart">⭐ Fanart</option>
+                        <option value="Meme/GIF">✨ Meme/GIF</option>
+                    </select>
+                    <div class="visibility-selector">
+                        <label>
+                            <input type="radio" name="galleryVisibility" value="public" checked> 🌍 Pública
+                        </label>
+                        <label>
+                            <input type="radio" name="galleryVisibility" value="private"> 🔒 Privada
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="file-label">
+                            📁 Archivo
+                            <input type="file" id="galleryFile" accept="image/*" style="display: none;">
+                        </label>
+                        <button class="btn-publish" onclick="uploadToGallery()">Subir</button>
+                    </div>
+                </div>
+                <div id="galleryContainer" class="gallery-grid"></div>
+            </div>
+
+            <!-- 4. SOCIAL / CHAT PRIVADO -->
+            <div id="social" class="section">
+                <div class="chat-container">
+                    <div class="chat-toggle-bar">
+                        <span>💬 Chat con: <strong id="chatWithUser">@RatBot</strong></span>
+                        <div class="chat-toggle-actions">
+                            <button class="chat-icon-btn" id="searchToggleBtn" onclick="toggleChatSearch()" title="Buscar en la conversación">🔍</button>
+                            <button class="chat-icon-btn" id="muteToggleBtn" onclick="toggleMuteContact()" title="Silenciar">🔔</button>
+                            <button class="chat-icon-btn" onclick="openWallpaperPicker()" title="Cambiar fondo">🖼️</button>
+                            <button class="chat-icon-btn" onclick="toggleContacts()">👥 Contactos ▾</button>
+                        </div>
+                    </div>
+
+                    <div id="chatSearchBar" class="chat-search-bar">
+                        <input type="text" id="chatSearchInput" placeholder="Buscar en esta conversación..." oninput="handleChatSearch()">
+                    </div>
+
+                    <div id="contactsDrawer" class="contacts-drawer">
+                        <div class="contact-item active" onclick="switchChat('RatBot')">
+                            <span class="active-dot"></span> @RatBot
+                        </div>
+                    </div>
+
+                    <div class="chat-main" id="chatMain">
+                        <div id="chatMessages" class="chat-messages"></div>
+
+                        <div id="chatReplyPreview" class="chat-reply-preview">
+                            <span id="chatReplyText"></span>
+                            <span style="cursor:pointer;" onclick="clearChatReplyTarget()">✕</span>
+                        </div>
+
+                        <div class="chat-input-bar">
+                            <label class="file-label" style="padding:2px 6px;">
+                                📷
+                                <input type="file" id="chatMedia" accept="image/*,video/*" style="display: none;">
+                            </label>
+                            <button class="mic-btn" id="micBtn" onclick="toggleVoiceRecording()" title="Mensaje de voz">🎤</button>
+                            <input type="text" id="chatMsgInput" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                            <button class="btn-publish" id="chatSendBtn" onclick="sendChatMessage()">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. PERFIL -->
+            <div id="perfil" class="section">
+                <button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
+                <div class="profile-card">
+                    <div class="profile-banner" id="profileBanner">
+                        <label class="profile-edit-banner-btn" title="Cambiar banner">
+                            🖼️
+                            <input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)">
+                        </label>
+                    </div>
+                    <div class="profile-avatar-row">
+                        <div class="profile-avatar-wrap">
+                            <img id="profileAvatarImg" class="profile-avatar">
+                            <label class="profile-edit-avatar-btn" title="Cambiar foto de perfil">
+                                🖼️
+                                <input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="profile-info">
+                        <div class="profile-name-row">
+                            <span id="profileDisplayName" class="profile-display-name"></span>
+                            <span class="profile-edit-pencil" onclick="startEditName()" id="editNamePencil">✏️</span>
+                        </div>
+                        <div id="editNameBox" class="profile-edit-box">
+                            <input type="text" id="editNameInput" maxlength="30">
+                            <button class="btn-publish" onclick="saveName()">Guardar</button>
+                            <button class="btn-back" onclick="cancelEditName()">Cancelar</button>
+                        </div>
+                        <div id="nameCooldownNote" class="profile-cooldown-note"></div>
+
+                        <div class="profile-name-row">
+                            <span id="profileUsername" class="profile-username"></span>
+                            <span class="profile-edit-pencil" onclick="startEditUsername()" id="editUsernamePencil">✏️</span>
+                        </div>
+                        <div id="editUsernameBox" class="profile-edit-box">
+                            <input type="text" id="editUsernameInput" maxlength="20">
+                            <button class="btn-publish" onclick="saveUsername()">Guardar</button>
+                            <button class="btn-back" onclick="cancelEditUsername()">Cancelar</button>
+                        </div>
+                        <div id="usernameCooldownNote" class="profile-cooldown-note"></div>
+
+                        <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
+
+                        <div class="profile-stats-row">
+                            <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Publicaciones</span></div>
+                            <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
+                            <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
+                            <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Quesitos</span></div>
+                        </div>
+
+                        <div id="profileJoinedNote" class="profile-joined-note"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="imageModal" class="modal-viewer" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <div id="modalContent"></div>
+    </div>
+
+    <div id="wallpaperModal" class="modal-viewer" onclick="if(event.target===this) closeWallpaperPicker()">
+        <div style="background:#fff; border:3px solid #000; border-radius:14px; padding:14px; width:90%; max-width:360px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; gap:8px;" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="font-size:13px; color:#8c4a4a;">🖼️ Fondo del chat</strong>
+                <span style="cursor:pointer; font-weight:bold;" onclick="closeWallpaperPicker()">✕</span>
+            </div>
+            <p style="font-size:10px; color:#777;">Elige una imagen de tu galería como fondo de esta conversación.</p>
+            <div id="wallpaperGrid" class="wallpaper-modal-grid"></div>
+        </div>
+    </div>
+
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('ratweb_user')) || null;
+
+        // Compatibilidad: perfiles creados antes de banner/bio/cooldowns
+        if (currentUser) {
+            currentUser.bio = currentUser.bio || '';
+            currentUser.banner = currentUser.banner || null;
+            currentUser.joinedAt = currentUser.joinedAt || Date.now();
+            currentUser.lastNameChange = currentUser.lastNameChange || 0;
+            currentUser.lastUsernameChange = currentUser.lastUsernameChange || 0;
+            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+        }
+
+        const NAME_COOLDOWN_DAYS = 15;
+        const USERNAME_COOLDOWN_DAYS = 30;
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        let posts = JSON.parse(localStorage.getItem('ratweb_posts')) || [];
+        let forums = JSON.parse(localStorage.getItem('ratweb_forums')) || [];
+        let gallery = JSON.parse(localStorage.getItem('ratweb_gallery')) || [];
+        let usersPresence = JSON.parse(localStorage.getItem('ratweb_presence')) || {};
+        let openRepliesBoxes = {}; 
+        let chats = JSON.parse(localStorage.getItem('ratweb_chats')) || {
+            'RatBot': [
+                { sender: 'RatBot', text: '¡Hola! Bienvenido a la mensajería de RatWeb 🐾', mediaSrc: null, mediaType: null }
+            ]
+        };
+        
+        // Limpieza: quitar el contacto de prueba AmigoPrueba si quedó guardado
+        if (chats['AmigoPrueba'] !== undefined) {
+            delete chats['AmigoPrueba'];
+            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+        }
+        let activeChatContact = 'RatBot';
+        let currentForumId = null;
+        let tempAvatarData = null;
+        let activeReplyTargets = {}; 
+
+        // Compatibilidad con imágenes de galería subidas antes de este cambio
+        gallery = gallery.map(g => ({
+            ...g,
+            uploaderHandle: g.uploaderHandle || '@ScottWilh',
+            visibility: g.visibility || 'public',
+            likedBy: g.likedBy || []
+        }));
+
+        // HEARTBEAT DE PRESENCIA EN TIEMPO REAL
+        function pingUserPresence() {
+            if (!currentUser) return;
+            usersPresence[currentUser.username] = Date.now();
+            localStorage.setItem('ratweb_presence', JSON.stringify(usersPresence));
+            if (document.getElementById('foros').classList.contains('active')) {
+                renderForums();
+            }
+        }
+
+        function getActiveForumMembersCount(forumMembers) {
+            const now = Date.now();
+            let activeCount = 0;
+            if (!forumMembers) return 0;
+            
+            for (let memberHandle of forumMembers) {
+                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) {
+                    activeCount++;
+                }
+            }
+            return activeCount;
+        }
+
+        setInterval(pingUserPresence, 10000);
+
+        window.onload = function() {
+            if (currentUser) {
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('headerAvatar').src = currentUser.avatar || '';
+                pingUserPresence();
+            }
+            renderPosts('main');
+            renderForums();
+            renderGallery();
+            updateMuteButtonUI();
+            applyChatWallpaper();
+            renderChat();
+        };
+
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempAvatarData = e.target.result;
+                    document.getElementById('avatarPreview').src = tempAvatarData;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function registerUser() {
+            const username = document.getElementById('regUsername').value.trim();
+            const displayName = document.getElementById('regDisplayName').value.trim();
+            const bio = document.getElementById('regBio').value.trim();
+
+            if (!username || !displayName) {
+                alert("Por favor ingresa un nombre de usuario y un nombre visible.");
+                return;
+            }
+
+            currentUser = {
+                username: username.startsWith('@') ? username : '@' + username,
+                displayName: displayName,
+                bio: bio,
+                banner: null,
+                joinedAt: Date.now(),
+                lastNameChange: 0,
+                lastUsernameChange: 0,
+                avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
+            };
+
+            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+            document.getElementById('headerAvatar').src = currentUser.avatar;
+            document.getElementById('authOverlay').style.display = 'none';
+            pingUserPresence();
+            renderPosts('main');
+            renderGallery();
+            renderForums();
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            const targetSec = document.getElementById(sectionId);
+            if (targetSec) targetSec.classList.add('active');
+
+            const navBtn = document.getElementById(`btn-${sectionId}`);
+            if (navBtn) navBtn.classList.add('active');
+            else if (sectionId === 'forumView') {
+                document.getElementById('btn-foros').classList.add('active');
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.placeholder = sectionId === 'foros' ? 'Buscar por #tag...' : 'Buscar...';
+                searchInput.value = '';
+            }
+
+            if (sectionId === 'perfil') renderProfile();
+
+            handleSearch();
+        }
+
+        function createPost(target) {
+            const isForum = target === 'forum';
+            const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
+            const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
+            const userText = textInput.value.trim();
+
+            if (userText === "" && fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    savePost(userText, e.target.result, file.type.startsWith('image/') ? 'image' : 'video', isForum ? currentForumId : null);
+                    textInput.value = '';
+                    fileInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                savePost(userText, null, null, isForum ? currentForumId : null);
+                textInput.value = '';
+                fileInput.value = '';
+            }
+        }
+
+        function savePost(text, mediaSrc, mediaType, forumId) {
+            const newPost = {
+                id: Date.now(),
+                authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
+                authorHandle: currentUser ? currentUser.username : '@ScottWilh',
+                avatar: currentUser ? currentUser.avatar : '',
+                text: text,
+                mediaSrc: mediaSrc,
+                mediaType: mediaType,
+                forumId: forumId || null,
+                likedBy: [],
+                replies: []
+            };
+
+            posts.unshift(newPost);
+            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+            renderPosts(forumId ? 'forum' : 'main');
+        }
+
+        function toggleLike(postId, target) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const index = post.likedBy.indexOf(myHandle);
+
+            if (index === -1) {
+                post.likedBy.push(myHandle);
+            } else {
+                post.likedBy.splice(index, 1);
+            }
+
+            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+            renderPosts(target);
+        }
+
+        function toggleMenu(postId) {
+            const menu = document.getElementById(`menu-${postId}`);
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        function deletePost(postId, target) {
+            posts = posts.filter(p => p.id !== postId);
+            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+            renderPosts(target);
+        }
+
+        function toggleReplies(postId) {
+            openRepliesBoxes[postId] = !openRepliesBoxes[postId];
+            const box = document.getElementById(`replies-${postId}`);
+            const btnText = document.getElementById(`reply-btn-text-${postId}`);
+            
+            if (box) {
+                box.classList.toggle('open', openRepliesBoxes[postId]);
+            }
+            if (btnText) {
+                const post = posts.find(p => p.id === postId);
+                const count = post ? post.replies.length : 0;
+                btnText.innerText = openRepliesBoxes[postId] ? `💬 Ocultar comentarios` : `💬 ${count === 0 ? 'Comentar' : count + ' comentarios'}`;
+            }
+        }
+
+        function setReplyTarget(postId, authorHandle) {
+            activeReplyTargets[postId] = authorHandle;
+            const indicator = document.getElementById(`target-indicator-${postId}`);
+            const textSpan = document.getElementById(`target-text-${postId}`);
+            if (indicator && textSpan) {
+                textSpan.innerText = `Respondiendo a ${authorHandle}`;
+                indicator.classList.add('active');
+            }
+        }
+
+        function clearReplyTarget(postId) {
+            delete activeReplyTargets[postId];
+            const indicator = document.getElementById(`target-indicator-${postId}`);
+            if (indicator) indicator.classList.remove('active');
+        }
+
+        function addReply(postId, target) {
+            const input = document.getElementById(`reply-input-${postId}`);
+            const mediaInput = document.getElementById(`reply-media-${postId}`);
+            const text = input.value.trim();
+            const file = mediaInput ? mediaInput.files[0] : null;
+
+            if (text === "" && !file) return;
+
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const replyTarget = activeReplyTargets[postId] || null;
+
+            openRepliesBoxes[postId] = true;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    post.replies.push({
+                        id: Date.now(),
+                        authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
+                        authorHandle: currentUser ? currentUser.username : '@ScottWilh',
+                        replyTo: replyTarget,
+                        text: text,
+                        mediaSrc: e.target.result
+                    });
+                    localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                    clearReplyTarget(postId);
+                    if (mediaInput) mediaInput.value = '';
+                    renderPosts(target);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                post.replies.push({
+                    id: Date.now(),
+                    authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
+                    authorHandle: currentUser ? currentUser.username : '@ScottWilh',
+                    replyTo: replyTarget,
+                    text: text,
+                    mediaSrc: null
+                });
+                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                clearReplyTarget(postId);
+                renderPosts(target);
+            }
+        }
+
+        function deleteComment(postId, commentId, target) {
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.replies = post.replies.filter(r => r.id !== commentId);
+                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                openRepliesBoxes[postId] = true;
+                renderPosts(target);
+            }
+        }
+
+        function renderPosts(target) {
+            const isForum = target === 'forum';
+            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
+            if (!listContainer) return;
+
+            const filteredPosts = isForum 
+                ? posts.filter(p => p.forumId === currentForumId)
+                : posts.filter(p => !p.forumId);
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            listContainer.innerHTML = filteredPosts.map(post => {
+                const isLiked = post.likedBy.includes(myHandle);
+                const isMyPost = currentUser && post.authorHandle === currentUser.username;
+                const isRepliesOpen = !!openRepliesBoxes[post.id];
+                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${post.replies.length === 0 ? 'Comentar' : post.replies.length + ' comentarios'}`;
+
+                return `
+                <div class="post-card">
+                    <img class="avatar-circle" src="${post.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
+                    <div class="post-bubble">
+                        <div class="post-header">
+                            <span class="post-author">${post.authorName} (${post.authorHandle})</span>
+                            ${isMyPost ? `
+                                <button class="post-options-btn" onclick="toggleMenu(${post.id})">⋮</button>
+                                <div id="menu-${post.id}" class="options-menu">
+                                    <button onclick="deletePost(${post.id}, '${target}')">🗑️ Borrar</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="post-content">${post.text}</div>
+
+                        ${post.mediaSrc ? (
+                            post.mediaType === 'image' 
+                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
+                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`
+                        ) : ''}
+
+                        <div class="post-actions">
+                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id}, '${target}')">
+                                🐾 ${post.likedBy.length}
+                            </span>
+                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies(${post.id})">
+                                ${replyBtnLabel}
+                            </span>
+                        </div>
+
+                        <!-- CAJÓN DE COMENTARIOS -->
+                        <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
+                            ${post.replies.map(r => `
+                                <div class="reply-item">
+                                    <div class="reply-header">
+                                        <div class="reply-user-info">
+                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
+                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
+                                        </div>
+                                        <div class="reply-actions-right">
+                                            <span class="reply-action-btn" onclick="setReplyTarget(${post.id}, '${r.authorHandle}')">Responder</span>
+                                            ${(currentUser && r.authorHandle === currentUser.username) ? `
+                                                <button class="delete-comment-btn" onclick="deleteComment(${post.id}, ${r.id}, '${target}')">🗑️</button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                    <div>${r.text}</div>
+                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
+                                </div>
+                            `).join('')}
+
+                            <div class="reply-input-wrapper">
+                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
+                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
+                                    <span style="cursor:pointer;" onclick="clearReplyTarget(${post.id})">✕</span>
+                                </div>
+                                <div class="reply-input-row">
+                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply(${post.id}, '${target}')">
+                                    <label class="file-label">
+                                        📷
+                                        <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
+                                    </label>
+                                    <button class="btn-publish" onclick="addReply(${post.id}, '${target}')">Enviar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        /* FOROS */
+        const MAX_FORUMS_PER_USER = 3;
+
+        function getMyForumsCount() {
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            return forums.filter(f => f.creatorHandle === myHandle).length;
+        }
+
+        function updateForumCounter() {
+            const counterEl = document.getElementById('forumCounter');
+            const createBtn = document.getElementById('createForumBtn');
+            const count = getMyForumsCount();
+            const limitReached = count >= MAX_FORUMS_PER_USER;
+
+            if (counterEl) {
+                counterEl.innerText = `📋 Foros creados: ${count}/${MAX_FORUMS_PER_USER}${limitReached ? ' (límite alcanzado)' : ''}`;
+                counterEl.classList.toggle('limit-reached', limitReached);
+            }
+            if (createBtn) {
+                createBtn.disabled = limitReached;
+            }
+        }
+
+        function createForum() {
+            if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
+                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros creados a la vez. Borra uno de los tuyos para crear otro.`);
+                return;
+            }
+
+            const title = document.getElementById('forumTitle').value.trim();
+            const category = document.getElementById('forumCategory').value.trim();
+            const tags = document.getElementById('forumTags').value.trim();
+            const desc = document.getElementById('forumDesc').value.trim();
+
+            if (!title) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            const newForum = {
+                id: Date.now(),
+                title: title,
+                category: category || 'GENERAL',
+                tags: tags ? tags.split(',').map(t => t.trim()) : [],
+                desc: desc,
+                creatorHandle: myHandle,
+                members: [myHandle] // El creador se une automáticamente
+            };
+
+            forums.unshift(newForum);
+            localStorage.setItem('ratweb_forums', JSON.stringify(forums));
+            document.getElementById('forumTitle').value = '';
+            document.getElementById('forumCategory').value = '';
+            document.getElementById('forumTags').value = '';
+            document.getElementById('forumDesc').value = '';
+            renderForums();
+        }
+
+        function deleteForum(forumId, event) {
+            event.stopPropagation();
+            if (confirm("¿Seguro que quieres borrar este foro?")) {
+                forums = forums.filter(f => f.id !== forumId);
+                posts = posts.filter(p => p.forumId !== forumId);
+                localStorage.setItem('ratweb_forums', JSON.stringify(forums));
+                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                renderForums();
+                if (currentForumId === forumId) showSection('foros');
+            }
+        }
+
+        function toggleJoinForum(forumId, event) {
+            event.stopPropagation();
+            const forum = forums.find(f => f.id === forumId);
+            if (!forum) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const index = forum.members.indexOf(myHandle);
+
+            if (index === -1) forum.members.push(myHandle);
+            else forum.members.splice(index, 1);
+
+            localStorage.setItem('ratweb_forums', JSON.stringify(forums));
+            renderForums();
+            if (currentForumId === forumId) openForum(forumId);
+        }
+
+        function renderForums(filteredList) {
+            const container = document.getElementById('forumsList');
+            updateForumCounter();
+            if (!container) return;
+
+            const sourceForums = filteredList || forums;
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (sourceForums.length === 0) {
+                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron foros con esa etiqueta.</p>`;
+                return;
+            }
+
+            container.innerHTML = sourceForums.map(f => {
+                const isJoined = f.members.includes(myHandle);
+                const isCreator = f.creatorHandle === myHandle;
+                const activeCount = getActiveForumMembersCount(f.members);
+
+                return `
+                <div class="forum-card" onclick="openForum(${f.id})">
+                    <div class="forum-header-container">
+                        <div>
+                            <div class="forum-category">${f.category}</div>
+                            <div class="forum-title">${f.title}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum(${f.id}, event)">
+                                ${isJoined ? 'Unido' : 'Unirme'}
+                            </button>
+                            ${isCreator ? `
+                                <button class="btn-delete-forum" onclick="deleteForum(${f.id}, event)">🗑️ Borrar</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="forum-desc">${f.desc}</div>
+                    <div class="forum-tags-container">
+                        ${f.tags.map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                    </div>
+                    <div class="forum-stats-box">
+                        <span>👥 ${f.members.length} Miembro${f.members.length === 1 ? '' : 's'}</span>
+                        <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function openForum(forumId) {
+            currentForumId = forumId;
+            const forum = forums.find(f => f.id === forumId);
+            if (!forum) return;
+
+            const header = document.getElementById('forumHeader');
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const isJoined = forum.members.includes(myHandle);
+            const isCreator = forum.creatorHandle === myHandle;
+            const activeCount = getActiveForumMembersCount(forum.members);
+
+            header.innerHTML = `
+                <div class="forum-header-container">
+                    <div>
+                        <div class="forum-category">${forum.category}</div>
+                        <div class="forum-title">${forum.title}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum(${forum.id}, event)">
+                            ${isJoined ? 'Unido' : 'Unirme'}
+                        </button>
+                        ${isCreator ? `
+                            <button class="btn-delete-forum" onclick="deleteForum(${forum.id}, event)">🗑️ Borrar</button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="forum-desc">${forum.desc}</div>
+                <div class="forum-tags-container">
+                    ${forum.tags.map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                </div>
+                <div class="forum-stats-box">
+                    <span>👥 ${forum.members.length} Miembro${forum.members.length === 1 ? '' : 's'}</span>
+                    <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
+                </div>
+            `;
+
+            showSection('forumView');
+            renderPosts('forum');
+        }
+
+        /* GALERÍA */
+        function uploadToGallery() {
+            const title = document.getElementById('galleryTitle').value.trim();
+            const category = document.getElementById('galleryCategory').value;
+            const fileInput = document.getElementById('galleryFile');
+            const visibilityInput = document.querySelector('input[name="galleryVisibility"]:checked');
+            const visibility = visibilityInput ? visibilityInput.value : 'public';
+
+            if (!fileInput.files[0]) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                gallery.unshift({
+                    id: Date.now(),
+                    title: title || 'Sin título',
+                    category: category,
+                    src: e.target.result,
+                    uploaderHandle: currentUser ? currentUser.username : '@ScottWilh',
+                    visibility: visibility,
+                    likedBy: []
+                });
+                localStorage.setItem('ratweb_gallery', JSON.stringify(gallery));
+                document.getElementById('galleryTitle').value = '';
+                fileInput.value = '';
+                renderGallery();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        function getVisibleGalleryItems() {
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            return gallery.filter(item => item.visibility !== 'private' || item.uploaderHandle === myHandle);
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('galleryContainer');
+            if (!container) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const visibleItems = getVisibleGalleryItems();
+
+            container.innerHTML = visibleItems.map(item => {
+                const isMine = item.uploaderHandle === myHandle;
+                const likedBy = item.likedBy || [];
+                const isLiked = likedBy.includes(myHandle);
+                const isPrivate = item.visibility === 'private';
+
+                return `
+                <div class="polaroid-card">
+                    ${isMine ? `<button class="polaroid-delete-btn" onclick="deleteGalleryItem(${item.id}, event)">🗑️</button>` : ''}
+                    <img class="polaroid-img" src="${item.src}" onclick="openModal('${item.src}', 'image')">
+                    <div class="polaroid-caption">${item.title}</div>
+                    <span class="polaroid-tag">${item.category}</span>
+                    <span class="polaroid-tag" style="background:${isPrivate ? '#dbe2e6' : '#e2f0d9'};">${isPrivate ? '🔒 Privada' : '🌍 Pública'}</span>
+                    <span class="polaroid-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleGalleryLike(${item.id}, event)">
+                        🐾 ${likedBy.length}
+                    </span>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function deleteGalleryItem(id, event) {
+            event.stopPropagation();
+            const item = gallery.find(g => g.id === id);
+            if (!item) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            if (item.uploaderHandle !== myHandle) return; // seguridad extra: solo el dueño borra
+
+            if (confirm('¿Eliminar esta imagen de la galería?')) {
+                gallery = gallery.filter(g => g.id !== id);
+                localStorage.setItem('ratweb_gallery', JSON.stringify(gallery));
+                renderGallery();
+            }
+        }
+
+        function toggleGalleryLike(id, event) {
+            event.stopPropagation();
+            const item = gallery.find(g => g.id === id);
+            if (!item) return;
+
+            if (!item.likedBy) item.likedBy = [];
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const idx = item.likedBy.indexOf(myHandle);
+
+            if (idx === -1) item.likedBy.push(myHandle);
+            else item.likedBy.splice(idx, 1);
+
+            localStorage.setItem('ratweb_gallery', JSON.stringify(gallery));
+            renderGallery();
+        }
+
+        /* PERFIL */
+        function renderProfile() {
+            if (!currentUser) return;
+
+            const banner = document.getElementById('profileBanner');
+            banner.style.backgroundImage = currentUser.banner ? `url('${currentUser.banner}')` : 'none';
+
+            document.getElementById('profileAvatarImg').src = currentUser.avatar || '';
+            document.getElementById('profileDisplayName').innerText = currentUser.displayName;
+            document.getElementById('profileUsername').innerText = currentUser.username;
+            document.getElementById('profileBioInput').value = currentUser.bio || '';
+
+            updateNameCooldownUI();
+            updateUsernameCooldownUI();
+
+            const myHandle = currentUser.username;
+            document.getElementById('statPosts').innerText = posts.filter(p => p.authorHandle === myHandle).length;
+            document.getElementById('statGallery').innerText = gallery.filter(g => g.uploaderHandle === myHandle).length;
+            document.getElementById('statForums').innerText = forums.filter(f => f.members.includes(myHandle)).length;
+
+            const myPostsLikes = posts.filter(p => p.authorHandle === myHandle).reduce((sum, p) => sum + p.likedBy.length, 0);
+            const myGalleryLikes = gallery.filter(g => g.uploaderHandle === myHandle).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
+            document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
+
+            const joinedDate = new Date(currentUser.joinedAt);
+            document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+        }
+
+        function changeBanner(event) {
+            const file = event.target.files[0];
+            if (!file || !currentUser) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentUser.banner = e.target.result;
+                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                renderProfile();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function changeProfileAvatar(event) {
+            const file = event.target.files[0];
+            if (!file || !currentUser) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentUser.avatar = e.target.result;
+                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                document.getElementById('headerAvatar').src = currentUser.avatar;
+                renderProfile();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function getDaysRemaining(lastChangeTs, cooldownDays) {
+            const elapsed = Date.now() - lastChangeTs;
+            const remainingMs = (cooldownDays * DAY_MS) - elapsed;
+            return Math.ceil(remainingMs / DAY_MS);
+        }
+
+        function updateNameCooldownUI() {
+            const pencil = document.getElementById('editNamePencil');
+            const note = document.getElementById('nameCooldownNote');
+            const daysLeft = getDaysRemaining(currentUser.lastNameChange, NAME_COOLDOWN_DAYS);
+            if (daysLeft > 0) {
+                pencil.style.opacity = '0.3';
+                pencil.style.pointerEvents = 'none';
+                note.innerText = `Podrás cambiar tu nombre en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`;
+            } else {
+                pencil.style.opacity = '1';
+                pencil.style.pointerEvents = 'auto';
+                note.innerText = '';
+            }
+        }
+
+        function updateUsernameCooldownUI() {
+            const pencil = document.getElementById('editUsernamePencil');
+            const note = document.getElementById('usernameCooldownNote');
+            const daysLeft = getDaysRemaining(currentUser.lastUsernameChange, USERNAME_COOLDOWN_DAYS);
+            if (daysLeft > 0) {
+                pencil.style.opacity = '0.3';
+                pencil.style.pointerEvents = 'none';
+                note.innerText = `Podrás cambiar tu @usuario en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`;
+            } else {
+                pencil.style.opacity = '1';
+                pencil.style.pointerEvents = 'auto';
+                note.innerText = '';
+            }
+        }
+
+        function startEditName() {
+            const daysLeft = getDaysRemaining(currentUser.lastNameChange, NAME_COOLDOWN_DAYS);
+            if (daysLeft > 0) return;
+            document.getElementById('editNameInput').value = currentUser.displayName;
+            document.getElementById('editNameBox').style.display = 'flex';
+        }
+
+        function cancelEditName() {
+            document.getElementById('editNameBox').style.display = 'none';
+        }
+
+        function saveName() {
+            const newName = document.getElementById('editNameInput').value.trim();
+            if (!newName) return;
+            currentUser.displayName = newName;
+            currentUser.lastNameChange = Date.now();
+            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+            cancelEditName();
+            renderProfile();
+        }
+
+        function startEditUsername() {
+            const daysLeft = getDaysRemaining(currentUser.lastUsernameChange, USERNAME_COOLDOWN_DAYS);
+            if (daysLeft > 0) return;
+            document.getElementById('editUsernameInput').value = currentUser.username.replace('@', '');
+            document.getElementById('editUsernameBox').style.display = 'flex';
+        }
+
+        function cancelEditUsername() {
+            document.getElementById('editUsernameBox').style.display = 'none';
+        }
+
+        function saveUsername() {
+            let newUsername = document.getElementById('editUsernameInput').value.trim();
+            if (!newUsername) return;
+            if (!newUsername.startsWith('@')) newUsername = '@' + newUsername;
+            currentUser.username = newUsername;
+            currentUser.lastUsernameChange = Date.now();
+            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+            cancelEditUsername();
+            renderProfile();
+        }
+
+        function saveBio() {
+            if (!currentUser) return;
+            currentUser.bio = document.getElementById('profileBioInput').value.trim();
+            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+        }
+
+        /* CHAT PRIVADO */
+        let chatReplyTargets = {};   // { contactHandle: {id, sender, text} }
+        let openReactionPicker = null;
+        let openMsgOptionsMenu = null;
+        let editingMessageId = null;
+        let chatSearchQuery = '';
+        let mutedContacts = JSON.parse(localStorage.getItem('ratweb_muted_contacts')) || {};
+        let chatWallpapers = JSON.parse(localStorage.getItem('ratweb_chat_wallpapers')) || {};
+        let isTypingIndicatorOn = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
+
+        const BOT_REPLIES = [
+            '¡Miau- digo, squeak! 🐭', 
+            'Interesante, cuéntame más 🧀',
+            '¡Jaja me encanta! 🐾',
+            'Estoy pensando en queso ahora mismo 🧀',
+            '¡Genial! Sigue así 💗'
+        ];
+
+        // Normaliza mensajes viejos guardados sin id/reactions/edited
+        function normalizeChats() {
+            let changed = false;
+            Object.keys(chats).forEach(contact => {
+                chats[contact] = (chats[contact] || []).map((msg, idx) => {
+                    const normalized = { ...msg };
+                    if (!normalized.id) { normalized.id = Date.now() + idx; changed = true; }
+                    if (!normalized.reactions) { normalized.reactions = {}; changed = true; }
+                    if (normalized.edited === undefined) { normalized.edited = false; changed = true; }
+                    if (normalized.replyTo === undefined) { normalized.replyTo = null; changed = true; }
+                    return normalized;
+                });
+            });
+            if (changed) localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+        }
+        normalizeChats();
+
+        function toggleContacts() {
+            const drawer = document.getElementById('contactsDrawer');
+            if (drawer) drawer.classList.toggle('open');
+        }
+
+        function switchChat(contact) {
+            activeChatContact = contact;
+            document.getElementById('chatWithUser').innerText = '@' + contact;
+            clearChatReplyTarget();
+            cancelEditMessage();
+            document.getElementById('chatSearchInput').value = '';
+            chatSearchQuery = '';
+            document.getElementById('chatSearchBar').classList.remove('open');
+            document.getElementById('searchToggleBtn').classList.remove('active-toggle');
+            toggleContacts();
+            updateMuteButtonUI();
+            applyChatWallpaper();
+            renderChat();
+        }
+
+        /* ESCRIBIENDO... + RESPUESTA AUTOMÁTICA DE PRUEBA */
+        function showTypingIndicator() {
+            isTypingIndicatorOn = true;
+            renderChat();
+        }
+
+        function hideTypingIndicator() {
+            isTypingIndicatorOn = false;
+            renderChat();
+        }
+
+        function maybeTriggerBotReply(contact) {
+            if (contact !== 'RatBot') return;
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    const reply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
+                    chats['RatBot'].push({
+                        id: Date.now(),
+                        sender: 'RatBot',
+                        text: reply,
+                        mediaSrc: null,
+                        mediaType: null,
+                        replyTo: null,
+                        reactions: {},
+                        edited: false
+                    });
+                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                    if (activeChatContact === 'RatBot') renderChat();
+                }, 1400);
+            }, 500);
+        }
+
+        /* ENVIAR MENSAJE (texto / foto / gif / video) */
+        function sendChatMessage() {
+            const input = document.getElementById('chatMsgInput');
+            const mediaInput = document.getElementById('chatMedia');
+            const text = input.value.trim();
+            const file = mediaInput ? mediaInput.files[0] : null;
+
+            if (editingMessageId !== null) {
+                saveEditMessage();
+                return;
+            }
+
+            if (text === "" && !file) return;
+
+            if (!chats[activeChatContact]) chats[activeChatContact] = [];
+
+            const replyTarget = chatReplyTargets[activeChatContact] || null;
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            const pushMessage = (mediaSrc, mediaType) => {
+                chats[activeChatContact].push({
+                    id: Date.now(),
+                    sender: myHandle,
+                    text: text,
+                    mediaSrc: mediaSrc,
+                    mediaType: mediaType,
+                    replyTo: replyTarget,
+                    reactions: {},
+                    edited: false
+                });
+                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                input.value = '';
+                if (mediaInput) mediaInput.value = '';
+                clearChatReplyTarget();
+                renderChat();
+                maybeTriggerBotReply(activeChatContact);
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    pushMessage(e.target.result, file.type.startsWith('video/') ? 'video' : 'image');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                pushMessage(null, null);
+            }
+        }
+
+        /* RESPONDER A UN MENSAJE (cita) */
+        function setChatReplyTarget(msgId) {
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === msgId);
+            if (!msg) return;
+            chatReplyTargets[activeChatContact] = {
+                id: msg.id,
+                sender: msg.sender,
+                text: msg.text || (msg.mediaType === 'audio' ? '🎤 Mensaje de voz' : '📷 Archivo adjunto')
+            };
+            const preview = document.getElementById('chatReplyPreview');
+            const textEl = document.getElementById('chatReplyText');
+            textEl.innerText = `Respondiendo a ${msg.sender}: ${chatReplyTargets[activeChatContact].text.slice(0, 40)}`;
+            preview.classList.add('active');
+            document.getElementById('chatMsgInput').focus();
+        }
+
+        function clearChatReplyTarget() {
+            delete chatReplyTargets[activeChatContact];
+            const preview = document.getElementById('chatReplyPreview');
+            if (preview) preview.classList.remove('active');
+        }
+
+        /* EDITAR / BORRAR MENSAJE PROPIO */
+        function toggleMsgOptions(msgId) {
+            const menu = document.getElementById(`msg-options-${msgId}`);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
+            if (!isOpen) menu.classList.add('open');
+        }
+
+        function startEditMessage(msgId) {
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === msgId);
+            if (!msg) return;
+            editingMessageId = msgId;
+            const input = document.getElementById('chatMsgInput');
+            input.value = msg.text || '';
+            input.focus();
+            document.getElementById('chatSendBtn').innerText = 'Guardar';
+            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
+        }
+
+        function cancelEditMessage() {
+            editingMessageId = null;
+            const sendBtn = document.getElementById('chatSendBtn');
+            if (sendBtn) sendBtn.innerText = 'Enviar';
+            const input = document.getElementById('chatMsgInput');
+            if (input) input.value = '';
+        }
+
+        function saveEditMessage() {
+            const input = document.getElementById('chatMsgInput');
+            const newText = input.value.trim();
+            if (newText === '') { cancelEditMessage(); return; }
+
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === editingMessageId);
+            if (msg) {
+                msg.text = newText;
+                msg.edited = true;
+                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+            }
+            cancelEditMessage();
+            renderChat();
+        }
+
+        function deleteChatMessage(msgId) {
+            if (!confirm('¿Borrar este mensaje?')) return;
+            chats[activeChatContact] = (chats[activeChatContact] || []).filter(m => m.id !== msgId);
+            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+            renderChat();
+        }
+
+        /* REACCIONES CON EMOJI (estilo WhatsApp: rápidas + cualquier otra) */
+        function toggleReactionPicker(msgId) {
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (!picker) return;
+            const isOpen = picker.classList.contains('open');
+            document.querySelectorAll('.reaction-picker.open').forEach(p => p.classList.remove('open'));
+            if (!isOpen) picker.classList.add('open');
+        }
+
+        function toggleReaction(msgId, emoji) {
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === msgId);
+            if (!msg) return;
+            if (!msg.reactions) msg.reactions = {};
+            if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const idx = msg.reactions[emoji].indexOf(myHandle);
+            if (idx === -1) msg.reactions[emoji].push(myHandle);
+            else msg.reactions[emoji].splice(idx, 1);
+
+            if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+
+            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+            renderChat();
+        }
+
+        function addCustomReaction(msgId) {
+            const input = document.getElementById(`custom-emoji-${msgId}`);
+            if (!input) return;
+            const value = input.value.trim();
+            if (!value) return;
+            toggleReaction(msgId, value);
+            input.value = '';
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.remove('open');
+        }
+
+        /* MENSAJES DE VOZ */
+        async function toggleVoiceRecording() {
+            const micBtn = document.getElementById('micBtn');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            if (!chats[activeChatContact]) chats[activeChatContact] = [];
+                            const replyTarget = chatReplyTargets[activeChatContact] || null;
+                            chats[activeChatContact].push({
+                                id: Date.now(),
+                                sender: currentUser ? currentUser.username : '@ScottWilh',
+                                text: '',
+                                mediaSrc: e.target.result,
+                                mediaType: 'audio',
+                                replyTo: replyTarget,
+                                reactions: {},
+                                edited: false
+                            });
+                            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                            clearChatReplyTarget();
+                            renderChat();
+                            maybeTriggerBotReply(activeChatContact);
+                        };
+                        reader.readAsDataURL(blob);
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('recording');
+                    micBtn.innerText = '⏹️';
+                } catch (err) {
+                    alert('No se pudo acceder al micrófono. Revisa los permisos del navegador.');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording');
+                micBtn.innerText = '🎤';
+            }
+        }
+
+        /* BUSCAR DENTRO DE LA CONVERSACIÓN */
+        function toggleChatSearch() {
+            const bar = document.getElementById('chatSearchBar');
+            const btn = document.getElementById('searchToggleBtn');
+            bar.classList.toggle('open');
+            btn.classList.toggle('active-toggle');
+            if (!bar.classList.contains('open')) {
+                document.getElementById('chatSearchInput').value = '';
+                chatSearchQuery = '';
+                renderChat();
+            }
+        }
+
+        function handleChatSearch() {
+            chatSearchQuery = document.getElementById('chatSearchInput').value.toLowerCase().trim();
+            renderChat();
+        }
+
+        /* SILENCIAR CONVERSACIÓN */
+        function toggleMuteContact() {
+            mutedContacts[activeChatContact] = !mutedContacts[activeChatContact];
+            localStorage.setItem('ratweb_muted_contacts', JSON.stringify(mutedContacts));
+            updateMuteButtonUI();
+        }
+
+        function updateMuteButtonUI() {
+            const btn = document.getElementById('muteToggleBtn');
+            if (!btn) return;
+            const isMuted = !!mutedContacts[activeChatContact];
+            btn.innerText = isMuted ? '🔕' : '🔔';
+            btn.classList.toggle('active-toggle', isMuted);
+            btn.title = isMuted ? 'Notificaciones silenciadas (actívalas de nuevo aquí)' : 'Silenciar notificaciones';
+        }
+
+        /* FONDO DE CHAT PERSONALIZADO (imágenes de tu galería visibles para ti) */
+        function openWallpaperPicker() {
+            const grid = document.getElementById('wallpaperGrid');
+            const visibleItems = getVisibleGalleryItems();
+            if (visibleItems.length === 0) {
+                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes en tu Galería. ¡Sube alguna primero! 🖼️</p>`;
+            } else {
+                grid.innerHTML = `
+                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
+                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}
+                `;
+            }
+            document.getElementById('wallpaperModal').style.display = 'flex';
+        }
+
+        function closeWallpaperPicker() {
+            document.getElementById('wallpaperModal').style.display = 'none';
+        }
+
+        function selectWallpaper(src) {
+            chatWallpapers[activeChatContact] = src;
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function removeWallpaper() {
+            delete chatWallpapers[activeChatContact];
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function applyChatWallpaper() {
+            const chatMain = document.getElementById('chatMain');
+            if (!chatMain) return;
+            const wallpaper = chatWallpapers[activeChatContact];
+            if (wallpaper) {
+                chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
+            } else {
+                chatMain.style.backgroundImage = 'none';
+            }
+        }
+
+        /* RENDER PRINCIPAL DEL CHAT */
+        function renderChat() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+
+            let list = chats[activeChatContact] || [];
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (chatSearchQuery) {
+                list = list.filter(m => (m.text || '').toLowerCase().includes(chatSearchQuery));
+            }
+
+            const emptyMsg = chatSearchQuery && list.length === 0
+                ? `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron mensajes.</p>`
+                : '';
+
+            container.innerHTML = emptyMsg + list.map(msg => {
+                const isSent = msg.sender === myHandle;
+                const reactions = msg.reactions || {};
+                const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
+
+                let mediaHtml = '';
+                if (msg.mediaType === 'image') {
+                    mediaHtml = `<img class="msg-media" src="${msg.mediaSrc}" onclick="openModal('${msg.mediaSrc}', 'image')">`;
+                } else if (msg.mediaType === 'video') {
+                    mediaHtml = `<video class="msg-media" src="${msg.mediaSrc}" controls></video>`;
+                } else if (msg.mediaType === 'audio') {
+                    mediaHtml = `<div class="voice-msg">🎤<audio src="${msg.mediaSrc}" controls></audio></div>`;
+                }
+
+                return `
+                <div class="msg-row ${isSent ? 'sent' : 'received'}">
+                    <div class="msg-bubble ${isSent ? 'sent' : 'received'}">
+                        ${msg.replyTo ? `<div class="msg-quote"><strong>${msg.replyTo.sender}</strong>: ${msg.replyTo.text}</div>` : ''}
+                        ${msg.text ? `<div>${msg.text}</div>` : ''}
+                        ${mediaHtml}
+                        ${reactionEntries.length > 0 ? `
+                            <div class="msg-reactions">
+                                ${reactionEntries.map(([emoji, users]) => `
+                                    <span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction(${msg.id}, '${emoji}')">${emoji} ${users.length}</span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span class="edited-tag">${msg.edited ? '(editado)' : ''}</span>
+                            ${isSent ? `<span class="read-status">Leído</span>` : ''}
+                        </div>
+
+                        ${isSent ? `
+                        <div class="msg-options-wrapper" style="position:absolute; top:2px; right:4px;">
+                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions(${msg.id})">⋮</span>
+                            <div id="msg-options-${msg.id}" class="msg-options-menu">
+                                ${msg.mediaType ? '' : `<button onclick="startEditMessage(${msg.id})">✏️ Editar</button>`}
+                                <button onclick="deleteChatMessage(${msg.id})">🗑️ Borrar</button>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="reaction-picker" id="reaction-picker-${msg.id}">
+                            <div class="reaction-picker-grid">
+                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction(${msg.id}, '${e}')">${e}</span>`).join('')}
+                            </div>
+                            <div class="reaction-picker-custom">
+                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction(${msg.id})">
+                                <button onclick="addCustomReaction(${msg.id})">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="msg-actions-row">
+                        <span class="msg-action-link" onclick="toggleReactionPicker(${msg.id})">Reaccionar</span>
+                        <span class="msg-action-link" onclick="setChatReplyTarget(${msg.id})">Responder</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            if (isTypingIndicatorOn && !chatSearchQuery) {
+                container.innerHTML += `<div class="typing-indicator">${activeChatContact} está escribiendo...</div>`;
+            }
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        /* MODAL VISOR */
+
+        function openModal(src, type) {
+            const modal = document.getElementById('imageModal');
+            const content = document.getElementById('modalContent');
+            if (!modal || !content) return;
+
+            if (type === 'image') {
+                content.innerHTML = `<img src="${src}">`;
+            } else {
+                content.innerHTML = `<video src="${src}" controls autoplay></video>`;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        /* BÚSQUEDA GLOBAL */
+        function handleSearch() {
+            const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            const query = rawQuery.startsWith('#') ? rawQuery.slice(1) : rawQuery;
+
+            const isForosActive = document.getElementById('foros').classList.contains('active');
+            const isMenuActive = document.getElementById('menu').classList.contains('active');
+
+            if (!query) {
+                renderPosts('main');
+                renderForums();
+                return;
+            }
+
+            if (isForosActive) {
+                const filtered = forums.filter(f =>
+                    f.tags.some(t => t.toLowerCase().includes(query)) ||
+                    f.title.toLowerCase().includes(query) ||
+                    f.category.toLowerCase().includes(query)
+                );
+                renderForums(filtered);
+                return;
+            }
+
+            if (isMenuActive) {
+                const mainList = document.getElementById('feedList');
+                if (!mainList) return;
+                const filtered = posts.filter(p =>
+                    !p.forumId && (
+                        p.text.toLowerCase().includes(query) ||
+                        p.authorName.toLowerCase().includes(query) ||
+                        p.authorHandle.toLowerCase().includes(query)
+                    )
+                );
+                if (filtered.length === 0) {
+                    mainList.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron publicaciones.</p>`;
+                    return;
+                }
+                mainList.innerHTML = filtered.map(p => `<div class="post-card"><div class="post-bubble"><strong>${p.authorName}</strong>: ${p.text}</div></div>`).join('');
+            }
+        }
+    </script>
+</body>
+</html>
