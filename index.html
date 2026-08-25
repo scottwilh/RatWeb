@@ -2904,5 +2904,155 @@
             }
         }
     </script>
+
+  <script type="module">
+    // 1. Importaciones necesarias de Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      setDoc, 
+      addDoc, 
+      collection, 
+      query, 
+      orderBy, 
+      onSnapshot, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 2. Configuración de tu App
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QD...",
+      authDomain: "ratweb-431ce.firebaseapp.com",
+      projectId: "ratweb-431ce",
+      storageBucket: "ratweb-431ce.firebasestorage.app",
+      messagingSenderId: "134049153537",
+      appId: "1:134049153537:web:072dbc3c48b23...",
+      measurementId: "G-JRBSPTZQN"
+    };
+
+    // 3. Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    window.db = db;
+
+    // ==========================================
+    // CÓDIGO 1: VERIFICAR Y GUARDAR USERNAME ÚNICO
+    // ==========================================
+    window.guardarUsuarioUnico = async function(usernameIngresado) {
+      if (!usernameIngresado) return alert("Escribe un usuario válido");
+
+      const usernameLimpio = usernameIngresado.replace("@", "").trim().toLowerCase();
+      const userRef = doc(db, "usernames", usernameLimpio);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        alert("❌ El @usuario '" + usernameLimpio + "' ya está ocupado. Elige otro.");
+        return false;
+      }
+
+      // Guardar el username si está libre
+      await setDoc(userRef, { 
+        creado: new Date().toISOString() 
+      });
+
+      alert("✅ ¡@usuario @" + usernameLimpio + " registrado exitosamente!");
+      return true;
+    };
+
+    // ==========================================
+    // CÓDIGO 2: CHAT PRIVADO EN TIEMPO REAL
+    // ==========================================
+    
+    // Generar ID único para la sala entre dos usuarios
+    function obtenerIdChat(usuarioA, usuarioB) {
+      return [usuarioA.toLowerCase(), usuarioB.toLowerCase()].sort().join("_");
+    }
+
+    // Enviar mensaje privado
+    window.enviarMensajePrivado = async function(miUsuario, usuarioDestino, texto) {
+      if (!texto.trim()) return;
+
+      const chatId = obtenerIdChat(miUsuario, usuarioDestino);
+      const chatRef = collection(db, "chats", chatId, "mensajes");
+
+      await addDoc(chatRef, {
+        emisor: miUsuario.toLowerCase(),
+        receptor: usuarioDestino.toLowerCase(),
+        texto: texto,
+        fecha: serverTimestamp()
+      });
+    };
+
+    // Escuchar chat en tiempo real
+    window.escucharChat = function(miUsuario, usuarioDestino, callbackMostrarMensaje) {
+      const chatId = obtenerIdChat(miUsuario, usuarioDestino);
+      const chatRef = collection(db, "chats", chatId, "mensajes");
+      const q = query(chatRef, orderBy("fecha", "asc"));
+
+      // Se ejecuta cada vez que llega un mensaje nuevo
+      onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+        callbackMostrarMensaje(msg);
+      }
+    });
+  });
+};
+
+// ==========================================
+// CÓDIGO 3: SISTEMA DE AMISTADES
+// ==========================================
+
+// 1. Enviar solicitud de amistad
+window.enviarSolicitudAmistad = async function(miUsuario, usuarioDestino) {
+  const de = miUsuario.toLowerCase();
+  const para = usuarioDestino.toLowerCase();
+
+  if (de === para) return alert("No puedes agregarte a ti mismo.");
+
+  const userRef = doc(db, "usernames", para);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) return alert("El @usuario no existe.");
+
+  const solicitudRef = doc(db, "users", para, "solicitudes", de);
+  await setDoc(solicitudRef, {
+    de: de,
+    estado: "pendiente",
+    fecha: serverTimestamp()
+  });
+
+  alert("¡Solicitud enviada a @" + para + "!");
+};
+
+// 2. Aceptar solicitud de amistad
+window.aceptarSolicitudAmistad = async function(miUsuario, usuarioAmigo) {
+  const yo = miUsuario.toLowerCase();
+  const amigo = usuarioAmigo.toLowerCase();
+
+  await setDoc(doc(db, "users", yo, "amigos", amigo), { agregado: serverTimestamp() });
+  await setDoc(doc(db, "users", amigo, "amigos", yo), { agregado: serverTimestamp() });
+
+  await setDoc(doc(db, "users", yo, "solicitudes", amigo)), { estado: "aceptado" });
+
+  alert("¡Ahora eres amigo de @" + amigo + "! Ya pueden chatear.");
+};
+
+// 3. Obtener lista de amigos en tiempo real
+window.escucharAmigos = function(miUsuario, callbackMostrarAmigos) {
+  const yo = miUsuario.toLowerCase();
+  const amigosRef = collection(db, "users", yo, "amigos");
+
+  onSnapshot(amigosRef, (snapshot) => {
+    const listaAmigos = [];
+    snapshot.forEach((doc) => listaAmigos.push(doc.id));
+    callbackMostrarAmigos(listaAmigos);
+  });
+};
+  </script>
 </body>
-</html>
+    </html>
