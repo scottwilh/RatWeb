@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<lang="es">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +12,22 @@
             font-family: 'Courier New', Courier, monospace;
         }
 
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             background-color: #fcebe6;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            height: 100dvh;
+            width: 100%;
             overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         /* OVERLAY REGISTRO */
@@ -27,6 +37,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             background-color: #fcebe6;
             z-index: 10000;
             display: flex;
@@ -155,6 +166,8 @@
             display: flex;
             flex: 1;
             height: calc(100vh - 55px);
+            height: calc(100dvh - 55px);
+            min-height: 0;
         }
 
         nav {
@@ -186,6 +199,8 @@
             padding: 8px;
             overflow-y: auto;
             width: calc(100% - 75px);
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
         }
 
         .section {
@@ -197,6 +212,7 @@
 
         .section.active {
             display: flex;
+            min-height: 0;
         }
 
         .create-box {
@@ -874,6 +890,7 @@
             border-radius: 14px;
             background: #fff;
             height: 100%;
+            min-height: 0;
             overflow: hidden;
             position: relative;
         }
@@ -964,6 +981,7 @@
             flex-direction: column;
             background: #fff6f8;
             overflow: hidden;
+            min-height: 0;
             background-size: cover;
             background-position: center;
         }
@@ -1310,6 +1328,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             background-color: rgba(0,0,0,0.9);
             z-index: 9999;
             justify-content: center;
@@ -2905,195 +2924,5 @@
         }
     </script>
 
-  <script type="module">
-    // 1. Importaciones necesarias de Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-    import { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      setDoc, 
-      addDoc, 
-      collection, 
-      query, 
-      orderBy, 
-      onSnapshot, 
-      serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // 2. Configuración de tu App
-    const firebaseConfig = {
-      apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QD...",
-      authDomain: "ratweb-431ce.firebaseapp.com",
-      projectId: "ratweb-431ce",
-      storageBucket: "ratweb-431ce.firebasestorage.app",
-      messagingSenderId: "134049153537",
-      appId: "1:134049153537:web:072dbc3c48b23...",
-      measurementId: "G-JRBSPTZQN"
-    };
-
-    // 3. Inicializar Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-    window.db = db;
-<script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-      import { 
-        getFirestore, collection, doc, setDoc, getDoc, addDoc, 
-        onSnapshot, query, orderBy, serverTimestamp 
-      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-      // Configuración de tu Firebase
-      const firebaseConfig = {
-        apiKey: "AIzaSy...", // Tu apiKey de siempre
-        authDomain: "ratweb-2efee.firebaseapp.com",
-        projectId: "ratweb-2efee",
-        storageBucket: "ratweb-2efee.appspot.com",
-        messagingSenderId: "338902808020",
-        appId: "1:338902808020:web:..."
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-
-      // -------------------------------------------------------------
-      // 1. VALIDACIÓN DE USUARIO ÚNICO
-      // -------------------------------------------------------------
-      window.guardarUsuarioUnico = async function(nombreUsuario) {
-        if (!nombreUsuario || !nombreUsuario.trim()) {
-          alert("Por favor ingresa un nombre de usuario válido.");
-          return false;
-        }
-
-        const usernameLOWER = nombreUsuario.trim().toLowerCase();
-        const userRef = doc(db, "usernames", usernameLOWER);
-        const snapshot = await getDoc(userRef);
-
-        if (snapshot.exists()) {
-          alert(`El usuario @${usernameLOWER} ya está registrado. Intenta con otro.`);
-          return false;
-        } else {
-          await setDoc(userRef, { 
-            creado: serverTimestamp(),
-            nombreOriginal: nombreUsuario 
-          });
-          alert(`¡Genial! El usuario @${usernameLOWER} es tuyo.`);
-          return true;
-        }
-      };
-
-      // -------------------------------------------------------------
-      // 2. PUBLICACIONES DEL FEED EN TIEMPO REAL
-      // -------------------------------------------------------------
-      window.publicarEnFeed = async function(idInputTexto) {
-        const input = document.getElementById(idInputTexto);
-        if (!input || !input.value.trim()) return;
-
-        try {
-          await addDoc(collection(db, "publicaciones"), {
-            usuario: "Wilhelm Reyes",
-            handle: "@Scottwilh",
-            texto: input.value,
-            fecha: serverTimestamp()
-          });
-          input.value = "";
-        } catch (e) }
-          console.error("Error al publicar:", e);
-        }
-      };
-
-      window.escucharPublicaciones = function(contenedorId) {
-        const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
-        onSnapshot(q, (snapshot) => {
-          const contenedor = document.getElementById(contenedorId);
-          if (!contenedor) return;
-          contenedor.innerHTML = "";
-
-          snapshot.forEach((docu) => {
-            const pub = docu.data();
-            const tarjeta = document.createElement("div");
-            tarjeta.className = "publicacion-tarjeta"; // Usa tus clases CSS
-            tarjeta.innerHTML = `
-              <div style="font-weight: bold;">${pub.usuario} <span style="font-weight: normal; opacity: 0.7;">${pub.handle}</span></div>
-              <p style="margin: 8px 0;">${pub.texto}</p>
-            `;
-            contenedor.appendChild(tarjeta);
-          });
-        });
-      };
-
-      // -------------------------------------------------------------
-      // 3. SISTEMA DE CHAT PRIVADO Y AMIGOS
-      // -------------------------------------------------------------
-      window.enviarSolicitudAmistad = async function(deUsuario, paraUsuario) {
-        const de = deUsuario.toLowerCase();
-        const para = paraUsuario.toLowerCase();
-        await setDoc(doc(db, "users", para, "solicitudes", de), { estado: "pendiente" });
-        alert("¡Solicitud enviada a @" + para + "!");
-      };
-
-      window.aceptarSolicitudAmistad = async function(miUsuario, usuarioAmigo) {
-        const yo = miUsuario.toLowerCase();
-        const amigo = usuarioAmigo.toLowerCase();
-
-        await setDoc(doc(db, "users", yo, "amigos", amigo), { activo: true });
-        await setDoc(doc(db, "users", amigo, "amigos", yo), { activo: true });
-        await setDoc(doc(db, "users", yo, "solicitudes", amigo), { estado: "aceptado" });
-
-        alert("¡Ahora eres amigo de @" + amigo + "!");
-      };
-
-      function obtenerChatId(user1, user2) {
-        return [user1.toLowerCase(), user2.toLowerCase()].sort().join("_");
-      }
-
-      window.enviarMensajePrivado = async function(deUsuario, paraUsuario, textoMensaje) {
-        if (!textoMensaje || !textoMensaje.trim()) return;
-        const chatId = obtenerChatId(deUsuario, paraUsuario);
-
-        await addDoc(collection(db, "chats", chatId, "mensajes"), {
-          de: deUsuario.toLowerCase(),
-          texto: textoMensaje,
-          fecha: serverTimestamp()
-        });
-      };
-
-      window.escucharChat = function(miUsuario, amigoUsuario, contenedorMensajesId) {
-        const chatId = obtenerChatId(miUsuario, amigoUsuario);
-        const q = query(collection(db, "chats", chatId, "mensajes"), orderBy("fecha", "asc"));
-
-        return onSnapshot(q, (snapshot) => {
-          const cajaMensajes = document.getElementById(contenedorMensajesId);
-          if (!cajaMensajes) return;
-          cajaMensajes.innerHTML = "";
-
-          snapshot.forEach((docu) => {
-            const msg = docu.data();
-            const div = document.createElement("div");
-            div.style.margin = "8px 0";
-            div.style.padding = "8px 12px";
-            div.style.borderRadius = "12px";
-            div.style.border = "1.5px solid #000";
-            div.style.maxWidth = "80%";
-
-            if (msg.de === miUsuario.toLowerCase()) {
-              div.style.marginLeft = "auto";
-              div.style.backgroundColor = "#fff";
-            } else {
-              div.style.marginRight = "auto";
-              div.style.backgroundColor = "#f0f0f0";
-            }
-
-            div.innerText = msg.texto;
-            cajaMensajes.appendChild(div);
-          });
-
-          // Scroll automático hacia el último mensaje
-          cajaMensajes.scrollTop = cajaMensajes.scrollHeight;
-        });
-      };
-    </script>
-  </body>
-                            </html>
+</body>
+                                </html>
