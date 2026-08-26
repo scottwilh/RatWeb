@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RatWeb</title>
+    
+    <!-- Firebase SDKs (versión compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <style>
         * {
             box-sizing: border-box;
@@ -30,7 +36,6 @@
             left: 0;
         }
 
-        /* OVERLAY REGISTRO */
         .auth-overlay {
             position: fixed;
             top: 0;
@@ -111,7 +116,6 @@
             font-family: inherit;
         }
 
-        /* HEADER Y ESTRUCTURA */
         header {
             background-color: #fbeee8;
             border-bottom: 4px solid #000;
@@ -120,6 +124,7 @@
             justify-content: space-between;
             padding: 6px 10px;
             height: 55px;
+            flex-shrink: 0;
         }
 
         .logo-text {
@@ -160,6 +165,7 @@
             border: 2px solid #000;
             object-fit: cover;
             background-color: #fff;
+            cursor: pointer;
         }
 
         .layout {
@@ -223,6 +229,7 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         .create-box input, .create-box textarea, .create-box select {
@@ -269,7 +276,6 @@
             color: #b56565;
         }
 
-        /* PUBLICACIÓN */
         .post-card {
             display: flex;
             gap: 6px;
@@ -375,7 +381,6 @@
             color: #b56565;
         }
 
-        /* CAJÓN DE COMENTARIOS */
         .replies-box {
             display: none;
             margin-top: 8px;
@@ -509,7 +514,6 @@
             cursor: pointer;
         }
 
-        /* FOROS Y ETIQUETAS */
         .forum-card {
             background-color: #e2f0d9;
             border: 2px solid #000;
@@ -615,6 +619,7 @@
             font-weight: bold;
             cursor: pointer;
             align-self: flex-start;
+            flex-shrink: 0;
         }
 
         .gallery-grid {
@@ -692,7 +697,6 @@
             color: #b56565;
         }
 
-        /* SELECTOR DE VISIBILIDAD DE GALERÍA */
         .visibility-selector {
             display: flex;
             gap: 10px;
@@ -705,11 +709,6 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            cursor: pointer;
-        }
-
-        /* PERFIL */
-        .avatar-top {
             cursor: pointer;
         }
 
@@ -882,7 +881,6 @@
             font-style: italic;
         }
 
-        /* CHAT PRIVADO */
         .chat-container {
             display: flex;
             flex-direction: column;
@@ -905,6 +903,7 @@
             font-size: 11px;
             font-weight: bold;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         .chat-toggle-actions {
@@ -932,6 +931,7 @@
             padding: 6px;
             border-bottom: 2px solid #000;
             background: #fff;
+            flex-shrink: 0;
         }
 
         .chat-search-bar.open {
@@ -954,6 +954,7 @@
             border-bottom: 2px solid #000;
             max-height: 120px;
             overflow-y: auto;
+            flex-shrink: 0;
         }
 
         .contacts-drawer.open {
@@ -993,6 +994,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            min-height: 0;
         }
 
         .msg-row {
@@ -1124,7 +1126,6 @@
             white-space: nowrap;
         }
 
-        /* SELECTOR DE REACCIONES ESTILO WHATSAPP (cualquier emoji) */
         .reaction-picker {
             display: none;
             position: absolute;
@@ -1229,6 +1230,7 @@
             padding: 4px 8px;
             margin: 6px 6px 0 6px;
             font-weight: bold;
+            flex-shrink: 0;
         }
 
         .chat-reply-preview.active {
@@ -1242,6 +1244,7 @@
             display: flex;
             gap: 6px;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .chat-input-bar input[type="text"] {
@@ -1354,7 +1357,6 @@
 </head>
 <body>
 
-    <!-- OVERLAY REGISTRO -->
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
             <div class="auth-title">RatWeb 🐾</div>
@@ -1376,7 +1378,6 @@
         </div>
     </div>
 
-    <!-- ESTRUCTURA PRINCIPAL -->
     <header>
         <div class="logo-text">RatWeb</div>
         <div class="search-bar">
@@ -1396,7 +1397,6 @@
         </nav>
 
         <main>
-            <!-- 1. MENÚ PRINCIPAL -->
             <div id="menu" class="section active">
                 <div class="create-box">
                     <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
@@ -1408,10 +1408,9 @@
                         <button class="btn-publish" onclick="createPost('main')">Publicar</button>
                     </div>
                 </div>
-                <div id="feedList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                <div id="feedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- 2. FOROS CON ETIQUETAS -->
             <div id="foros" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🧀 Nuevo Foro</span>
@@ -1422,13 +1421,13 @@
                     <textarea id="forumDesc" placeholder="Descripción..."></textarea>
                     <button class="btn-publish" id="createForumBtn" onclick="createForum()">Crear</button>
                 </div>
-                <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
             <div id="forumView" class="section">
                 <button class="btn-back" onclick="showSection('foros')">⬅ Volver</button>
-                <div id="forumHeader" class="forum-card" style="cursor: default;"></div>
-                <div class="create-box">
+                <div id="forumHeader" class="forum-card" style="cursor: default; flex-shrink:0;"></div>
+                <div class="create-box" style="flex-shrink:0;">
                     <textarea id="forumPostText" placeholder="Publica en este foro... 🧀"></textarea>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label class="file-label">
@@ -1438,10 +1437,9 @@
                         <button class="btn-publish" onclick="createPost('forum')">Publicar</button>
                     </div>
                 </div>
-                <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- 3. GALERÍA -->
             <div id="galeria" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🖼️ Subir a la Galería</span>
@@ -1468,10 +1466,9 @@
                         <button class="btn-publish" onclick="uploadToGallery()">Subir</button>
                     </div>
                 </div>
-                <div id="galleryContainer" class="gallery-grid"></div>
+                <div id="galleryContainer" class="gallery-grid" style="flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- 4. SOCIAL / CHAT PRIVADO -->
             <div id="social" class="section">
                 <div class="chat-container">
                     <div class="chat-toggle-bar">
@@ -1515,7 +1512,6 @@
                 </div>
             </div>
 
-            <!-- 5. PERFIL -->
             <div id="perfil" class="section">
                 <button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
                 <div class="profile-card">
@@ -1590,91 +1586,633 @@
         </div>
     </div>
 
-
     <script>
+        // ==========================================
+        // CONFIGURACIÓN DE FIREBASE - RATWEB
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QDGBpMZIPk",
+            authDomain: "ratweb-431ce.firebaseapp.com",
+            databaseURL: "https://ratweb-431ce-default-rtdb.firebaseio.com",
+            projectId: "ratweb-431ce",
+            storageBucket: "ratweb-431ce.firebasestorage.app",
+            messagingSenderId: "134049153537",
+            appId: "1:134049153537:web:072dbc3c48b2337fc37600",
+            measurementId: "G-JRBPSPTZQN"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // ==========================================
+        // VARIABLES GLOBALES
+        // ==========================================
         let currentUser = JSON.parse(localStorage.getItem('ratweb_user')) || null;
-
-        // Compatibilidad: perfiles creados antes de banner/bio/cooldowns
-        if (currentUser) {
-            currentUser.bio = currentUser.bio || '';
-            currentUser.banner = currentUser.banner || null;
-            currentUser.joinedAt = currentUser.joinedAt || Date.now();
-            currentUser.lastNameChange = currentUser.lastNameChange || 0;
-            currentUser.lastUsernameChange = currentUser.lastUsernameChange || 0;
-            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-        }
-
-        const NAME_COOLDOWN_DAYS = 15;
-        const USERNAME_COOLDOWN_DAYS = 30;
-        const DAY_MS = 24 * 60 * 60 * 1000;
-
+        let chatListeners = {};
+        let chatId = '';
+        let activeChatContact = 'RatBot';
         let posts = JSON.parse(localStorage.getItem('ratweb_posts')) || [];
         let forums = JSON.parse(localStorage.getItem('ratweb_forums')) || [];
         let gallery = JSON.parse(localStorage.getItem('ratweb_gallery')) || [];
         let usersPresence = JSON.parse(localStorage.getItem('ratweb_presence')) || {};
-        let openRepliesBoxes = {}; 
-        let chats = JSON.parse(localStorage.getItem('ratweb_chats')) || {
-            'RatBot': [
-                { sender: 'RatBot', text: '¡Hola! Bienvenido a la mensajería de RatWeb 🐾', mediaSrc: null, mediaType: null }
-            ]
-        };
-        
-        // Limpieza: quitar el contacto de prueba AmigoPrueba si quedó guardado
-        if (chats['AmigoPrueba'] !== undefined) {
-            delete chats['AmigoPrueba'];
-            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-        }
-        let activeChatContact = 'RatBot';
-        let currentForumId = null;
+        let openRepliesBoxes = {};
+        let chats = JSON.parse(localStorage.getItem('ratweb_chats')) || {};
+        let activeReplyTargets = {};
         let tempAvatarData = null;
-        let activeReplyTargets = {}; 
+        let currentForumId = null;
+        let editingMessageId = null;
+        let chatSearchQuery = '';
+        let mutedContacts = JSON.parse(localStorage.getItem('ratweb_muted_contacts')) || {};
+        let chatWallpapers = JSON.parse(localStorage.getItem('ratweb_chat_wallpapers')) || {};
+        let isTypingIndicatorOn = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let chatReplyTargets = {};
 
-        // Compatibilidad con imágenes de galería subidas antes de este cambio
-        gallery = gallery.map(g => ({
-            ...g,
-            uploaderHandle: g.uploaderHandle || '@ScottWilh',
-            visibility: g.visibility || 'public',
-            likedBy: g.likedBy || []
-        }));
+        const NAME_COOLDOWN_DAYS = 15;
+        const USERNAME_COOLDOWN_DAYS = 30;
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const MAX_FORUMS_PER_USER = 3;
+        const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
 
-        // HEARTBEAT DE PRESENCIA EN TIEMPO REAL
-        function pingUserPresence() {
-            if (!currentUser) return;
-            usersPresence[currentUser.username] = Date.now();
-            localStorage.setItem('ratweb_presence', JSON.stringify(usersPresence));
-            if (document.getElementById('foros').classList.contains('active')) {
-                renderForums();
-            }
+        const BOT_REPLIES = [
+            '¡Miau- digo, squeak! 🐭', 
+            'Interesante, cuéntame más 🧀',
+            '¡Jaja me encanta! 🐾',
+            'Estoy pensando en queso ahora mismo 🧀',
+            '¡Genial! Sigue así 💗'
+        ];
+
+        // ==========================================
+        // FUNCIONES DE CHAT CON FIREBASE
+        // ==========================================
+        function getChatId(user1, user2) {
+            const users = [user1, user2].sort();
+            return users.join('_');
         }
 
-        function getActiveForumMembersCount(forumMembers) {
-            const now = Date.now();
-            let activeCount = 0;
-            if (!forumMembers) return 0;
+        function switchChat(contact) {
+            if (chatListeners[activeChatContact]) {
+                chatListeners[activeChatContact]();
+                delete chatListeners[activeChatContact];
+            }
             
-            for (let memberHandle of forumMembers) {
-                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) {
-                    activeCount++;
-                }
-            }
-            return activeCount;
-        }
-
-        setInterval(pingUserPresence, 10000);
-
-        window.onload = function() {
-            if (currentUser) {
-                document.getElementById('authOverlay').style.display = 'none';
-                document.getElementById('headerAvatar').src = currentUser.avatar || '';
-                pingUserPresence();
-            }
-            renderPosts('main');
-            renderForums();
-            renderGallery();
+            activeChatContact = contact;
+            chatId = getChatId(currentUser.username, contact);
+            
+            document.getElementById('chatWithUser').innerText = '@' + contact;
+            clearChatReplyTarget();
+            cancelEditMessage();
+            document.getElementById('chatSearchInput').value = '';
+            chatSearchQuery = '';
+            document.getElementById('chatSearchBar').classList.remove('open');
+            document.getElementById('searchToggleBtn').classList.remove('active-toggle');
+            toggleContacts();
             updateMuteButtonUI();
             applyChatWallpaper();
+            
+            loadChatMessages(chatId);
+        }
+
+        function loadChatMessages(chatId) {
+            const messagesRef = database.ref(`chats/${chatId}`);
+            
+            if (chatListeners[activeChatContact]) {
+                chatListeners[activeChatContact]();
+            }
+            
+            const listener = messagesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                const messages = [];
+                
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        messages.push({
+                            id: parseInt(key),
+                            ...data[key]
+                        });
+                    });
+                    messages.sort((a, b) => a.timestamp - b.timestamp);
+                }
+                
+                chats[activeChatContact] = messages;
+                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                renderChat();
+            });
+            
+            chatListeners[activeChatContact] = () => {
+                messagesRef.off('value', listener);
+            };
+        }
+
+        function sendChatMessageToFirebase(text, mediaSrc, mediaType, replyTo) {
+            if (!currentUser) return;
+            
+            const chatId = getChatId(currentUser.username, activeChatContact);
+            const messagesRef = database.ref(`chats/${chatId}`);
+            
+            const newMessageRef = messagesRef.push();
+            const messageId = Date.now();
+            
+            const messageData = {
+                id: messageId,
+                sender: currentUser.username,
+                text: text || '',
+                mediaSrc: mediaSrc || null,
+                mediaType: mediaType || null,
+                replyTo: replyTo || null,
+                reactions: {},
+                edited: false,
+                timestamp: Date.now()
+            };
+            
+            newMessageRef.set(messageData).catch((error) => {
+                console.error('Error al enviar mensaje:', error);
+                saveMessageLocally(messageData);
+            });
+            
+            document.getElementById('chatMsgInput').value = '';
+            document.getElementById('chatMedia').value = '';
+            clearChatReplyTarget();
+        }
+
+        function saveMessageLocally(messageData) {
+            if (!chats[activeChatContact]) chats[activeChatContact] = [];
+            chats[activeChatContact].push(messageData);
+            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
             renderChat();
-        };
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatMsgInput');
+            const mediaInput = document.getElementById('chatMedia');
+            const text = input.value.trim();
+            const file = mediaInput ? mediaInput.files[0] : null;
+
+            if (editingMessageId !== null) {
+                saveEditMessage();
+                return;
+            }
+
+            if (text === "" && !file) return;
+
+            const replyTarget = chatReplyTargets[activeChatContact] || null;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    sendChatMessageToFirebase(
+                        text, 
+                        e.target.result, 
+                        file.type.startsWith('video/') ? 'video' : 'image',
+                        replyTarget
+                    );
+                    mediaInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                sendChatMessageToFirebase(text, null, null, replyTarget);
+            }
+        }
+
+        function saveEditMessage() {
+            const input = document.getElementById('chatMsgInput');
+            const newText = input.value.trim();
+            if (newText === '') { cancelEditMessage(); return; }
+
+            const chatId = getChatId(currentUser.username, activeChatContact);
+            const messageRef = database.ref(`chats/${chatId}/${editingMessageId}`);
+            
+            messageRef.update({
+                text: newText,
+                edited: true
+            }).catch((error) => {
+                console.error('Error al editar mensaje:', error);
+                const list = chats[activeChatContact] || [];
+                const msg = list.find(m => m.id === editingMessageId);
+                if (msg) {
+                    msg.text = newText;
+                    msg.edited = true;
+                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                }
+            });
+            
+            cancelEditMessage();
+        }
+
+        function deleteChatMessage(msgId) {
+            if (!confirm('¿Borrar este mensaje?')) return;
+            
+            const chatId = getChatId(currentUser.username, activeChatContact);
+            const messageRef = database.ref(`chats/${chatId}/${msgId}`);
+            
+            messageRef.remove().catch((error) => {
+                console.error('Error al borrar mensaje:', error);
+                chats[activeChatContact] = (chats[activeChatContact] || []).filter(m => m.id !== msgId);
+                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                renderChat();
+            });
+        }
+
+        function toggleReaction(msgId, emoji) {
+            const chatId = getChatId(currentUser.username, activeChatContact);
+            const messageRef = database.ref(`chats/${chatId}/${msgId}/reactions/${emoji}`);
+            
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            
+            messageRef.once('value').then((snapshot) => {
+                const users = snapshot.val() || [];
+                const idx = users.indexOf(myHandle);
+                
+                if (idx === -1) {
+                    users.push(myHandle);
+                } else {
+                    users.splice(idx, 1);
+                }
+                
+                if (users.length === 0) {
+                    return messageRef.remove();
+                } else {
+                    return messageRef.set(users);
+                }
+            }).catch((error) => {
+                console.error('Error al actualizar reacción:', error);
+                const list = chats[activeChatContact] || [];
+                const msg = list.find(m => m.id === msgId);
+                if (msg) {
+                    if (!msg.reactions) msg.reactions = {};
+                    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+                    const idx = msg.reactions[emoji].indexOf(myHandle);
+                    if (idx === -1) msg.reactions[emoji].push(myHandle);
+                    else msg.reactions[emoji].splice(idx, 1);
+                    if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
+                    renderChat();
+                }
+            });
+        }
+
+        function setChatReplyTarget(msgId) {
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === msgId);
+            if (!msg) return;
+            chatReplyTargets[activeChatContact] = {
+                id: msg.id,
+                sender: msg.sender,
+                text: msg.text || (msg.mediaType === 'audio' ? '🎤 Mensaje de voz' : '📷 Archivo adjunto')
+            };
+            const preview = document.getElementById('chatReplyPreview');
+            const textEl = document.getElementById('chatReplyText');
+            textEl.innerText = `Respondiendo a ${msg.sender}: ${chatReplyTargets[activeChatContact].text.slice(0, 40)}`;
+            preview.classList.add('active');
+            document.getElementById('chatMsgInput').focus();
+        }
+
+        function clearChatReplyTarget() {
+            delete chatReplyTargets[activeChatContact];
+            const preview = document.getElementById('chatReplyPreview');
+            if (preview) preview.classList.remove('active');
+        }
+
+        function toggleMsgOptions(msgId) {
+            const menu = document.getElementById(`msg-options-${msgId}`);
+            if (!menu) return;
+            const isOpen = menu.classList.contains('open');
+            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
+            if (!isOpen) menu.classList.add('open');
+        }
+
+        function startEditMessage(msgId) {
+            const list = chats[activeChatContact] || [];
+            const msg = list.find(m => m.id === msgId);
+            if (!msg) return;
+            editingMessageId = msgId;
+            const input = document.getElementById('chatMsgInput');
+            input.value = msg.text || '';
+            input.focus();
+            document.getElementById('chatSendBtn').innerText = 'Guardar';
+            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
+        }
+
+        function cancelEditMessage() {
+            editingMessageId = null;
+            const sendBtn = document.getElementById('chatSendBtn');
+            if (sendBtn) sendBtn.innerText = 'Enviar';
+            const input = document.getElementById('chatMsgInput');
+            if (input) input.value = '';
+        }
+
+        function toggleReactionPicker(msgId) {
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (!picker) return;
+            const isOpen = picker.classList.contains('open');
+            document.querySelectorAll('.reaction-picker.open').forEach(p => p.classList.remove('open'));
+            if (!isOpen) picker.classList.add('open');
+        }
+
+        function addCustomReaction(msgId) {
+            const input = document.getElementById(`custom-emoji-${msgId}`);
+            if (!input) return;
+            const value = input.value.trim();
+            if (!value) return;
+            toggleReaction(msgId, value);
+            input.value = '';
+            const picker = document.getElementById(`reaction-picker-${msgId}`);
+            if (picker) picker.classList.remove('open');
+        }
+
+        function maybeTriggerBotReply(contact) {
+            if (contact !== 'RatBot') return;
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    const reply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
+                    
+                    const chatId = getChatId(currentUser.username, 'RatBot');
+                    const messagesRef = database.ref(`chats/${chatId}`);
+                    const newMessageRef = messagesRef.push();
+                    
+                    const messageData = {
+                        id: Date.now(),
+                        sender: 'RatBot',
+                        text: reply,
+                        mediaSrc: null,
+                        mediaType: null,
+                        replyTo: null,
+                        reactions: {},
+                        edited: false,
+                        timestamp: Date.now()
+                    };
+                    
+                    newMessageRef.set(messageData).catch((error) => {
+                        console.error('Error al guardar mensaje del bot:', error);
+                    });
+                }, 1400);
+            }, 500);
+        }
+
+        function showTypingIndicator() {
+            isTypingIndicatorOn = true;
+            renderChat();
+        }
+
+        function hideTypingIndicator() {
+            isTypingIndicatorOn = false;
+            renderChat();
+        }
+
+        async function toggleVoiceRecording() {
+            const micBtn = document.getElementById('micBtn');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const replyTarget = chatReplyTargets[activeChatContact] || null;
+                            sendChatMessageToFirebase('', e.target.result, 'audio', replyTarget);
+                        };
+                        reader.readAsDataURL(blob);
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('recording');
+                    micBtn.innerText = '⏹️';
+                } catch (err) {
+                    alert('No se pudo acceder al micrófono. Revisa los permisos del navegador.');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('recording');
+                micBtn.innerText = '🎤';
+            }
+        }
+
+        function toggleChatSearch() {
+            const bar = document.getElementById('chatSearchBar');
+            const btn = document.getElementById('searchToggleBtn');
+            bar.classList.toggle('open');
+            btn.classList.toggle('active-toggle');
+            if (!bar.classList.contains('open')) {
+                document.getElementById('chatSearchInput').value = '';
+                chatSearchQuery = '';
+                renderChat();
+            }
+        }
+
+        function handleChatSearch() {
+            chatSearchQuery = document.getElementById('chatSearchInput').value.toLowerCase().trim();
+            renderChat();
+        }
+
+        function toggleMuteContact() {
+            mutedContacts[activeChatContact] = !mutedContacts[activeChatContact];
+            localStorage.setItem('ratweb_muted_contacts', JSON.stringify(mutedContacts));
+            updateMuteButtonUI();
+        }
+
+        function updateMuteButtonUI() {
+            const btn = document.getElementById('muteToggleBtn');
+            if (!btn) return;
+            const isMuted = !!mutedContacts[activeChatContact];
+            btn.innerText = isMuted ? '🔕' : '🔔';
+            btn.classList.toggle('active-toggle', isMuted);
+            btn.title = isMuted ? 'Notificaciones silenciadas (actívalas de nuevo aquí)' : 'Silenciar notificaciones';
+        }
+
+        function toggleContacts() {
+            const drawer = document.getElementById('contactsDrawer');
+            if (drawer) drawer.classList.toggle('open');
+        }
+
+        function openWallpaperPicker() {
+            const grid = document.getElementById('wallpaperGrid');
+            const visibleItems = getVisibleGalleryItems();
+            if (visibleItems.length === 0) {
+                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes en tu Galería. ¡Sube alguna primero! 🖼️</p>`;
+            } else {
+                grid.innerHTML = `
+                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
+                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}
+                `;
+            }
+            document.getElementById('wallpaperModal').style.display = 'flex';
+        }
+
+        function closeWallpaperPicker() {
+            document.getElementById('wallpaperModal').style.display = 'none';
+        }
+
+        function selectWallpaper(src) {
+            chatWallpapers[activeChatContact] = src;
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function removeWallpaper() {
+            delete chatWallpapers[activeChatContact];
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function applyChatWallpaper() {
+            const chatMain = document.getElementById('chatMain');
+            if (!chatMain) return;
+            const wallpaper = chatWallpapers[activeChatContact];
+            if (wallpaper) {
+                chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
+            } else {
+                chatMain.style.backgroundImage = 'none';
+            }
+        }
+
+        function renderChat() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+
+            let list = chats[activeChatContact] || [];
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (chatSearchQuery) {
+                list = list.filter(m => (m.text || '').toLowerCase().includes(chatSearchQuery));
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 ${chatSearchQuery ? 'No se encontraron mensajes.' : 'Comienza la conversación con ' + activeChatContact + ' 🧀'}</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(msg => {
+                const isSent = msg.sender === myHandle;
+                const reactions = msg.reactions || {};
+                const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
+
+                let mediaHtml = '';
+                if (msg.mediaType === 'image') {
+                    mediaHtml = `<img class="msg-media" src="${msg.mediaSrc}" onclick="openModal('${msg.mediaSrc}', 'image')">`;
+                } else if (msg.mediaType === 'video') {
+                    mediaHtml = `<video class="msg-media" src="${msg.mediaSrc}" controls></video>`;
+                } else if (msg.mediaType === 'audio') {
+                    mediaHtml = `<div class="voice-msg">🎤<audio src="${msg.mediaSrc}" controls></audio></div>`;
+                }
+
+                return `
+                <div class="msg-row ${isSent ? 'sent' : 'received'}">
+                    <div class="msg-bubble ${isSent ? 'sent' : 'received'}">
+                        ${msg.replyTo ? `<div class="msg-quote"><strong>${msg.replyTo.sender}</strong>: ${msg.replyTo.text}</div>` : ''}
+                        ${msg.text ? `<div>${msg.text}</div>` : ''}
+                        ${mediaHtml}
+                        ${reactionEntries.length > 0 ? `
+                            <div class="msg-reactions">
+                                ${reactionEntries.map(([emoji, users]) => `
+                                    <span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction(${msg.id}, '${emoji}')">${emoji} ${users.length}</span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span class="edited-tag">${msg.edited ? '(editado)' : ''}</span>
+                            ${isSent ? `<span class="read-status">Leído</span>` : ''}
+                        </div>
+
+                        ${isSent ? `
+                        <div class="msg-options-wrapper" style="position:absolute; top:2px; right:4px;">
+                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions(${msg.id})">⋮</span>
+                            <div id="msg-options-${msg.id}" class="msg-options-menu">
+                                ${msg.mediaType ? '' : `<button onclick="startEditMessage(${msg.id})">✏️ Editar</button>`}
+                                <button onclick="deleteChatMessage(${msg.id})">🗑️ Borrar</button>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div class="reaction-picker" id="reaction-picker-${msg.id}">
+                            <div class="reaction-picker-grid">
+                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction(${msg.id}, '${e}')">${e}</span>`).join('')}
+                            </div>
+                            <div class="reaction-picker-custom">
+                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction(${msg.id})">
+                                <button onclick="addCustomReaction(${msg.id})">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="msg-actions-row">
+                        <span class="msg-action-link" onclick="toggleReactionPicker(${msg.id})">Reaccionar</span>
+                        <span class="msg-action-link" onclick="setChatReplyTarget(${msg.id})">Responder</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            if (isTypingIndicatorOn && !chatSearchQuery) {
+                container.innerHTML += `<div class="typing-indicator">${activeChatContact} está escribiendo...</div>`;
+            }
+
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+        }
+
+        // ==========================================
+        // REGISTRO DE USUARIO CON FIREBASE
+        // ==========================================
+        function registerUser() {
+            const username = document.getElementById('regUsername').value.trim();
+            const displayName = document.getElementById('regDisplayName').value.trim();
+            const bio = document.getElementById('regBio').value.trim();
+
+            if (!username || !displayName) {
+                alert("Por favor ingresa un nombre de usuario y un nombre visible.");
+                return;
+            }
+
+            const finalUsername = username.startsWith('@') ? username : '@' + username;
+
+            auth.signInAnonymously()
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    const userData = {
+                        username: finalUsername,
+                        displayName: displayName,
+                        bio: bio,
+                        banner: null,
+                        joinedAt: Date.now(),
+                        lastNameChange: 0,
+                        lastUsernameChange: 0,
+                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
+                    };
+
+                    return database.ref(`users/${user.uid}`).set(userData).then(() => {
+                        currentUser = userData;
+                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        document.getElementById('headerAvatar').src = currentUser.avatar;
+                        document.getElementById('authOverlay').style.display = 'none';
+                        pingUserPresence();
+                        renderPosts('main');
+                        renderGallery();
+                        renderForums();
+                        updateContactsFromPosts();
+                        
+                        const initialChatId = getChatId(currentUser.username, 'RatBot');
+                        loadChatMessages(initialChatId);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error al registrar usuario:', error);
+                    alert('Error al registrarse. Intenta de nuevo.');
+                });
+        }
 
         function previewAvatar(event) {
             const file = event.target.files[0];
@@ -1688,60 +2226,9 @@
             }
         }
 
-        function registerUser() {
-            const username = document.getElementById('regUsername').value.trim();
-            const displayName = document.getElementById('regDisplayName').value.trim();
-            const bio = document.getElementById('regBio').value.trim();
-
-            if (!username || !displayName) {
-                alert("Por favor ingresa un nombre de usuario y un nombre visible.");
-                return;
-            }
-
-            currentUser = {
-                username: username.startsWith('@') ? username : '@' + username,
-                displayName: displayName,
-                bio: bio,
-                banner: null,
-                joinedAt: Date.now(),
-                lastNameChange: 0,
-                lastUsernameChange: 0,
-                avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
-            };
-
-            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-            document.getElementById('headerAvatar').src = currentUser.avatar;
-            document.getElementById('authOverlay').style.display = 'none';
-            pingUserPresence();
-            renderPosts('main');
-            renderGallery();
-            renderForums();
-        }
-
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            
-            const targetSec = document.getElementById(sectionId);
-            if (targetSec) targetSec.classList.add('active');
-
-            const navBtn = document.getElementById(`btn-${sectionId}`);
-            if (navBtn) navBtn.classList.add('active');
-            else if (sectionId === 'forumView') {
-                document.getElementById('btn-foros').classList.add('active');
-            }
-
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.placeholder = sectionId === 'foros' ? 'Buscar por #tag...' : 'Buscar...';
-                searchInput.value = '';
-            }
-
-            if (sectionId === 'perfil') renderProfile();
-
-            handleSearch();
-        }
-
+        // ==========================================
+        // FUNCIONES DE POSTS Y FOROS
+        // ==========================================
         function createPost(target) {
             const isForum = target === 'forum';
             const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
@@ -1757,12 +2244,14 @@
                     savePost(userText, e.target.result, file.type.startsWith('image/') ? 'image' : 'video', isForum ? currentForumId : null);
                     textInput.value = '';
                     fileInput.value = '';
+                    updateContactsFromPosts();
                 };
                 reader.readAsDataURL(file);
             } else {
                 savePost(userText, null, null, isForum ? currentForumId : null);
                 textInput.value = '';
                 fileInput.value = '';
+                updateContactsFromPosts();
             }
         }
 
@@ -1783,6 +2272,100 @@
             posts.unshift(newPost);
             localStorage.setItem('ratweb_posts', JSON.stringify(posts));
             renderPosts(forumId ? 'forum' : 'main');
+        }
+
+        function renderPosts(target) {
+            const isForum = target === 'forum';
+            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
+            if (!listContainer) return;
+
+            const filteredPosts = isForum 
+                ? posts.filter(p => p.forumId === currentForumId)
+                : posts;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (filteredPosts.length === 0) {
+                listContainer.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún. ¡Sé el primero en publicar!</p>`;
+                return;
+            }
+
+            listContainer.innerHTML = filteredPosts.map(post => {
+                const isLiked = post.likedBy.includes(myHandle);
+                const isMyPost = currentUser && post.authorHandle === currentUser.username;
+                const isRepliesOpen = !!openRepliesBoxes[post.id];
+                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${post.replies.length === 0 ? 'Comentar' : post.replies.length + ' comentarios'}`;
+
+                return `
+                <div class="post-card">
+                    <img class="avatar-circle" src="${post.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
+                    <div class="post-bubble">
+                        <div class="post-header">
+                            <span class="post-author">${post.authorName} (${post.authorHandle}) ${post.forumId ? '🧀' : ''}</span>
+                            ${isMyPost ? `
+                                <button class="post-options-btn" onclick="toggleMenu(${post.id})">⋮</button>
+                                <div id="menu-${post.id}" class="options-menu">
+                                    <button onclick="deletePost(${post.id}, '${target}')">🗑️ Borrar</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="post-content">${post.text}</div>
+
+                        ${post.mediaSrc ? (
+                            post.mediaType === 'image' 
+                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
+                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`
+                        ) : ''}
+
+                        <div class="post-actions">
+                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id}, '${target}')">
+                                🐾 ${post.likedBy.length}
+                            </span>
+                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies(${post.id})">
+                                ${replyBtnLabel}
+                            </span>
+                        </div>
+
+                        <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
+                            ${post.replies.map(r => `
+                                <div class="reply-item">
+                                    <div class="reply-header">
+                                        <div class="reply-user-info">
+                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
+                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
+                                        </div>
+                                        <div class="reply-actions-right">
+                                            <span class="reply-action-btn" onclick="setReplyTarget(${post.id}, '${r.authorHandle}')">Responder</span>
+                                            ${(currentUser && r.authorHandle === currentUser.username) ? `
+                                                <button class="delete-comment-btn" onclick="deleteComment(${post.id}, ${r.id}, '${target}')">🗑️</button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                    <div>${r.text}</div>
+                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
+                                </div>
+                            `).join('')}
+
+                            <div class="reply-input-wrapper">
+                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
+                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
+                                    <span style="cursor:pointer;" onclick="clearReplyTarget(${post.id})">✕</span>
+                                </div>
+                                <div class="reply-input-row">
+                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply(${post.id}, '${target}')">
+                                    <label class="file-label">
+                                        📷
+                                        <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
+                                    </label>
+                                    <button class="btn-publish" onclick="addReply(${post.id}, '${target}')">Enviar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
         }
 
         function toggleLike(postId, target) {
@@ -1813,6 +2396,7 @@
             posts = posts.filter(p => p.id !== postId);
             localStorage.setItem('ratweb_posts', JSON.stringify(posts));
             renderPosts(target);
+            updateContactsFromPosts();
         }
 
         function toggleReplies(postId) {
@@ -1876,6 +2460,7 @@
                     clearReplyTarget(postId);
                     if (mediaInput) mediaInput.value = '';
                     renderPosts(target);
+                    updateContactsFromPosts();
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -1890,6 +2475,7 @@
                 localStorage.setItem('ratweb_posts', JSON.stringify(posts));
                 clearReplyTarget(postId);
                 renderPosts(target);
+                updateContactsFromPosts();
             }
         }
 
@@ -1900,102 +2486,13 @@
                 localStorage.setItem('ratweb_posts', JSON.stringify(posts));
                 openRepliesBoxes[postId] = true;
                 renderPosts(target);
+                updateContactsFromPosts();
             }
         }
 
-        function renderPosts(target) {
-            const isForum = target === 'forum';
-            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
-            if (!listContainer) return;
-
-            const filteredPosts = isForum 
-                ? posts.filter(p => p.forumId === currentForumId)
-                : posts.filter(p => !p.forumId);
-
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-
-            listContainer.innerHTML = filteredPosts.map(post => {
-                const isLiked = post.likedBy.includes(myHandle);
-                const isMyPost = currentUser && post.authorHandle === currentUser.username;
-                const isRepliesOpen = !!openRepliesBoxes[post.id];
-                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${post.replies.length === 0 ? 'Comentar' : post.replies.length + ' comentarios'}`;
-
-                return `
-                <div class="post-card">
-                    <img class="avatar-circle" src="${post.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
-                    <div class="post-bubble">
-                        <div class="post-header">
-                            <span class="post-author">${post.authorName} (${post.authorHandle})</span>
-                            ${isMyPost ? `
-                                <button class="post-options-btn" onclick="toggleMenu(${post.id})">⋮</button>
-                                <div id="menu-${post.id}" class="options-menu">
-                                    <button onclick="deletePost(${post.id}, '${target}')">🗑️ Borrar</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="post-content">${post.text}</div>
-
-                        ${post.mediaSrc ? (
-                            post.mediaType === 'image' 
-                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
-                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`
-                        ) : ''}
-
-                        <div class="post-actions">
-                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id}, '${target}')">
-                                🐾 ${post.likedBy.length}
-                            </span>
-                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies(${post.id})">
-                                ${replyBtnLabel}
-                            </span>
-                        </div>
-
-                        <!-- CAJÓN DE COMENTARIOS -->
-                        <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
-                            ${post.replies.map(r => `
-                                <div class="reply-item">
-                                    <div class="reply-header">
-                                        <div class="reply-user-info">
-                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
-                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
-                                        </div>
-                                        <div class="reply-actions-right">
-                                            <span class="reply-action-btn" onclick="setReplyTarget(${post.id}, '${r.authorHandle}')">Responder</span>
-                                            ${(currentUser && r.authorHandle === currentUser.username) ? `
-                                                <button class="delete-comment-btn" onclick="deleteComment(${post.id}, ${r.id}, '${target}')">🗑️</button>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                    <div>${r.text}</div>
-                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
-                                </div>
-                            `).join('')}
-
-                            <div class="reply-input-wrapper">
-                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
-                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
-                                    <span style="cursor:pointer;" onclick="clearReplyTarget(${post.id})">✕</span>
-                                </div>
-                                <div class="reply-input-row">
-                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply(${post.id}, '${target}')">
-                                    <label class="file-label">
-                                        📷
-                                        <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
-                                    </label>
-                                    <button class="btn-publish" onclick="addReply(${post.id}, '${target}')">Enviar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        /* FOROS */
-        const MAX_FORUMS_PER_USER = 3;
-
+        // ==========================================
+        // FUNCIONES DE FOROS
+        // ==========================================
         function getMyForumsCount() {
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
             return forums.filter(f => f.creatorHandle === myHandle).length;
@@ -2038,7 +2535,7 @@
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
                 desc: desc,
                 creatorHandle: myHandle,
-                members: [myHandle] // El creador se une automáticamente
+                members: [myHandle]
             };
 
             forums.unshift(newForum);
@@ -2059,6 +2556,7 @@
                 localStorage.setItem('ratweb_posts', JSON.stringify(posts));
                 renderForums();
                 if (currentForumId === forumId) showSection('foros');
+                updateContactsFromPosts();
             }
         }
 
@@ -2076,6 +2574,19 @@
             localStorage.setItem('ratweb_forums', JSON.stringify(forums));
             renderForums();
             if (currentForumId === forumId) openForum(forumId);
+        }
+
+        function getActiveForumMembersCount(forumMembers) {
+            const now = Date.now();
+            let activeCount = 0;
+            if (!forumMembers) return 0;
+            
+            for (let memberHandle of forumMembers) {
+                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) {
+                    activeCount++;
+                }
+            }
+            return activeCount;
         }
 
         function renderForums(filteredList) {
@@ -2165,7 +2676,9 @@
             renderPosts('forum');
         }
 
-        /* GALERÍA */
+        // ==========================================
+        // FUNCIONES DE GALERÍA
+        // ==========================================
         function uploadToGallery() {
             const title = document.getElementById('galleryTitle').value.trim();
             const category = document.getElementById('galleryCategory').value;
@@ -2206,6 +2719,11 @@
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
             const visibleItems = getVisibleGalleryItems();
 
+            if (visibleItems.length === 0) {
+                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px; grid-column:1/-1;">🐭 No hay imágenes en la galería. ¡Sube tu primera obra!</p>`;
+                return;
+            }
+
             container.innerHTML = visibleItems.map(item => {
                 const isMine = item.uploaderHandle === myHandle;
                 const likedBy = item.likedBy || [];
@@ -2233,7 +2751,7 @@
             if (!item) return;
 
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            if (item.uploaderHandle !== myHandle) return; // seguridad extra: solo el dueño borra
+            if (item.uploaderHandle !== myHandle) return;
 
             if (confirm('¿Eliminar esta imagen de la galería?')) {
                 gallery = gallery.filter(g => g.id !== id);
@@ -2258,7 +2776,9 @@
             renderGallery();
         }
 
-        /* PERFIL */
+        // ==========================================
+        // FUNCIONES DE PERFIL
+        // ==========================================
         function renderProfile() {
             if (!currentUser) return;
 
@@ -2396,473 +2916,75 @@
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
         }
 
-        /* CHAT PRIVADO */
-        let chatReplyTargets = {};   // { contactHandle: {id, sender, text} }
-        let openReactionPicker = null;
-        let openMsgOptionsMenu = null;
-        let editingMessageId = null;
-        let chatSearchQuery = '';
-        let mutedContacts = JSON.parse(localStorage.getItem('ratweb_muted_contacts')) || {};
-        let chatWallpapers = JSON.parse(localStorage.getItem('ratweb_chat_wallpapers')) || {};
-        let isTypingIndicatorOn = false;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let isRecording = false;
-
-        const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
-
-        const BOT_REPLIES = [
-            '¡Miau- digo, squeak! 🐭', 
-            'Interesante, cuéntame más 🧀',
-            '¡Jaja me encanta! 🐾',
-            'Estoy pensando en queso ahora mismo 🧀',
-            '¡Genial! Sigue así 💗'
-        ];
-
-        // Normaliza mensajes viejos guardados sin id/reactions/edited
-        function normalizeChats() {
-            let changed = false;
-            Object.keys(chats).forEach(contact => {
-                chats[contact] = (chats[contact] || []).map((msg, idx) => {
-                    const normalized = { ...msg };
-                    if (!normalized.id) { normalized.id = Date.now() + idx; changed = true; }
-                    if (!normalized.reactions) { normalized.reactions = {}; changed = true; }
-                    if (normalized.edited === undefined) { normalized.edited = false; changed = true; }
-                    if (normalized.replyTo === undefined) { normalized.replyTo = null; changed = true; }
-                    return normalized;
-                });
-            });
-            if (changed) localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-        }
-        normalizeChats();
-
-        function toggleContacts() {
-            const drawer = document.getElementById('contactsDrawer');
-            if (drawer) drawer.classList.toggle('open');
+        // ==========================================
+        // FUNCIONES DE PRESENCIA Y NAVEGACIÓN
+        // ==========================================
+        function pingUserPresence() {
+            if (!currentUser) return;
+            usersPresence[currentUser.username] = Date.now();
+            localStorage.setItem('ratweb_presence', JSON.stringify(usersPresence));
+            if (document.getElementById('foros').classList.contains('active')) {
+                renderForums();
+            }
         }
 
-        function switchChat(contact) {
-            activeChatContact = contact;
-            document.getElementById('chatWithUser').innerText = '@' + contact;
-            clearChatReplyTarget();
-            cancelEditMessage();
-            document.getElementById('chatSearchInput').value = '';
-            chatSearchQuery = '';
-            document.getElementById('chatSearchBar').classList.remove('open');
-            document.getElementById('searchToggleBtn').classList.remove('active-toggle');
-            toggleContacts();
-            updateMuteButtonUI();
-            applyChatWallpaper();
-            renderChat();
+        setInterval(pingUserPresence, 10000);
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            const targetSec = document.getElementById(sectionId);
+            if (targetSec) targetSec.classList.add('active');
+
+            const navBtn = document.getElementById(`btn-${sectionId}`);
+            if (navBtn) navBtn.classList.add('active');
+            else if (sectionId === 'forumView') {
+                document.getElementById('btn-foros').classList.add('active');
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.placeholder = sectionId === 'foros' ? 'Buscar por #tag...' : 'Buscar...';
+                searchInput.value = '';
+            }
+
+            if (sectionId === 'perfil') renderProfile();
+
+            handleSearch();
         }
 
-        /* ESCRIBIENDO... + RESPUESTA AUTOMÁTICA DE PRUEBA */
-        function showTypingIndicator() {
-            isTypingIndicatorOn = true;
-            renderChat();
-        }
-
-        function hideTypingIndicator() {
-            isTypingIndicatorOn = false;
-            renderChat();
-        }
-
-        function maybeTriggerBotReply(contact) {
-            if (contact !== 'RatBot') return;
-            setTimeout(() => {
-                showTypingIndicator();
-                setTimeout(() => {
-                    hideTypingIndicator();
-                    const reply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
-                    chats['RatBot'].push({
-                        id: Date.now(),
-                        sender: 'RatBot',
-                        text: reply,
-                        mediaSrc: null,
-                        mediaType: null,
-                        replyTo: null,
-                        reactions: {},
-                        edited: false
+        function updateContactsFromPosts() {
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const contactsSet = new Set(['RatBot']);
+            
+            posts.forEach(post => {
+                if (post.authorHandle && post.authorHandle !== myHandle) {
+                    contactsSet.add(post.authorHandle);
+                }
+                if (post.replies) {
+                    post.replies.forEach(reply => {
+                        if (reply.authorHandle && reply.authorHandle !== myHandle) {
+                            contactsSet.add(reply.authorHandle);
+                        }
                     });
-                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                    if (activeChatContact === 'RatBot') renderChat();
-                }, 1400);
-            }, 500);
-        }
-
-        /* ENVIAR MENSAJE (texto / foto / gif / video) */
-        function sendChatMessage() {
-            const input = document.getElementById('chatMsgInput');
-            const mediaInput = document.getElementById('chatMedia');
-            const text = input.value.trim();
-            const file = mediaInput ? mediaInput.files[0] : null;
-
-            if (editingMessageId !== null) {
-                saveEditMessage();
-                return;
-            }
-
-            if (text === "" && !file) return;
-
-            if (!chats[activeChatContact]) chats[activeChatContact] = [];
-
-            const replyTarget = chatReplyTargets[activeChatContact] || null;
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-
-            const pushMessage = (mediaSrc, mediaType) => {
-                chats[activeChatContact].push({
-                    id: Date.now(),
-                    sender: myHandle,
-                    text: text,
-                    mediaSrc: mediaSrc,
-                    mediaType: mediaType,
-                    replyTo: replyTarget,
-                    reactions: {},
-                    edited: false
-                });
-                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                input.value = '';
-                if (mediaInput) mediaInput.value = '';
-                clearChatReplyTarget();
-                renderChat();
-                maybeTriggerBotReply(activeChatContact);
-            };
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    pushMessage(e.target.result, file.type.startsWith('video/') ? 'video' : 'image');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                pushMessage(null, null);
-            }
-        }
-
-        /* RESPONDER A UN MENSAJE (cita) */
-        function setChatReplyTarget(msgId) {
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === msgId);
-            if (!msg) return;
-            chatReplyTargets[activeChatContact] = {
-                id: msg.id,
-                sender: msg.sender,
-                text: msg.text || (msg.mediaType === 'audio' ? '🎤 Mensaje de voz' : '📷 Archivo adjunto')
-            };
-            const preview = document.getElementById('chatReplyPreview');
-            const textEl = document.getElementById('chatReplyText');
-            textEl.innerText = `Respondiendo a ${msg.sender}: ${chatReplyTargets[activeChatContact].text.slice(0, 40)}`;
-            preview.classList.add('active');
-            document.getElementById('chatMsgInput').focus();
-        }
-
-        function clearChatReplyTarget() {
-            delete chatReplyTargets[activeChatContact];
-            const preview = document.getElementById('chatReplyPreview');
-            if (preview) preview.classList.remove('active');
-        }
-
-        /* EDITAR / BORRAR MENSAJE PROPIO */
-        function toggleMsgOptions(msgId) {
-            const menu = document.getElementById(`msg-options-${msgId}`);
-            if (!menu) return;
-            const isOpen = menu.classList.contains('open');
-            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
-            if (!isOpen) menu.classList.add('open');
-        }
-
-        function startEditMessage(msgId) {
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === msgId);
-            if (!msg) return;
-            editingMessageId = msgId;
-            const input = document.getElementById('chatMsgInput');
-            input.value = msg.text || '';
-            input.focus();
-            document.getElementById('chatSendBtn').innerText = 'Guardar';
-            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
-        }
-
-        function cancelEditMessage() {
-            editingMessageId = null;
-            const sendBtn = document.getElementById('chatSendBtn');
-            if (sendBtn) sendBtn.innerText = 'Enviar';
-            const input = document.getElementById('chatMsgInput');
-            if (input) input.value = '';
-        }
-
-        function saveEditMessage() {
-            const input = document.getElementById('chatMsgInput');
-            const newText = input.value.trim();
-            if (newText === '') { cancelEditMessage(); return; }
-
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === editingMessageId);
-            if (msg) {
-                msg.text = newText;
-                msg.edited = true;
-                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-            }
-            cancelEditMessage();
-            renderChat();
-        }
-
-        function deleteChatMessage(msgId) {
-            if (!confirm('¿Borrar este mensaje?')) return;
-            chats[activeChatContact] = (chats[activeChatContact] || []).filter(m => m.id !== msgId);
-            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-            renderChat();
-        }
-
-        /* REACCIONES CON EMOJI (estilo WhatsApp: rápidas + cualquier otra) */
-        function toggleReactionPicker(msgId) {
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (!picker) return;
-            const isOpen = picker.classList.contains('open');
-            document.querySelectorAll('.reaction-picker.open').forEach(p => p.classList.remove('open'));
-            if (!isOpen) picker.classList.add('open');
-        }
-
-        function toggleReaction(msgId, emoji) {
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === msgId);
-            if (!msg) return;
-            if (!msg.reactions) msg.reactions = {};
-            if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const idx = msg.reactions[emoji].indexOf(myHandle);
-            if (idx === -1) msg.reactions[emoji].push(myHandle);
-            else msg.reactions[emoji].splice(idx, 1);
-
-            if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
-
-            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-            renderChat();
-        }
-
-        function addCustomReaction(msgId) {
-            const input = document.getElementById(`custom-emoji-${msgId}`);
-            if (!input) return;
-            const value = input.value.trim();
-            if (!value) return;
-            toggleReaction(msgId, value);
-            input.value = '';
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) picker.classList.remove('open');
-        }
-
-        /* MENSAJES DE VOZ */
-        async function toggleVoiceRecording() {
-            const micBtn = document.getElementById('micBtn');
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            if (!chats[activeChatContact]) chats[activeChatContact] = [];
-                            const replyTarget = chatReplyTargets[activeChatContact] || null;
-                            chats[activeChatContact].push({
-                                id: Date.now(),
-                                sender: currentUser ? currentUser.username : '@ScottWilh',
-                                text: '',
-                                mediaSrc: e.target.result,
-                                mediaType: 'audio',
-                                replyTo: replyTarget,
-                                reactions: {},
-                                edited: false
-                            });
-                            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                            clearChatReplyTarget();
-                            renderChat();
-                            maybeTriggerBotReply(activeChatContact);
-                        };
-                        reader.readAsDataURL(blob);
-                        stream.getTracks().forEach(t => t.stop());
-                    };
-                    mediaRecorder.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording');
-                    micBtn.innerText = '⏹️';
-                } catch (err) {
-                    alert('No se pudo acceder al micrófono. Revisa los permisos del navegador.');
                 }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('recording');
-                micBtn.innerText = '🎤';
-            }
-        }
-
-        /* BUSCAR DENTRO DE LA CONVERSACIÓN */
-        function toggleChatSearch() {
-            const bar = document.getElementById('chatSearchBar');
-            const btn = document.getElementById('searchToggleBtn');
-            bar.classList.toggle('open');
-            btn.classList.toggle('active-toggle');
-            if (!bar.classList.contains('open')) {
-                document.getElementById('chatSearchInput').value = '';
-                chatSearchQuery = '';
-                renderChat();
-            }
-        }
-
-        function handleChatSearch() {
-            chatSearchQuery = document.getElementById('chatSearchInput').value.toLowerCase().trim();
-            renderChat();
-        }
-
-        /* SILENCIAR CONVERSACIÓN */
-        function toggleMuteContact() {
-            mutedContacts[activeChatContact] = !mutedContacts[activeChatContact];
-            localStorage.setItem('ratweb_muted_contacts', JSON.stringify(mutedContacts));
-            updateMuteButtonUI();
-        }
-
-        function updateMuteButtonUI() {
-            const btn = document.getElementById('muteToggleBtn');
-            if (!btn) return;
-            const isMuted = !!mutedContacts[activeChatContact];
-            btn.innerText = isMuted ? '🔕' : '🔔';
-            btn.classList.toggle('active-toggle', isMuted);
-            btn.title = isMuted ? 'Notificaciones silenciadas (actívalas de nuevo aquí)' : 'Silenciar notificaciones';
-        }
-
-        /* FONDO DE CHAT PERSONALIZADO (imágenes de tu galería visibles para ti) */
-        function openWallpaperPicker() {
-            const grid = document.getElementById('wallpaperGrid');
-            const visibleItems = getVisibleGalleryItems();
-            if (visibleItems.length === 0) {
-                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes en tu Galería. ¡Sube alguna primero! 🖼️</p>`;
-            } else {
-                grid.innerHTML = `
-                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
-                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}
-                `;
-            }
-            document.getElementById('wallpaperModal').style.display = 'flex';
-        }
-
-        function closeWallpaperPicker() {
-            document.getElementById('wallpaperModal').style.display = 'none';
-        }
-
-        function selectWallpaper(src) {
-            chatWallpapers[activeChatContact] = src;
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function removeWallpaper() {
-            delete chatWallpapers[activeChatContact];
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function applyChatWallpaper() {
-            const chatMain = document.getElementById('chatMain');
-            if (!chatMain) return;
-            const wallpaper = chatWallpapers[activeChatContact];
-            if (wallpaper) {
-                chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
-            } else {
-                chatMain.style.backgroundImage = 'none';
-            }
-        }
-
-        /* RENDER PRINCIPAL DEL CHAT */
-        function renderChat() {
-            const container = document.getElementById('chatMessages');
-            if (!container) return;
-
-            let list = chats[activeChatContact] || [];
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-
-            if (chatSearchQuery) {
-                list = list.filter(m => (m.text || '').toLowerCase().includes(chatSearchQuery));
-            }
-
-            const emptyMsg = chatSearchQuery && list.length === 0
-                ? `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron mensajes.</p>`
-                : '';
-
-            container.innerHTML = emptyMsg + list.map(msg => {
-                const isSent = msg.sender === myHandle;
-                const reactions = msg.reactions || {};
-                const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
-
-                let mediaHtml = '';
-                if (msg.mediaType === 'image') {
-                    mediaHtml = `<img class="msg-media" src="${msg.mediaSrc}" onclick="openModal('${msg.mediaSrc}', 'image')">`;
-                } else if (msg.mediaType === 'video') {
-                    mediaHtml = `<video class="msg-media" src="${msg.mediaSrc}" controls></video>`;
-                } else if (msg.mediaType === 'audio') {
-                    mediaHtml = `<div class="voice-msg">🎤<audio src="${msg.mediaSrc}" controls></audio></div>`;
-                }
-
-                return `
-                <div class="msg-row ${isSent ? 'sent' : 'received'}">
-                    <div class="msg-bubble ${isSent ? 'sent' : 'received'}">
-                        ${msg.replyTo ? `<div class="msg-quote"><strong>${msg.replyTo.sender}</strong>: ${msg.replyTo.text}</div>` : ''}
-                        ${msg.text ? `<div>${msg.text}</div>` : ''}
-                        ${mediaHtml}
-                        ${reactionEntries.length > 0 ? `
-                            <div class="msg-reactions">
-                                ${reactionEntries.map(([emoji, users]) => `
-                                    <span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction(${msg.id}, '${emoji}')">${emoji} ${users.length}</span>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                            <span class="edited-tag">${msg.edited ? '(editado)' : ''}</span>
-                            ${isSent ? `<span class="read-status">Leído</span>` : ''}
-                        </div>
-
-                        ${isSent ? `
-                        <div class="msg-options-wrapper" style="position:absolute; top:2px; right:4px;">
-                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions(${msg.id})">⋮</span>
-                            <div id="msg-options-${msg.id}" class="msg-options-menu">
-                                ${msg.mediaType ? '' : `<button onclick="startEditMessage(${msg.id})">✏️ Editar</button>`}
-                                <button onclick="deleteChatMessage(${msg.id})">🗑️ Borrar</button>
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        <div class="reaction-picker" id="reaction-picker-${msg.id}">
-                            <div class="reaction-picker-grid">
-                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction(${msg.id}, '${e}')">${e}</span>`).join('')}
-                            </div>
-                            <div class="reaction-picker-custom">
-                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction(${msg.id})">
-                                <button onclick="addCustomReaction(${msg.id})">OK</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="msg-actions-row">
-                        <span class="msg-action-link" onclick="toggleReactionPicker(${msg.id})">Reaccionar</span>
-                        <span class="msg-action-link" onclick="setChatReplyTarget(${msg.id})">Responder</span>
-                    </div>
+            });
+            
+            const drawer = document.getElementById('contactsDrawer');
+            if (!drawer) return;
+            
+            const currentContact = activeChatContact;
+            drawer.innerHTML = Array.from(contactsSet).map(handle => `
+                <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
+                    <span class="active-dot"></span> ${handle}
                 </div>
-                `;
-            }).join('');
-
-            if (isTypingIndicatorOn && !chatSearchQuery) {
-                container.innerHTML += `<div class="typing-indicator">${activeChatContact} está escribiendo...</div>`;
-            }
-
-            container.scrollTop = container.scrollHeight;
+            `).join('');
         }
 
-        /* MODAL VISOR */
-
+        // ==========================================
+        // FUNCIONES DE MODAL Y BÚSQUEDA
+        // ==========================================
         function openModal(src, type) {
             const modal = document.getElementById('imageModal');
             const content = document.getElementById('modalContent');
@@ -2881,7 +3003,6 @@
             if (modal) modal.style.display = 'none';
         }
 
-        /* BÚSQUEDA GLOBAL */
         function handleSearch() {
             const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
             const query = rawQuery.startsWith('#') ? rawQuery.slice(1) : rawQuery;
@@ -2909,20 +3030,56 @@
                 const mainList = document.getElementById('feedList');
                 if (!mainList) return;
                 const filtered = posts.filter(p =>
-                    !p.forumId && (
-                        p.text.toLowerCase().includes(query) ||
-                        p.authorName.toLowerCase().includes(query) ||
-                        p.authorHandle.toLowerCase().includes(query)
-                    )
+                    p.text.toLowerCase().includes(query) ||
+                    p.authorName.toLowerCase().includes(query) ||
+                    p.authorHandle.toLowerCase().includes(query)
                 );
                 if (filtered.length === 0) {
                     mainList.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron publicaciones.</p>`;
                     return;
                 }
-                mainList.innerHTML = filtered.map(p => `<div class="post-card"><div class="post-bubble"><strong>${p.authorName}</strong>: ${p.text}</div></div>`).join('');
+                const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+                mainList.innerHTML = filtered.map(p => `
+                    <div class="post-card">
+                        <img class="avatar-circle" src="${p.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
+                        <div class="post-bubble">
+                            <div class="post-header">
+                                <span class="post-author">${p.authorName} (${p.authorHandle})</span>
+                            </div>
+                            <div class="post-content">${p.text}</div>
+                        </div>
+                    </div>
+                `).join('');
             }
         }
-    </script>
 
+        // ==========================================
+        // INICIALIZACIÓN
+        // ==========================================
+        window.onload = function() {
+            if (currentUser) {
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('headerAvatar').src = currentUser.avatar || '';
+                pingUserPresence();
+                
+                auth.signInAnonymously().catch((error) => {
+                    console.error('Error en autenticación anónima:', error);
+                });
+                
+                const initialChatId = getChatId(currentUser.username, 'RatBot');
+                loadChatMessages(initialChatId);
+            }
+            renderPosts('main');
+            renderForums();
+            renderGallery();
+            updateMuteButtonUI();
+            applyChatWallpaper();
+            updateContactsFromPosts();
+        };
+
+        console.log('🔥 RatWeb con Firebase iniciado correctamente');
+        console.log('📱 App ID:', firebaseConfig.appId);
+        console.log('👤 Usuario actual:', currentUser ? currentUser.username : 'No autenticado');
+    </script>
 </body>
-                                </html>
+    </html>
