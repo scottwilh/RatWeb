@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <style>
-        /* ===== ESTILOS COMPLETOS (igual que antes) ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
         html { height: 100%; overflow: hidden; }
         body { background-color: #fcebe6; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; }
@@ -23,7 +22,9 @@
         .auth-card input, .auth-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
         .auth-card textarea { height: 50px; resize: none; }
         .btn-auth { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
-        .error-msg { color: #e74c3c; font-size: 11px; text-align: center; min-height: 16px; }
+        .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error-msg { color: #e74c3c; font-size: 12px; text-align: center; min-height: 20px; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
+        .error-msg.show { display: block; }
         header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
         .logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
         .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
@@ -195,7 +196,7 @@
             <input type="text" id="regDisplayName" placeholder="Nombre visible (ej: Wilhelm Reyes)">
             <textarea id="regBio" placeholder="Descripción de tu perfil..."></textarea>
             
-            <div id="regError" class="error-msg"></div>
+            <div id="regError" class="error-msg">⚠️ Ya hay un usuario con este nombre. Por favor, elige otro.</div>
 
             <button class="btn-auth" id="registerBtn" onclick="registerUser()">Entrar a RatWeb</button>
         </div>
@@ -230,7 +231,7 @@
                             📷 Adjuntar
                             <input type="file" id="postMedia" accept="image/*,video/*" style="display: none;">
                         </label>
-                        <button class="btn-publish" onclick="createPost('main')">Publicar</button>
+                        <button class="btn-publish" id="publishBtn" onclick="createPost('main')">Publicar</button>
                     </div>
                 </div>
                 <div id="feedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
@@ -440,7 +441,7 @@
         let chatId = '';
         let activeChatContact = 'RatBot';
         let posts = [];
-        let forums = JSON.parse(localStorage.getItem('ratweb_forums')) || [];
+        let forums = [];
         let gallery = JSON.parse(localStorage.getItem('ratweb_gallery')) || [];
         let usersPresence = JSON.parse(localStorage.getItem('ratweb_presence')) || {};
         let openRepliesBoxes = {};
@@ -457,6 +458,7 @@
         let audioChunks = [];
         let isRecording = false;
         let chatReplyTargets = {};
+        let isRegistering = false;
 
         const NAME_COOLDOWN_DAYS = 15;
         const USERNAME_COOLDOWN_DAYS = 30;
@@ -466,7 +468,7 @@
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ==========================================
-        // POSTS EN FIREBASE - ¡NUEVO!
+        // POSTS EN FIREBASE
         // ==========================================
         function loadPostsFromFirebase() {
             const postsRef = database.ref('posts');
@@ -481,7 +483,6 @@
                 } else {
                     posts = [];
                 }
-                // Renderizar según la vista actual
                 const isForumActive = document.getElementById('forumView').classList.contains('active');
                 if (isForumActive && currentForumId) {
                     renderPosts('forum');
@@ -489,6 +490,9 @@
                     renderPosts('main');
                 }
                 updateContactsFromPosts();
+                if (document.getElementById('perfil').classList.contains('active')) {
+                    renderProfile();
+                }
             });
         }
 
@@ -510,85 +514,6 @@
         }
 
         // ==========================================
-        // REGISTRO DE USUARIO CON VERIFICACIÓN
-        // ==========================================
-        function registerUser() {
-            const username = document.getElementById('regUsername').value.trim();
-            const displayName = document.getElementById('regDisplayName').value.trim();
-            const bio = document.getElementById('regBio').value.trim();
-            const errorEl = document.getElementById('regError');
-            const registerBtn = document.getElementById('registerBtn');
-
-            if (!username || !displayName) {
-                errorEl.textContent = "⚠️ Por favor ingresa un nombre de usuario y un nombre visible.";
-                return;
-            }
-
-            const finalUsername = username.startsWith('@') ? username : '@' + username;
-
-            // Verificar si el username ya existe en Firebase
-            registerBtn.disabled = true;
-            registerBtn.textContent = 'Verificando...';
-            errorEl.textContent = '';
-
-            database.ref('usernames').child(finalUsername).once('value')
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        errorEl.textContent = `❌ El usuario ${finalUsername} ya existe. Elige otro.`;
-                        registerBtn.disabled = false;
-                        registerBtn.textContent = 'Entrar a RatWeb';
-                        return Promise.reject('Username exists');
-                    }
-                    
-                    // Username disponible - proceder con registro
-                    return auth.signInAnonymously();
-                })
-                .then((userCredential) => {
-                    if (!userCredential) return;
-                    const user = userCredential.user;
-                    
-                    const userData = {
-                        username: finalUsername,
-                        displayName: displayName,
-                        bio: bio,
-                        banner: null,
-                        joinedAt: Date.now(),
-                        lastNameChange: 0,
-                        lastUsernameChange: 0,
-                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
-                    };
-
-                    // Guardar usuario y username en Firebase
-                    return Promise.all([
-                        database.ref(`users/${user.uid}`).set(userData),
-                        database.ref(`usernames/${finalUsername}`).set({ uid: user.uid, displayName: displayName })
-                    ]).then(() => {
-                        currentUser = userData;
-                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                        document.getElementById('headerAvatar').src = currentUser.avatar;
-                        document.getElementById('authOverlay').style.display = 'none';
-                        pingUserPresence();
-                        
-                        // Cargar datos desde Firebase
-                        loadPostsFromFirebase();
-                        loadForumsFromFirebase();
-                        renderGallery();
-                        
-                        const initialChatId = getChatId(currentUser.username, 'RatBot');
-                        loadChatMessages(initialChatId);
-                    });
-                })
-                .catch((error) => {
-                    if (error !== 'Username exists') {
-                        console.error('Error al registrar usuario:', error);
-                        errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
-                    }
-                    registerBtn.disabled = false;
-                    registerBtn.textContent = 'Entrar a RatWeb';
-                });
-        }
-
-        // ==========================================
         // FOROS EN FIREBASE
         // ==========================================
         function loadForumsFromFirebase() {
@@ -605,6 +530,9 @@
                     forums = [];
                 }
                 renderForums();
+                if (document.getElementById('perfil').classList.contains('active')) {
+                    renderProfile();
+                }
             });
         }
 
@@ -623,6 +551,122 @@
 
         function updateForumInFirebase(forumId, data) {
             return database.ref(`forums/${forumId}`).update(data);
+        }
+
+        // ==========================================
+        // REGISTRO DE USUARIO - CORREGIDO
+        // ==========================================
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempAvatarData = e.target.result;
+                    document.getElementById('avatarPreview').src = tempAvatarData;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function registerUser() {
+            if (isRegistering) return;
+            
+            const username = document.getElementById('regUsername').value.trim();
+            const displayName = document.getElementById('regDisplayName').value.trim();
+            const bio = document.getElementById('regBio').value.trim();
+            const errorEl = document.getElementById('regError');
+            const registerBtn = document.getElementById('registerBtn');
+
+            // Ocultar error previo
+            errorEl.classList.remove('show');
+
+            if (!username || !displayName) {
+                errorEl.textContent = "⚠️ Por favor ingresa un nombre de usuario y un nombre visible.";
+                errorEl.classList.add('show');
+                return;
+            }
+
+            if (!username.startsWith('@')) {
+                errorEl.textContent = "⚠️ El nombre de usuario debe comenzar con @";
+                errorEl.classList.add('show');
+                return;
+            }
+
+            if (username.length < 3) {
+                errorEl.textContent = "⚠️ El nombre de usuario debe tener al menos 3 caracteres (incluyendo @)";
+                errorEl.classList.add('show');
+                return;
+            }
+
+            isRegistering = true;
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Verificando...';
+            errorEl.classList.remove('show');
+
+            // PRIMERO: Verificar si el username existe
+            database.ref('usernames').child(username).once('value')
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        errorEl.textContent = `⚠️ Ya hay un usuario con el nombre ${username}. Por favor, elige otro.`;
+                        errorEl.classList.add('show');
+                        isRegistering = false;
+                        registerBtn.disabled = false;
+                        registerBtn.textContent = 'Entrar a RatWeb';
+                        return Promise.reject('Username exists');
+                    }
+                    
+                    // Username disponible - proceder con autenticación
+                    return auth.signInAnonymously();
+                })
+                .then((userCredential) => {
+                    if (!userCredential) return Promise.reject('No user credential');
+                    const user = userCredential.user;
+                    
+                    const userData = {
+                        username: username,
+                        displayName: displayName,
+                        bio: bio || '',
+                        banner: null,
+                        joinedAt: Date.now(),
+                        lastNameChange: 0,
+                        lastUsernameChange: 0,
+                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
+                    };
+
+                    // Guardar usuario y username en Firebase
+                    return Promise.all([
+                        database.ref(`users/${user.uid}`).set(userData),
+                        database.ref(`usernames/${username}`).set({ uid: user.uid, displayName: displayName })
+                    ]).then(() => {
+                        currentUser = userData;
+                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        document.getElementById('headerAvatar').src = currentUser.avatar;
+                        document.getElementById('authOverlay').style.display = 'none';
+                        
+                        // Inicializar todo
+                        loadPostsFromFirebase();
+                        loadForumsFromFirebase();
+                        renderGallery();
+                        pingUserPresence();
+                        
+                        const initialChatId = getChatId(currentUser.username, 'RatBot');
+                        loadChatMessages(initialChatId);
+                        
+                        isRegistering = false;
+                        registerBtn.disabled = false;
+                        registerBtn.textContent = 'Entrar a RatWeb';
+                    });
+                })
+                .catch((error) => {
+                    if (error !== 'Username exists') {
+                        console.error('Error al registrar usuario:', error);
+                        errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
+                        errorEl.classList.add('show');
+                    }
+                    isRegistering = false;
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'Entrar a RatWeb';
+                });
         }
 
         // ==========================================
@@ -1142,32 +1186,24 @@
         }
 
         // ==========================================
-        // FUNCIONES DE POSTS (GUARDAN EN FIREBASE)
+        // FUNCIONES DE POSTS
         // ==========================================
-        function previewAvatar(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    tempAvatarData = e.target.result;
-                    document.getElementById('avatarPreview').src = tempAvatarData;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
         function createPost(target) {
-            if (!currentUser) return;
+            if (!currentUser) {
+                alert('Debes iniciar sesión primero');
+                return;
+            }
             
             const isForum = target === 'forum';
             const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
             const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
             const userText = textInput.value.trim();
 
-            if (userText === "" && fileInput.files.length === 0) return;
+            if (userText === "" && fileInput.files.length === 0) {
+                alert('Escribe algo o adjunta un archivo');
+                return;
+            }
 
-            const file = fileInput.files[0];
-            
             const postData = {
                 authorName: currentUser.displayName,
                 authorHandle: currentUser.username,
@@ -1181,6 +1217,7 @@
                 timestamp: Date.now()
             };
 
+            const file = fileInput.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -1189,14 +1226,14 @@
                     savePostToFirebase(postData).then(() => {
                         textInput.value = '';
                         fileInput.value = '';
-                    });
+                    }).catch(err => console.error('Error al guardar post:', err));
                 };
                 reader.readAsDataURL(file);
             } else {
                 savePostToFirebase(postData).then(() => {
                     textInput.value = '';
                     fileInput.value = '';
-                });
+                }).catch(err => console.error('Error al guardar post:', err));
             }
         }
 
@@ -1220,7 +1257,8 @@
                 const isLiked = post.likedBy && post.likedBy.includes(myHandle);
                 const isMyPost = currentUser && post.authorHandle === currentUser.username;
                 const isRepliesOpen = !!openRepliesBoxes[post.id];
-                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${(post.replies && post.replies.length) || 0 === 0 ? 'Comentar' : (post.replies ? post.replies.length : 0) + ' comentarios'}`;
+                const replyCount = (post.replies && post.replies.length) || 0;
+                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${replyCount === 0 ? 'Comentar' : replyCount + ' comentarios'}`;
 
                 return `
                 <div class="post-card">
@@ -1308,7 +1346,6 @@
                 post.likedBy.splice(index, 1);
             }
 
-            // Actualizar en Firebase
             updatePostInFirebase(postId, { likedBy: post.likedBy });
             renderPosts(target);
         }
@@ -1416,7 +1453,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE FOROS (GUARDAN EN FIREBASE)
+        // FUNCIONES DE FOROS
         // ==========================================
         function getMyForumsCount() {
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
@@ -1475,7 +1512,6 @@
             event.stopPropagation();
             if (confirm("¿Seguro que quieres borrar este foro?")) {
                 deleteForumFromFirebase(forumId).then(() => {
-                    // También borrar posts del foro
                     posts.filter(p => p.forumId === forumId).forEach(p => {
                         deletePostFromFirebase(p.id);
                     });
@@ -1962,7 +1998,6 @@
                     mainList.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron publicaciones.</p>`;
                     return;
                 }
-                const myHandle = currentUser ? currentUser.username : '@ScottWilh';
                 mainList.innerHTML = filtered.map(p => `
                     <div class="post-card">
                         <img class="avatar-circle" src="${p.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
@@ -2007,4 +2042,4 @@
         console.log('👤 Usuario actual:', currentUser ? currentUser.username : 'No autenticado');
     </script>
 </body>
-                            </html>
+    </html>
