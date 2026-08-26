@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2938,121 +2938,162 @@
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
     window.db = db;
+<script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { 
+        getFirestore, collection, doc, setDoc, getDoc, addDoc, 
+        onSnapshot, query, orderBy, serverTimestamp 
+      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ==========================================
-    // CÓDIGO 1: VERIFICAR Y GUARDAR USERNAME ÚNICO
-    // ==========================================
-    window.guardarUsuarioUnico = async function(usernameIngresado) {
-      if (!usernameIngresado) return alert("Escribe un usuario válido");
+      // Configuración de tu Firebase
+      const firebaseConfig = {
+        apiKey: "AIzaSy...", // Tu apiKey de siempre
+        authDomain: "ratweb-2efee.firebaseapp.com",
+        projectId: "ratweb-2efee",
+        storageBucket: "ratweb-2efee.appspot.com",
+        messagingSenderId: "338902808020",
+        appId: "1:338902808020:web:..."
+      };
 
-      const usernameLimpio = usernameIngresado.replace("@", "").trim().toLowerCase();
-      const userRef = doc(db, "usernames", usernameLimpio);
-      const userSnap = await getDoc(userRef);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
 
-      if (userSnap.exists()) {
-        alert("❌ El @usuario '" + usernameLimpio + "' ya está ocupado. Elige otro.");
-        return false;
+      // -------------------------------------------------------------
+      // 1. VALIDACIÓN DE USUARIO ÚNICO
+      // -------------------------------------------------------------
+      window.guardarUsuarioUnico = async function(nombreUsuario) {
+        if (!nombreUsuario || !nombreUsuario.trim()) {
+          alert("Por favor ingresa un nombre de usuario válido.");
+          return false;
+        }
+
+        const usernameLOWER = nombreUsuario.trim().toLowerCase();
+        const userRef = doc(db, "usernames", usernameLOWER);
+        const snapshot = await getDoc(userRef);
+
+        if (snapshot.exists()) {
+          alert(`El usuario @${usernameLOWER} ya está registrado. Intenta con otro.`);
+          return false;
+        } else {
+          await setDoc(userRef, { 
+            creado: serverTimestamp(),
+            nombreOriginal: nombreUsuario 
+          });
+          alert(`¡Genial! El usuario @${usernameLOWER} es tuyo.`);
+          return true;
+        }
+      };
+
+      // -------------------------------------------------------------
+      // 2. PUBLICACIONES DEL FEED EN TIEMPO REAL
+      // -------------------------------------------------------------
+      window.publicarEnFeed = async function(idInputTexto) {
+        const input = document.getElementById(idInputTexto);
+        if (!input || !input.value.trim()) return;
+
+        try {
+          await addDoc(collection(db, "publicaciones"), {
+            usuario: "Wilhelm Reyes",
+            handle: "@Scottwilh",
+            texto: input.value,
+            fecha: serverTimestamp()
+          });
+          input.value = "";
+        } catch (e) }
+          console.error("Error al publicar:", e);
+        }
+      };
+
+      window.escucharPublicaciones = function(contenedorId) {
+        const q = query(collection(db, "publicaciones"), orderBy("fecha", "desc"));
+        onSnapshot(q, (snapshot) => {
+          const contenedor = document.getElementById(contenedorId);
+          if (!contenedor) return;
+          contenedor.innerHTML = "";
+
+          snapshot.forEach((docu) => {
+            const pub = docu.data();
+            const tarjeta = document.createElement("div");
+            tarjeta.className = "publicacion-tarjeta"; // Usa tus clases CSS
+            tarjeta.innerHTML = `
+              <div style="font-weight: bold;">${pub.usuario} <span style="font-weight: normal; opacity: 0.7;">${pub.handle}</span></div>
+              <p style="margin: 8px 0;">${pub.texto}</p>
+            `;
+            contenedor.appendChild(tarjeta);
+          });
+        });
+      };
+
+      // -------------------------------------------------------------
+      // 3. SISTEMA DE CHAT PRIVADO Y AMIGOS
+      // -------------------------------------------------------------
+      window.enviarSolicitudAmistad = async function(deUsuario, paraUsuario) {
+        const de = deUsuario.toLowerCase();
+        const para = paraUsuario.toLowerCase();
+        await setDoc(doc(db, "users", para, "solicitudes", de), { estado: "pendiente" });
+        alert("¡Solicitud enviada a @" + para + "!");
+      };
+
+      window.aceptarSolicitudAmistad = async function(miUsuario, usuarioAmigo) {
+        const yo = miUsuario.toLowerCase();
+        const amigo = usuarioAmigo.toLowerCase();
+
+        await setDoc(doc(db, "users", yo, "amigos", amigo), { activo: true });
+        await setDoc(doc(db, "users", amigo, "amigos", yo), { activo: true });
+        await setDoc(doc(db, "users", yo, "solicitudes", amigo), { estado: "aceptado" });
+
+        alert("¡Ahora eres amigo de @" + amigo + "!");
+      };
+
+      function obtenerChatId(user1, user2) {
+        return [user1.toLowerCase(), user2.toLowerCase()].sort().join("_");
       }
 
-      // Guardar el username si está libre
-      await setDoc(userRef, { 
-        creado: new Date().toISOString() 
-      });
+      window.enviarMensajePrivado = async function(deUsuario, paraUsuario, textoMensaje) {
+        if (!textoMensaje || !textoMensaje.trim()) return;
+        const chatId = obtenerChatId(deUsuario, paraUsuario);
 
-      alert("✅ ¡@usuario @" + usernameLimpio + " registrado exitosamente!");
-      return true;
-    };
+        await addDoc(collection(db, "chats", chatId, "mensajes"), {
+          de: deUsuario.toLowerCase(),
+          texto: textoMensaje,
+          fecha: serverTimestamp()
+        });
+      };
 
-    // ==========================================
-    // CÓDIGO 2: CHAT PRIVADO EN TIEMPO REAL
-    // ==========================================
-    
-    // Generar ID único para la sala entre dos usuarios
-    function obtenerIdChat(usuarioA, usuarioB) {
-      return [usuarioA.toLowerCase(), usuarioB.toLowerCase()].sort().join("_");
-    }
+      window.escucharChat = function(miUsuario, amigoUsuario, contenedorMensajesId) {
+        const chatId = obtenerChatId(miUsuario, amigoUsuario);
+        const q = query(collection(db, "chats", chatId, "mensajes"), orderBy("fecha", "asc"));
 
-    // Enviar mensaje privado
-    window.enviarMensajePrivado = async function(miUsuario, usuarioDestino, texto) {
-      if (!texto.trim()) return;
+        return onSnapshot(q, (snapshot) => {
+          const cajaMensajes = document.getElementById(contenedorMensajesId);
+          if (!cajaMensajes) return;
+          cajaMensajes.innerHTML = "";
 
-      const chatId = obtenerIdChat(miUsuario, usuarioDestino);
-      const chatRef = collection(db, "chats", chatId, "mensajes");
+          snapshot.forEach((docu) => {
+            const msg = docu.data();
+            const div = document.createElement("div");
+            div.style.margin = "8px 0";
+            div.style.padding = "8px 12px";
+            div.style.borderRadius = "12px";
+            div.style.border = "1.5px solid #000";
+            div.style.maxWidth = "80%";
 
-      await addDoc(chatRef, {
-        emisor: miUsuario.toLowerCase(),
-        receptor: usuarioDestino.toLowerCase(),
-        texto: texto,
-        fecha: serverTimestamp()
-      });
-    };
+            if (msg.de === miUsuario.toLowerCase()) {
+              div.style.marginLeft = "auto";
+              div.style.backgroundColor = "#fff";
+            } else {
+              div.style.marginRight = "auto";
+              div.style.backgroundColor = "#f0f0f0";
+            }
 
-    // Escuchar chat en tiempo real
-    window.escucharChat = function(miUsuario, usuarioDestino, callbackMostrarMensaje) {
-      const chatId = obtenerIdChat(miUsuario, usuarioDestino);
-      const chatRef = collection(db, "chats", chatId, "mensajes");
-      const q = query(chatRef, orderBy("fecha", "asc"));
+            div.innerText = msg.texto;
+            cajaMensajes.appendChild(div);
+          });
 
-      // Se ejecuta cada vez que llega un mensaje nuevo
-      onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const msg = change.doc.data();
-        callbackMostrarMensaje(msg);
-      }
-    });
-  });
-};
-
-// ==========================================
-// CÓDIGO 3: SISTEMA DE AMISTADES
-// ==========================================
-
-// 1. Enviar solicitud de amistad
-window.enviarSolicitudAmistad = async function(miUsuario, usuarioDestino) {
-  const de = miUsuario.toLowerCase();
-  const para = usuarioDestino.toLowerCase();
-
-  if (de === para) return alert("No puedes agregarte a ti mismo.");
-
-  const userRef = doc(db, "usernames", para);
-  const userSnap = await getDoc(userRef);
-  if (!userSnap.exists()) return alert("El @usuario no existe.");
-
-  const solicitudRef = doc(db, "users", para, "solicitudes", de);
-  await setDoc(solicitudRef, {
-    de: de,
-    estado: "pendiente",
-    fecha: serverTimestamp()
-  });
-
-  alert("¡Solicitud enviada a @" + para + "!");
-};
-
-// 2. Aceptar solicitud de amistad
-window.aceptarSolicitudAmistad = async function(miUsuario, usuarioAmigo) {
-  const yo = miUsuario.toLowerCase();
-  const amigo = usuarioAmigo.toLowerCase();
-
-  await setDoc(doc(db, "users", yo, "amigos", amigo), { agregado: serverTimestamp() });
-  await setDoc(doc(db, "users", amigo, "amigos", yo), { agregado: serverTimestamp() });
-
-  await setDoc(doc(db, "users", yo, "solicitudes", amigo)), { estado: "aceptado" });
-
-  alert("¡Ahora eres amigo de @" + amigo + "! Ya pueden chatear.");
-};
-
-// 3. Obtener lista de amigos en tiempo real
-window.escucharAmigos = function(miUsuario, callbackMostrarAmigos) {
-  const yo = miUsuario.toLowerCase();
-  const amigosRef = collection(db, "users", yo, "amigos");
-
-  onSnapshot(amigosRef, (snapshot) => {
-    const listaAmigos = [];
-    snapshot.forEach((doc) => listaAmigos.push(doc.id));
-    callbackMostrarAmigos(listaAmigos);
-  });
-};
-  </script>
-</body>
-    </html>
+          // Scroll automático hacia el último mensaje
+          cajaMensajes.scrollTop = cajaMensajes.scrollHeight;
+        });
+      };
+    </script>
+  </body>
+                            </html>
