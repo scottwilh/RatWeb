@@ -5,1358 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RatWeb</title>
     
-    <!-- Firebase SDKs (versión compat) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        html {
-            height: 100%;
-            overflow: hidden;
-        }
-
-        body {
-            background-color: #fcebe6;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            width: 100%;
-            overflow: hidden;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-
-        .auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            background-color: #fcebe6;
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-        }
-
-        .auth-card {
-            background-color: #fff;
-            border: 3px solid #000;
-            border-radius: 16px;
-            padding: 20px;
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 4px 4px 0px #000;
-        }
-
-        .auth-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #8c4a4a;
-            font-family: 'Georgia', serif;
-            font-style: italic;
-            text-align: center;
-        }
-
-        .avatar-preview-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .avatar-preview {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 2px solid #000;
-            object-fit: cover;
-            background-color: #ffd8df;
-        }
-
-        .auth-card input, .auth-card textarea {
-            width: 100%;
-            border: 2px solid #000;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 12px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .auth-card textarea {
-            height: 50px;
-            resize: none;
-        }
-
-        .btn-auth {
-            background-color: #b56565;
-            color: #fff;
-            border: 2px solid #000;
-            border-radius: 10px;
-            padding: 8px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        header {
-            background-color: #fbeee8;
-            border-bottom: 4px solid #000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 10px;
-            height: 55px;
-            flex-shrink: 0;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-            color: #8c4a4a;
-            font-family: 'Georgia', serif;
-            font-style: italic;
-        }
-
-        .search-bar {
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 16px;
-            padding: 2px 8px;
-            width: 45%;
-        }
-
-        .search-bar input {
-            border: none;
-            outline: none;
-            width: 100%;
-            font-size: 11px;
-            background: transparent;
-            font-family: inherit;
-        }
-
-        .user-header-profile {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .avatar-top {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid #000;
-            object-fit: cover;
-            background-color: #fff;
-            cursor: pointer;
-        }
-
-        .layout {
-            display: flex;
-            flex: 1;
-            height: calc(100vh - 55px);
-            height: calc(100dvh - 55px);
-            min-height: 0;
-        }
-
-        nav {
-            width: 75px;
-            background-color: #dbe2e6;
-            border-right: 3px solid #000;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .nav-btn {
-            padding: 12px 4px;
-            border-bottom: 2px solid #c0c8cc;
-            font-weight: bold;
-            font-size: 11px;
-            color: #000;
-            cursor: pointer;
-            text-align: center;
-            word-break: break-word;
-        }
-
-        .nav-btn.active {
-            background-color: #cbd4d9;
-        }
-
-        main {
-            flex: 1;
-            padding: 8px;
-            overflow-y: auto;
-            width: calc(100% - 75px);
-            min-height: 0;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .section {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            height: 100%;
-        }
-
-        .section.active {
-            display: flex;
-            min-height: 0;
-        }
-
-        .create-box {
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 14px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .create-box input, .create-box textarea, .create-box select {
-            width: 100%;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            padding: 6px;
-            font-size: 11px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .create-box textarea {
-            height: 45px;
-            resize: none;
-        }
-
-        .btn-publish {
-            background-color: #b56565;
-            color: #fff;
-            border: 2px solid #000;
-            border-radius: 10px;
-            padding: 4px 10px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .btn-publish:disabled {
-            background-color: #ccc;
-            color: #777;
-            border-color: #999;
-            cursor: not-allowed;
-        }
-
-        .forum-limit-counter {
-            font-size: 10px;
-            font-weight: bold;
-            color: #4a7c59;
-        }
-
-        .forum-limit-counter.limit-reached {
-            color: #b56565;
-        }
-
-        .post-card {
-            display: flex;
-            gap: 6px;
-            align-items: flex-start;
-            position: relative;
-        }
-
-        .avatar-circle {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid #000;
-            object-fit: cover;
-            background-color: #fff;
-            flex-shrink: 0;
-        }
-
-        .post-bubble {
-            background-color: #ffd8df;
-            border: 2px solid #000;
-            border-radius: 14px;
-            padding: 8px;
-            flex: 1;
-            position: relative;
-        }
-
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .post-author {
-            font-size: 11px;
-            color: #555;
-            font-weight: bold;
-        }
-
-        .post-options-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0 4px;
-            line-height: 1;
-        }
-
-        .options-menu {
-            display: none;
-            position: absolute;
-            right: 8px;
-            top: 25px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 6px;
-            z-index: 10;
-        }
-
-        .options-menu button {
-            display: block;
-            width: 100%;
-            padding: 6px 10px;
-            border: none;
-            background: none;
-            text-align: left;
-            font-size: 11px;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .post-content {
-            font-size: 12px;
-            color: #000;
-            line-height: 1.2;
-            word-break: break-word;
-        }
-
-        .post-media {
-            margin-top: 6px;
-            max-width: 100%;
-            border: 2px solid #000;
-            border-radius: 8px;
-            display: block;
-            cursor: pointer;
-        }
-
-        .post-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 6px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .action-btn {
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .action-btn.liked {
-            color: #b56565;
-        }
-
-        .replies-box {
-            display: none;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed #000;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .replies-box.open {
-            display: flex;
-        }
-
-        .reply-item {
-            background-color: #fff;
-            border: 1.5px solid #000;
-            border-radius: 10px;
-            padding: 6px 8px;
-            font-size: 11px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .reply-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .reply-user-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .reply-author {
-            font-weight: bold;
-            font-size: 11px;
-            color: #000;
-        }
-
-        .reply-tag {
-            font-size: 9.5px;
-            color: #8c4a4a;
-            font-weight: bold;
-        }
-
-        .reply-actions-right {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .reply-action-btn {
-            font-size: 10px;
-            color: #000;
-            cursor: pointer;
-            text-decoration: underline;
-            font-weight: bold;
-        }
-
-        .delete-comment-btn {
-            color: #b56565;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 12px;
-            background: none;
-            border: none;
-        }
-
-        .comment-media {
-            max-width: 100%;
-            max-height: 140px;
-            border: 1px solid #000;
-            border-radius: 6px;
-            margin-top: 4px;
-            display: block;
-            cursor: pointer;
-        }
-
-        .reply-input-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-top: 4px;
-            background: #fdf5f6;
-            border: 1.5px solid #000;
-            border-radius: 10px;
-            padding: 6px;
-        }
-
-        .reply-target-indicator {
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 9.5px;
-            background: #ffd8df;
-            border: 1px solid #000;
-            border-radius: 6px;
-            padding: 2px 6px;
-            font-weight: bold;
-        }
-
-        .reply-target-indicator.active {
-            display: flex;
-        }
-
-        .reply-input-row {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .reply-input-row input[type="text"] {
-            flex: 1;
-            border: 1px solid #000;
-            border-radius: 8px;
-            padding: 4px 6px;
-            font-size: 11px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .file-label {
-            background-color: #ffd8df;
-            border: 2px solid #000;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .forum-card {
-            background-color: #e2f0d9;
-            border: 2px solid #000;
-            border-radius: 12px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            cursor: pointer;
-        }
-
-        .forum-header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .forum-stats-box {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            font-size: 10px;
-            font-weight: bold;
-            color: #2b5735;
-            background: rgba(255, 255, 255, 0.6);
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #000;
-            align-self: flex-start;
-        }
-
-        .btn-join-forum {
-            background-color: #b56565;
-            color: #fff;
-            border: 2px solid #000;
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: 10.5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .btn-join-forum.joined {
-            background-color: #dbe2e6;
-            color: #000;
-        }
-
-        .btn-delete-forum {
-            background-color: #e74c3c;
-            color: #fff;
-            border: 2px solid #000;
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 10.5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
-        .forum-category {
-            font-size: 10px;
-            font-weight: bold;
-            color: #4a7c59;
-            text-transform: uppercase;
-        }
-
-        .forum-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #000;
-        }
-
-        .forum-desc {
-            font-size: 11px;
-            color: #333;
-        }
-
-        .forum-tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 2px;
-        }
-
-        .forum-tag-badge {
-            font-size: 9px;
-            font-weight: bold;
-            background-color: #fff;
-            color: #2b5735;
-            border: 1px solid #000;
-            border-radius: 6px;
-            padding: 1px 5px;
-        }
-
-        .btn-back {
-            background-color: #dbe2e6;
-            border: 2px solid #000;
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            align-self: flex-start;
-            flex-shrink: 0;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 8px;
-            margin-top: 6px;
-        }
-
-        .polaroid-card {
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 6px;
-            padding: 4px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .polaroid-img {
-            width: 100%;
-            height: 90px;
-            object-fit: cover;
-            border: 1px solid #000;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .polaroid-caption {
-            font-size: 10px;
-            font-weight: bold;
-            margin-top: 4px;
-            text-align: center;
-            word-break: break-word;
-        }
-
-        .polaroid-tag {
-            font-size: 8px;
-            background: #ffd8df;
-            border: 1px solid #000;
-            border-radius: 4px;
-            padding: 1px 4px;
-            margin-top: 2px;
-        }
-
-        .polaroid-delete-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: #e74c3c;
-            color: #fff;
-            border: 1.5px solid #000;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            z-index: 2;
-        }
-
-        .polaroid-like-btn {
-            font-size: 10px;
-            font-weight: bold;
-            margin-top: 4px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .polaroid-like-btn.liked {
-            color: #b56565;
-        }
-
-        .visibility-selector {
-            display: flex;
-            gap: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            align-items: center;
-        }
-
-        .visibility-selector label {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
-
-        .profile-card {
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 14px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .profile-banner {
-            height: 100px;
-            background-color: #ffd8df;
-            background-size: cover;
-            background-position: center;
-            border-bottom: 2px solid #000;
-            position: relative;
-        }
-
-        .profile-edit-banner-btn {
-            position: absolute;
-            bottom: 6px;
-            right: 6px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 8px;
-            padding: 3px 6px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .profile-avatar-row {
-            display: flex;
-            padding: 0 12px;
-            margin-top: -34px;
-        }
-
-        .profile-avatar-wrap {
-            position: relative;
-            width: 70px;
-            height: 70px;
-        }
-
-        .profile-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            outline: 2px solid #000;
-            object-fit: cover;
-            background-color: #fff;
-        }
-
-        .profile-edit-avatar-btn {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .profile-info {
-            padding: 10px 12px 14px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .profile-name-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 4px;
-        }
-
-        .profile-display-name {
-            font-weight: bold;
-            font-size: 14px;
-            color: #000;
-        }
-
-        .profile-username {
-            font-size: 11px;
-            color: #8c4a4a;
-            font-weight: bold;
-        }
-
-        .profile-edit-pencil {
-            cursor: pointer;
-            font-size: 11px;
-        }
-
-        .profile-edit-box {
-            display: none;
-            gap: 4px;
-            align-items: center;
-            margin-top: 2px;
-        }
-
-        .profile-edit-box input {
-            flex: 1;
-            border: 1.5px solid #000;
-            border-radius: 8px;
-            padding: 4px 6px;
-            font-size: 11px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .profile-cooldown-note {
-            font-size: 9.5px;
-            color: #999;
-            font-style: italic;
-            min-height: 12px;
-        }
-
-        .profile-bio-input {
-            margin-top: 6px;
-            width: 100%;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            padding: 6px;
-            font-size: 11px;
-            font-family: inherit;
-            height: 55px;
-            resize: none;
-            outline: none;
-        }
-
-        .profile-stats-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            background: #fdf5f6;
-            border: 1.5px solid #000;
-            border-radius: 10px;
-            padding: 8px 4px;
-        }
-
-        .profile-stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 9.5px;
-            font-weight: bold;
-            gap: 2px;
-            flex: 1;
-        }
-
-        .profile-stat-item strong {
-            font-size: 14px;
-            color: #8c4a4a;
-        }
-
-        .profile-joined-note {
-            font-size: 10px;
-            color: #777;
-            margin-top: 8px;
-            text-align: center;
-            font-style: italic;
-        }
-
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            border: 2px solid #000;
-            border-radius: 14px;
-            background: #fff;
-            height: 100%;
-            min-height: 0;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .chat-toggle-bar {
-            background: #e8dff5;
-            border-bottom: 2px solid #000;
-            padding: 6px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 11px;
-            font-weight: bold;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .chat-toggle-actions {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .chat-icon-btn {
-            border: 1.5px solid #000;
-            background: #fff;
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            line-height: 1.3;
-        }
-
-        .chat-icon-btn.active-toggle {
-            background: #ffd8df;
-        }
-
-        .chat-search-bar {
-            display: none;
-            padding: 6px;
-            border-bottom: 2px solid #000;
-            background: #fff;
-            flex-shrink: 0;
-        }
-
-        .chat-search-bar.open {
-            display: block;
-        }
-
-        .chat-search-bar input {
-            width: 100%;
-            border: 1.5px solid #000;
-            border-radius: 8px;
-            padding: 4px 8px;
-            font-size: 11px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .contacts-drawer {
-            display: none;
-            background: #f1f3f4;
-            border-bottom: 2px solid #000;
-            max-height: 120px;
-            overflow-y: auto;
-            flex-shrink: 0;
-        }
-
-        .contacts-drawer.open {
-            display: block;
-        }
-
-        .contact-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid #ccc;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .contact-item.active {
-            background: #ffd8df;
-        }
-
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #fff6f8;
-            overflow: hidden;
-            min-height: 0;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 8px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 0;
-        }
-
-        .msg-row {
-            display: flex;
-            flex-direction: column;
-            max-width: 85%;
-        }
-
-        .msg-row.sent {
-            align-self: flex-end;
-            align-items: flex-end;
-        }
-
-        .msg-row.received {
-            align-self: flex-start;
-            align-items: flex-start;
-        }
-
-        .msg-bubble {
-            max-width: 100%;
-            padding: 6px 10px;
-            border: 2px solid #000;
-            border-radius: 12px;
-            font-size: 11px;
-            line-height: 1.2;
-            word-break: break-word;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .msg-bubble.sent {
-            background-color: #ffd8df;
-            border-bottom-right-radius: 2px;
-        }
-
-        .msg-bubble.received {
-            background-color: #fff;
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg-quote {
-            background: rgba(0,0,0,0.06);
-            border-left: 3px solid #b56565;
-            padding: 3px 6px;
-            margin-bottom: 4px;
-            font-size: 9.5px;
-            border-radius: 4px;
-            color: #555;
-        }
-
-        .msg-quote strong {
-            color: #8c4a4a;
-        }
-
-        .edited-tag {
-            font-size: 8.5px;
-            color: #888;
-            font-style: italic;
-            margin-left: 4px;
-        }
-
-        .read-status {
-            font-size: 9px;
-            color: #666;
-            align-self: flex-end;
-            margin-top: 3px;
-            font-style: italic;
-        }
-
-        .msg-media {
-            max-width: 100%;
-            max-height: 140px;
-            border: 1px solid #000;
-            border-radius: 6px;
-            margin-top: 4px;
-            display: block;
-        }
-
-        .voice-msg audio {
-            max-width: 190px;
-            height: 32px;
-            margin-top: 2px;
-        }
-
-        .msg-actions-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 3px;
-            font-size: 9.5px;
-        }
-
-        .msg-action-link {
-            cursor: pointer;
-            text-decoration: underline;
-            font-weight: bold;
-            color: #555;
-        }
-
-        .msg-options-wrapper {
-            position: relative;
-        }
-
-        .msg-options-menu {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 16px;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 6px;
-            z-index: 15;
-        }
-
-        .msg-options-menu.open {
-            display: block;
-        }
-
-        .msg-options-menu button {
-            display: block;
-            width: 100%;
-            padding: 6px 10px;
-            border: none;
-            background: none;
-            text-align: left;
-            font-size: 10.5px;
-            cursor: pointer;
-            font-family: inherit;
-            white-space: nowrap;
-        }
-
-        .reaction-picker {
-            display: none;
-            position: absolute;
-            bottom: -34px;
-            right: 0;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 14px;
-            padding: 6px;
-            z-index: 20;
-            flex-direction: column;
-            gap: 4px;
-            width: 190px;
-            box-shadow: 3px 3px 0 #000;
-        }
-
-        .reaction-picker.open {
-            display: flex;
-        }
-
-        .reaction-picker-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            max-height: 110px;
-            overflow-y: auto;
-        }
-
-        .reaction-picker-grid span {
-            cursor: pointer;
-            font-size: 16px;
-            padding: 2px;
-        }
-
-        .reaction-picker-custom {
-            display: flex;
-            gap: 4px;
-            border-top: 1px dashed #000;
-            padding-top: 4px;
-            margin-top: 2px;
-        }
-
-        .reaction-picker-custom input {
-            flex: 1;
-            border: 1px solid #000;
-            border-radius: 8px;
-            padding: 2px 6px;
-            font-size: 13px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .reaction-picker-custom button {
-            border: 1.5px solid #000;
-            background: #ffd8df;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 2px 6px;
-        }
-
-        .msg-reactions {
-            display: flex;
-            gap: 4px;
-            margin-top: 4px;
-            flex-wrap: wrap;
-        }
-
-        .reaction-badge {
-            font-size: 10px;
-            background: #fff;
-            border: 1px solid #000;
-            border-radius: 10px;
-            padding: 1px 6px;
-            cursor: pointer;
-        }
-
-        .reaction-badge.mine {
-            background: #ffd8df;
-        }
-
-        .typing-indicator {
-            align-self: flex-start;
-            background: #fff;
-            border: 2px solid #000;
-            border-radius: 12px;
-            padding: 6px 10px;
-            font-size: 10.5px;
-            font-style: italic;
-            color: #777;
-        }
-
-        .chat-reply-preview {
-            display: none;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 10px;
-            background: #ffd8df;
-            border: 1.5px solid #000;
-            border-radius: 8px;
-            padding: 4px 8px;
-            margin: 6px 6px 0 6px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .chat-reply-preview.active {
-            display: flex;
-        }
-
-        .chat-input-bar {
-            padding: 6px;
-            background: #fff;
-            border-top: 2px solid #000;
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .chat-input-bar input[type="text"] {
-            flex: 1;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            padding: 6px 8px;
-            font-size: 11px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .mic-btn {
-            border: 2px solid #000;
-            background: #ffd8df;
-            border-radius: 50%;
-            width: 26px;
-            height: 26px;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            flex-shrink: 0;
-        }
-
-        .mic-btn.recording {
-            background: #e74c3c;
-            color: #fff;
-            animation: pulse-rec 1s infinite;
-        }
-
-        @keyframes pulse-rec {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .active-dot {
-            width: 7px;
-            height: 7px;
-            background-color: #4caf50;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .wallpaper-modal-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 8px;
-            padding: 4px;
-            max-height: 55vh;
-            overflow-y: auto;
-        }
-
-        .wallpaper-thumb {
-            width: 100%;
-            height: 70px;
-            object-fit: cover;
-            border: 2px solid #000;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .wallpaper-none-thumb {
-            width: 100%;
-            height: 70px;
-            border: 2px dashed #000;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 9px;
-            font-weight: bold;
-            text-align: center;
-            background: #f5f5f5;
-        }
-
-        .modal-viewer {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            background-color: rgba(0,0,0,0.9);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-viewer img, .modal-viewer video {
-            max-width: 90%;
-            max-height: 80%;
-            border-radius: 8px;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            color: #fff;
-            font-size: 26px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        /* ===== ESTILOS COMPLETOS (igual que antes) ===== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+        html { height: 100%; overflow: hidden; }
+        body { background-color: #fcebe6; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; }
+        .auth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: #fcebe6; z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
+        .auth-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; }
+        .auth-title { font-size: 22px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
+        .avatar-preview-container { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .avatar-preview { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #ffd8df; }
+        .auth-card input, .auth-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
+        .auth-card textarea { height: 50px; resize: none; }
+        .btn-auth { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .error-msg { color: #e74c3c; font-size: 11px; text-align: center; min-height: 16px; }
+        header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
+        .logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
+        .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
+        .search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; }
+        .user-header-profile { display: flex; align-items: center; gap: 6px; }
+        .avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; cursor: pointer; }
+        .layout { display: flex; flex: 1; height: calc(100vh - 55px); height: calc(100dvh - 55px); min-height: 0; }
+        nav { width: 75px; background-color: #dbe2e6; border-right: 3px solid #000; display: flex; flex-direction: column; flex-shrink: 0; }
+        .nav-btn { padding: 12px 4px; border-bottom: 2px solid #c0c8cc; font-weight: bold; font-size: 11px; color: #000; cursor: pointer; text-align: center; word-break: break-word; }
+        .nav-btn.active { background-color: #cbd4d9; }
+        main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-height: 0; -webkit-overflow-scrolling: touch; }
+        .section { display: none; flex-direction: column; gap: 10px; height: 100%; }
+        .section.active { display: flex; min-height: 0; }
+        .create-box { background-color: #fff; border: 2px solid #000; border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+        .create-box input, .create-box textarea, .create-box select { width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; outline: none; font-family: inherit; }
+        .create-box textarea { height: 45px; resize: none; }
+        .btn-publish { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 4px 10px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
+        .btn-publish:disabled { background-color: #ccc; color: #777; border-color: #999; cursor: not-allowed; }
+        .forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
+        .forum-limit-counter.limit-reached { color: #b56565; }
+        .post-card { display: flex; gap: 6px; align-items: flex-start; position: relative; }
+        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; flex-shrink: 0; }
+        .post-bubble { background-color: #ffd8df; border: 2px solid #000; border-radius: 14px; padding: 8px; flex: 1; position: relative; }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .post-author { font-size: 11px; color: #555; font-weight: bold; }
+        .post-options-btn { background: none; border: none; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 4px; line-height: 1; }
+        .options-menu { display: none; position: absolute; right: 8px; top: 25px; background: #fff; border: 2px solid #000; border-radius: 6px; z-index: 10; }
+        .options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 11px; cursor: pointer; font-family: inherit; }
+        .post-content { font-size: 12px; color: #000; line-height: 1.2; word-break: break-word; }
+        .post-media { margin-top: 6px; max-width: 100%; border: 2px solid #000; border-radius: 8px; display: block; cursor: pointer; }
+        .post-actions { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; font-weight: bold; }
+        .action-btn { cursor: pointer; user-select: none; }
+        .action-btn.liked { color: #b56565; }
+        .replies-box { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; flex-direction: column; gap: 6px; }
+        .replies-box.open { display: flex; }
+        .reply-item { background-color: #fff; border: 1.5px solid #000; border-radius: 10px; padding: 6px 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+        .reply-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .reply-user-info { display: flex; flex-direction: column; }
+        .reply-author { font-weight: bold; font-size: 11px; color: #000; }
+        .reply-tag { font-size: 9.5px; color: #8c4a4a; font-weight: bold; }
+        .reply-actions-right { display: flex; gap: 8px; align-items: center; }
+        .reply-action-btn { font-size: 10px; color: #000; cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .delete-comment-btn { color: #b56565; text-decoration: none; cursor: pointer; font-size: 12px; background: none; border: none; }
+        .comment-media { max-width: 100%; max-height: 140px; border: 1px solid #000; border-radius: 6px; margin-top: 4px; display: block; cursor: pointer; }
+        .reply-input-wrapper { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 6px; }
+        .reply-target-indicator { display: none; justify-content: space-between; align-items: center; font-size: 9.5px; background: #ffd8df; border: 1px solid #000; border-radius: 6px; padding: 2px 6px; font-weight: bold; }
+        .reply-target-indicator.active { display: flex; }
+        .reply-input-row { display: flex; gap: 4px; align-items: center; }
+        .reply-input-row input[type="text"] { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
+        .file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .forum-card { background-color: #e2f0d9; border: 2px solid #000; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+        .forum-header-container { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .forum-stats-box { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; font-weight: bold; color: #2b5735; background: rgba(255,255,255,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid #000; align-self: flex-start; }
+        .btn-join-forum { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 10px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
+        .btn-join-forum.joined { background-color: #dbe2e6; color: #000; }
+        .btn-delete-forum { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
+        .forum-category { font-size: 10px; font-weight: bold; color: #4a7c59; text-transform: uppercase; }
+        .forum-title { font-size: 14px; font-weight: bold; color: #000; }
+        .forum-desc { font-size: 11px; color: #333; }
+        .forum-tags-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+        .forum-tag-badge { font-size: 9px; font-weight: bold; background-color: #fff; color: #2b5735; border: 1px solid #000; border-radius: 6px; padding: 1px 5px; }
+        .btn-back { background-color: #dbe2e6; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
+        .polaroid-card { background-color: #fff; border: 2px solid #000; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .polaroid-img { width: 100%; height: 90px; object-fit: cover; border: 1px solid #000; border-radius: 4px; cursor: pointer; }
+        .polaroid-caption { font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center; word-break: break-word; }
+        .polaroid-tag { font-size: 8px; background: #ffd8df; border: 1px solid #000; border-radius: 4px; padding: 1px 4px; margin-top: 2px; }
+        .polaroid-delete-btn { position: absolute; top: 4px; right: 4px; background: #e74c3c; color: #fff; border: 1.5px solid #000; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 2; }
+        .polaroid-like-btn { font-size: 10px; font-weight: bold; margin-top: 4px; cursor: pointer; user-select: none; }
+        .polaroid-like-btn.liked { color: #b56565; }
+        .visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; }
+        .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .profile-card { background-color: #fff; border: 2px solid #000; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+        .profile-banner { height: 100px; background-color: #ffd8df; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
+        .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: #fff; border: 2px solid #000; border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
+        .profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; }
+        .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
+        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; outline: 2px solid #000; object-fit: cover; background-color: #fff; }
+        .profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: #fff; border: 2px solid #000; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .profile-info { padding: 10px 12px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+        .profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .profile-display-name { font-weight: bold; font-size: 14px; color: #000; }
+        .profile-username { font-size: 11px; color: #8c4a4a; font-weight: bold; }
+        .profile-edit-pencil { cursor: pointer; font-size: 11px; }
+        .profile-edit-box { display: none; gap: 4px; align-items: center; margin-top: 2px; }
+        .profile-edit-box input { flex: 1; border: 1.5px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
+        .profile-cooldown-note { font-size: 9.5px; color: #999; font-style: italic; min-height: 12px; }
+        .profile-bio-input { margin-top: 6px; width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; font-family: inherit; height: 55px; resize: none; outline: none; }
+        .profile-stats-row { display: flex; justify-content: space-between; margin-top: 10px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 8px 4px; }
+        .profile-stat-item { display: flex; flex-direction: column; align-items: center; font-size: 9.5px; font-weight: bold; gap: 2px; flex: 1; }
+        .profile-stat-item strong { font-size: 14px; color: #8c4a4a; }
+        .profile-joined-note { font-size: 10px; color: #777; margin-top: 8px; text-align: center; font-style: italic; }
+        .chat-container { display: flex; flex-direction: column; border: 2px solid #000; border-radius: 14px; background: #fff; height: 100%; min-height: 0; overflow: hidden; position: relative; }
+        .chat-toggle-bar { background: #e8dff5; border-bottom: 2px solid #000; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: bold; gap: 6px; flex-shrink: 0; }
+        .chat-toggle-actions { display: flex; gap: 4px; align-items: center; }
+        .chat-icon-btn { border: 1.5px solid #000; background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 12px; cursor: pointer; line-height: 1.3; }
+        .chat-icon-btn.active-toggle { background: #ffd8df; }
+        .chat-search-bar { display: none; padding: 6px; border-bottom: 2px solid #000; background: #fff; flex-shrink: 0; }
+        .chat-search-bar.open { display: block; }
+        .chat-search-bar input { width: 100%; border: 1.5px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; outline: none; font-family: inherit; }
+        .contacts-drawer { display: none; background: #f1f3f4; border-bottom: 2px solid #000; max-height: 120px; overflow-y: auto; flex-shrink: 0; }
+        .contacts-drawer.open { display: block; }
+        .contact-item { padding: 8px 12px; border-bottom: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+        .contact-item.active { background: #ffd8df; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff6f8; overflow: hidden; min-height: 0; background-size: cover; background-position: center; }
+        .chat-messages { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+        .msg-row { display: flex; flex-direction: column; max-width: 85%; }
+        .msg-row.sent { align-self: flex-end; align-items: flex-end; }
+        .msg-row.received { align-self: flex-start; align-items: flex-start; }
+        .msg-bubble { max-width: 100%; padding: 6px 10px; border: 2px solid #000; border-radius: 12px; font-size: 11px; line-height: 1.2; word-break: break-word; display: flex; flex-direction: column; position: relative; }
+        .msg-bubble.sent { background-color: #ffd8df; border-bottom-right-radius: 2px; }
+        .msg-bubble.received { background-color: #fff; border-bottom-left-radius: 2px; }
+        .msg-quote { background: rgba(0,0,0,0.06); border-left: 3px solid #b56565; padding: 3px 6px; margin-bottom: 4px; font-size: 9.5px; border-radius: 4px; color: #555; }
+        .msg-quote strong { color: #8c4a4a; }
+        .edited-tag { font-size: 8.5px; color: #888; font-style: italic; margin-left: 4px; }
+        .read-status { font-size: 9px; color: #666; align-self: flex-end; margin-top: 3px; font-style: italic; }
+        .msg-media { max-width: 100%; max-height: 140px; border: 1px solid #000; border-radius: 6px; margin-top: 4px; display: block; }
+        .voice-msg audio { max-width: 190px; height: 32px; margin-top: 2px; }
+        .msg-actions-row { display: flex; gap: 8px; margin-top: 3px; font-size: 9.5px; }
+        .msg-action-link { cursor: pointer; text-decoration: underline; font-weight: bold; color: #555; }
+        .msg-options-wrapper { position: relative; }
+        .msg-options-menu { display: none; position: absolute; right: 0; top: 16px; background: #fff; border: 2px solid #000; border-radius: 6px; z-index: 15; }
+        .msg-options-menu.open { display: block; }
+        .msg-options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 10.5px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .reaction-picker { display: none; position: absolute; bottom: -34px; right: 0; background: #fff; border: 2px solid #000; border-radius: 14px; padding: 6px; z-index: 20; flex-direction: column; gap: 4px; width: 190px; box-shadow: 3px 3px 0 #000; }
+        .reaction-picker.open { display: flex; }
+        .reaction-picker-grid { display: flex; flex-wrap: wrap; gap: 4px; max-height: 110px; overflow-y: auto; }
+        .reaction-picker-grid span { cursor: pointer; font-size: 16px; padding: 2px; }
+        .reaction-picker-custom { display: flex; gap: 4px; border-top: 1px dashed #000; padding-top: 4px; margin-top: 2px; }
+        .reaction-picker-custom input { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 2px 6px; font-size: 13px; outline: none; font-family: inherit; }
+        .reaction-picker-custom button { border: 1.5px solid #000; background: #ffd8df; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 2px 6px; }
+        .msg-reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .reaction-badge { font-size: 10px; background: #fff; border: 1px solid #000; border-radius: 10px; padding: 1px 6px; cursor: pointer; }
+        .reaction-badge.mine { background: #ffd8df; }
+        .typing-indicator { align-self: flex-start; background: #fff; border: 2px solid #000; border-radius: 12px; padding: 6px 10px; font-size: 10.5px; font-style: italic; color: #777; }
+        .chat-reply-preview { display: none; justify-content: space-between; align-items: center; font-size: 10px; background: #ffd8df; border: 1.5px solid #000; border-radius: 8px; padding: 4px 8px; margin: 6px 6px 0 6px; font-weight: bold; flex-shrink: 0; }
+        .chat-reply-preview.active { display: flex; }
+        .chat-input-bar { padding: 6px; background: #fff; border-top: 2px solid #000; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+        .chat-input-bar input[type="text"] { flex: 1; border: 1px solid #ccc; border-radius: 10px; padding: 6px 8px; font-size: 11px; outline: none; font-family: inherit; }
+        .mic-btn { border: 2px solid #000; background: #ffd8df; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+        .mic-btn.recording { background: #e74c3c; color: #fff; animation: pulse-rec 1s infinite; }
+        @keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .active-dot { width: 7px; height: 7px; background-color: #4caf50; border-radius: 50%; display: inline-block; }
+        .wallpaper-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; padding: 4px; max-height: 55vh; overflow-y: auto; }
+        .wallpaper-thumb { width: 100%; height: 70px; object-fit: cover; border: 2px solid #000; border-radius: 6px; cursor: pointer; }
+        .wallpaper-none-thumb { width: 100%; height: 70px; border: 2px dashed #000; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; background: #f5f5f5; }
+        .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-viewer img, .modal-viewer video { max-width: 90%; max-height: 80%; border-radius: 8px; }
+        .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <!-- ===== OVERLAY REGISTRO ===== -->
     <div id="authOverlay" class="auth-overlay">
         <div class="auth-card">
             <div class="auth-title">RatWeb 🐾</div>
@@ -1373,11 +194,14 @@
             <input type="text" id="regUsername" placeholder="@usuario (ej: @ScottWilh)">
             <input type="text" id="regDisplayName" placeholder="Nombre visible (ej: Wilhelm Reyes)">
             <textarea id="regBio" placeholder="Descripción de tu perfil..."></textarea>
+            
+            <div id="regError" class="error-msg"></div>
 
-            <button class="btn-auth" onclick="registerUser()">Entrar a RatWeb</button>
+            <button class="btn-auth" id="registerBtn" onclick="registerUser()">Entrar a RatWeb</button>
         </div>
     </div>
 
+    <!-- ===== ESTRUCTURA PRINCIPAL ===== -->
     <header>
         <div class="logo-text">RatWeb</div>
         <div class="search-bar">
@@ -1397,6 +221,7 @@
         </nav>
 
         <main>
+            <!-- MENÚ PRINCIPAL - FEED GLOBAL -->
             <div id="menu" class="section active">
                 <div class="create-box">
                     <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
@@ -1411,6 +236,7 @@
                 <div id="feedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- FOROS -->
             <div id="foros" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🧀 Nuevo Foro</span>
@@ -1424,6 +250,7 @@
                 <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- FORUM VIEW -->
             <div id="forumView" class="section">
                 <button class="btn-back" onclick="showSection('foros')">⬅ Volver</button>
                 <div id="forumHeader" class="forum-card" style="cursor: default; flex-shrink:0;"></div>
@@ -1440,6 +267,7 @@
                 <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- GALERÍA -->
             <div id="galeria" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🖼️ Subir a la Galería</span>
@@ -1451,12 +279,8 @@
                         <option value="Meme/GIF">✨ Meme/GIF</option>
                     </select>
                     <div class="visibility-selector">
-                        <label>
-                            <input type="radio" name="galleryVisibility" value="public" checked> 🌍 Pública
-                        </label>
-                        <label>
-                            <input type="radio" name="galleryVisibility" value="private"> 🔒 Privada
-                        </label>
+                        <label><input type="radio" name="galleryVisibility" value="public" checked> 🌍 Pública</label>
+                        <label><input type="radio" name="galleryVisibility" value="private"> 🔒 Privada</label>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label class="file-label">
@@ -1469,14 +293,15 @@
                 <div id="galleryContainer" class="gallery-grid" style="flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- SOCIAL / CHAT -->
             <div id="social" class="section">
                 <div class="chat-container">
                     <div class="chat-toggle-bar">
                         <span>💬 Chat con: <strong id="chatWithUser">@RatBot</strong></span>
                         <div class="chat-toggle-actions">
-                            <button class="chat-icon-btn" id="searchToggleBtn" onclick="toggleChatSearch()" title="Buscar en la conversación">🔍</button>
+                            <button class="chat-icon-btn" id="searchToggleBtn" onclick="toggleChatSearch()" title="Buscar">🔍</button>
                             <button class="chat-icon-btn" id="muteToggleBtn" onclick="toggleMuteContact()" title="Silenciar">🔔</button>
-                            <button class="chat-icon-btn" onclick="openWallpaperPicker()" title="Cambiar fondo">🖼️</button>
+                            <button class="chat-icon-btn" onclick="openWallpaperPicker()" title="Fondo">🖼️</button>
                             <button class="chat-icon-btn" onclick="toggleContacts()">👥 Contactos ▾</button>
                         </div>
                     </div>
@@ -1512,6 +337,7 @@
                 </div>
             </div>
 
+            <!-- PERFIL -->
             <div id="perfil" class="section">
                 <button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
                 <div class="profile-card">
@@ -1570,6 +396,7 @@
         </main>
     </div>
 
+    <!-- ===== MODALES ===== -->
     <div id="imageModal" class="modal-viewer" onclick="closeModal()">
         <span class="close-modal">&times;</span>
         <div id="modalContent"></div>
@@ -1588,7 +415,7 @@
 
     <script>
         // ==========================================
-        // CONFIGURACIÓN DE FIREBASE - RATWEB
+        // CONFIGURACIÓN DE FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QDGBpMZIPk",
@@ -1601,7 +428,6 @@
             measurementId: "G-JRBPSPTZQN"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const auth = firebase.auth();
@@ -1613,7 +439,7 @@
         let chatListeners = {};
         let chatId = '';
         let activeChatContact = 'RatBot';
-        let posts = JSON.parse(localStorage.getItem('ratweb_posts')) || [];
+        let posts = [];
         let forums = JSON.parse(localStorage.getItem('ratweb_forums')) || [];
         let gallery = JSON.parse(localStorage.getItem('ratweb_gallery')) || [];
         let usersPresence = JSON.parse(localStorage.getItem('ratweb_presence')) || {};
@@ -1637,14 +463,167 @@
         const DAY_MS = 24 * 60 * 60 * 1000;
         const MAX_FORUMS_PER_USER = 3;
         const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
+        const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
-        const BOT_REPLIES = [
-            '¡Miau- digo, squeak! 🐭', 
-            'Interesante, cuéntame más 🧀',
-            '¡Jaja me encanta! 🐾',
-            'Estoy pensando en queso ahora mismo 🧀',
-            '¡Genial! Sigue así 💗'
-        ];
+        // ==========================================
+        // POSTS EN FIREBASE - ¡NUEVO!
+        // ==========================================
+        function loadPostsFromFirebase() {
+            const postsRef = database.ref('posts');
+            postsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    posts = Object.keys(data).map(key => ({
+                        id: parseInt(key),
+                        ...data[key]
+                    }));
+                    posts.sort((a, b) => b.id - a.id);
+                } else {
+                    posts = [];
+                }
+                // Renderizar según la vista actual
+                const isForumActive = document.getElementById('forumView').classList.contains('active');
+                if (isForumActive && currentForumId) {
+                    renderPosts('forum');
+                } else {
+                    renderPosts('main');
+                }
+                updateContactsFromPosts();
+            });
+        }
+
+        function savePostToFirebase(postData) {
+            const postsRef = database.ref('posts');
+            const newPostRef = postsRef.push();
+            return newPostRef.set({
+                ...postData,
+                id: Date.now()
+            });
+        }
+
+        function deletePostFromFirebase(postId) {
+            return database.ref(`posts/${postId}`).remove();
+        }
+
+        function updatePostInFirebase(postId, data) {
+            return database.ref(`posts/${postId}`).update(data);
+        }
+
+        // ==========================================
+        // REGISTRO DE USUARIO CON VERIFICACIÓN
+        // ==========================================
+        function registerUser() {
+            const username = document.getElementById('regUsername').value.trim();
+            const displayName = document.getElementById('regDisplayName').value.trim();
+            const bio = document.getElementById('regBio').value.trim();
+            const errorEl = document.getElementById('regError');
+            const registerBtn = document.getElementById('registerBtn');
+
+            if (!username || !displayName) {
+                errorEl.textContent = "⚠️ Por favor ingresa un nombre de usuario y un nombre visible.";
+                return;
+            }
+
+            const finalUsername = username.startsWith('@') ? username : '@' + username;
+
+            // Verificar si el username ya existe en Firebase
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Verificando...';
+            errorEl.textContent = '';
+
+            database.ref('usernames').child(finalUsername).once('value')
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        errorEl.textContent = `❌ El usuario ${finalUsername} ya existe. Elige otro.`;
+                        registerBtn.disabled = false;
+                        registerBtn.textContent = 'Entrar a RatWeb';
+                        return Promise.reject('Username exists');
+                    }
+                    
+                    // Username disponible - proceder con registro
+                    return auth.signInAnonymously();
+                })
+                .then((userCredential) => {
+                    if (!userCredential) return;
+                    const user = userCredential.user;
+                    
+                    const userData = {
+                        username: finalUsername,
+                        displayName: displayName,
+                        bio: bio,
+                        banner: null,
+                        joinedAt: Date.now(),
+                        lastNameChange: 0,
+                        lastUsernameChange: 0,
+                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
+                    };
+
+                    // Guardar usuario y username en Firebase
+                    return Promise.all([
+                        database.ref(`users/${user.uid}`).set(userData),
+                        database.ref(`usernames/${finalUsername}`).set({ uid: user.uid, displayName: displayName })
+                    ]).then(() => {
+                        currentUser = userData;
+                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        document.getElementById('headerAvatar').src = currentUser.avatar;
+                        document.getElementById('authOverlay').style.display = 'none';
+                        pingUserPresence();
+                        
+                        // Cargar datos desde Firebase
+                        loadPostsFromFirebase();
+                        loadForumsFromFirebase();
+                        renderGallery();
+                        
+                        const initialChatId = getChatId(currentUser.username, 'RatBot');
+                        loadChatMessages(initialChatId);
+                    });
+                })
+                .catch((error) => {
+                    if (error !== 'Username exists') {
+                        console.error('Error al registrar usuario:', error);
+                        errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
+                    }
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'Entrar a RatWeb';
+                });
+        }
+
+        // ==========================================
+        // FOROS EN FIREBASE
+        // ==========================================
+        function loadForumsFromFirebase() {
+            const forumsRef = database.ref('forums');
+            forumsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    forums = Object.keys(data).map(key => ({
+                        id: parseInt(key),
+                        ...data[key]
+                    }));
+                    forums.sort((a, b) => b.id - a.id);
+                } else {
+                    forums = [];
+                }
+                renderForums();
+            });
+        }
+
+        function saveForumToFirebase(forumData) {
+            const forumsRef = database.ref('forums');
+            const newForumRef = forumsRef.push();
+            return newForumRef.set({
+                ...forumData,
+                id: Date.now()
+            });
+        }
+
+        function deleteForumFromFirebase(forumId) {
+            return database.ref(`forums/${forumId}`).remove();
+        }
+
+        function updateForumInFirebase(forumId, data) {
+            return database.ref(`forums/${forumId}`).update(data);
+        }
 
         // ==========================================
         // FUNCIONES DE CHAT CON FIREBASE
@@ -2027,7 +1006,6 @@
             const isMuted = !!mutedContacts[activeChatContact];
             btn.innerText = isMuted ? '🔕' : '🔔';
             btn.classList.toggle('active-toggle', isMuted);
-            btn.title = isMuted ? 'Notificaciones silenciadas (actívalas de nuevo aquí)' : 'Silenciar notificaciones';
         }
 
         function toggleContacts() {
@@ -2164,56 +1142,8 @@
         }
 
         // ==========================================
-        // REGISTRO DE USUARIO CON FIREBASE
+        // FUNCIONES DE POSTS (GUARDAN EN FIREBASE)
         // ==========================================
-        function registerUser() {
-            const username = document.getElementById('regUsername').value.trim();
-            const displayName = document.getElementById('regDisplayName').value.trim();
-            const bio = document.getElementById('regBio').value.trim();
-
-            if (!username || !displayName) {
-                alert("Por favor ingresa un nombre de usuario y un nombre visible.");
-                return;
-            }
-
-            const finalUsername = username.startsWith('@') ? username : '@' + username;
-
-            auth.signInAnonymously()
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    
-                    const userData = {
-                        username: finalUsername,
-                        displayName: displayName,
-                        bio: bio,
-                        banner: null,
-                        joinedAt: Date.now(),
-                        lastNameChange: 0,
-                        lastUsernameChange: 0,
-                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
-                    };
-
-                    return database.ref(`users/${user.uid}`).set(userData).then(() => {
-                        currentUser = userData;
-                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                        document.getElementById('headerAvatar').src = currentUser.avatar;
-                        document.getElementById('authOverlay').style.display = 'none';
-                        pingUserPresence();
-                        renderPosts('main');
-                        renderGallery();
-                        renderForums();
-                        updateContactsFromPosts();
-                        
-                        const initialChatId = getChatId(currentUser.username, 'RatBot');
-                        loadChatMessages(initialChatId);
-                    });
-                })
-                .catch((error) => {
-                    console.error('Error al registrar usuario:', error);
-                    alert('Error al registrarse. Intenta de nuevo.');
-                });
-        }
-
         function previewAvatar(event) {
             const file = event.target.files[0];
             if (file) {
@@ -2226,10 +1156,9 @@
             }
         }
 
-        // ==========================================
-        // FUNCIONES DE POSTS Y FOROS
-        // ==========================================
         function createPost(target) {
+            if (!currentUser) return;
+            
             const isForum = target === 'forum';
             const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
             const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
@@ -2238,40 +1167,37 @@
             if (userText === "" && fileInput.files.length === 0) return;
 
             const file = fileInput.files[0];
+            
+            const postData = {
+                authorName: currentUser.displayName,
+                authorHandle: currentUser.username,
+                avatar: currentUser.avatar || '',
+                text: userText,
+                mediaSrc: null,
+                mediaType: null,
+                forumId: isForum ? currentForumId : null,
+                likedBy: [],
+                replies: [],
+                timestamp: Date.now()
+            };
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    savePost(userText, e.target.result, file.type.startsWith('image/') ? 'image' : 'video', isForum ? currentForumId : null);
-                    textInput.value = '';
-                    fileInput.value = '';
-                    updateContactsFromPosts();
+                    postData.mediaSrc = e.target.result;
+                    postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                    savePostToFirebase(postData).then(() => {
+                        textInput.value = '';
+                        fileInput.value = '';
+                    });
                 };
                 reader.readAsDataURL(file);
             } else {
-                savePost(userText, null, null, isForum ? currentForumId : null);
-                textInput.value = '';
-                fileInput.value = '';
-                updateContactsFromPosts();
+                savePostToFirebase(postData).then(() => {
+                    textInput.value = '';
+                    fileInput.value = '';
+                });
             }
-        }
-
-        function savePost(text, mediaSrc, mediaType, forumId) {
-            const newPost = {
-                id: Date.now(),
-                authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
-                authorHandle: currentUser ? currentUser.username : '@ScottWilh',
-                avatar: currentUser ? currentUser.avatar : '',
-                text: text,
-                mediaSrc: mediaSrc,
-                mediaType: mediaType,
-                forumId: forumId || null,
-                likedBy: [],
-                replies: []
-            };
-
-            posts.unshift(newPost);
-            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
-            renderPosts(forumId ? 'forum' : 'main');
         }
 
         function renderPosts(target) {
@@ -2291,10 +1217,10 @@
             }
 
             listContainer.innerHTML = filteredPosts.map(post => {
-                const isLiked = post.likedBy.includes(myHandle);
+                const isLiked = post.likedBy && post.likedBy.includes(myHandle);
                 const isMyPost = currentUser && post.authorHandle === currentUser.username;
                 const isRepliesOpen = !!openRepliesBoxes[post.id];
-                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${post.replies.length === 0 ? 'Comentar' : post.replies.length + ' comentarios'}`;
+                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${(post.replies && post.replies.length) || 0 === 0 ? 'Comentar' : (post.replies ? post.replies.length : 0) + ' comentarios'}`;
 
                 return `
                 <div class="post-card">
@@ -2320,7 +1246,7 @@
 
                         <div class="post-actions">
                             <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id}, '${target}')">
-                                🐾 ${post.likedBy.length}
+                                🐾 ${(post.likedBy && post.likedBy.length) || 0}
                             </span>
                             <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies(${post.id})">
                                 ${replyBtnLabel}
@@ -2328,7 +1254,7 @@
                         </div>
 
                         <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
-                            ${post.replies.map(r => `
+                            ${(post.replies || []).map(r => `
                                 <div class="reply-item">
                                     <div class="reply-header">
                                         <div class="reply-user-info">
@@ -2373,6 +1299,7 @@
             if (!post) return;
 
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            if (!post.likedBy) post.likedBy = [];
             const index = post.likedBy.indexOf(myHandle);
 
             if (index === -1) {
@@ -2381,7 +1308,8 @@
                 post.likedBy.splice(index, 1);
             }
 
-            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+            // Actualizar en Firebase
+            updatePostInFirebase(postId, { likedBy: post.likedBy });
             renderPosts(target);
         }
 
@@ -2393,9 +1321,8 @@
         }
 
         function deletePost(postId, target) {
-            posts = posts.filter(p => p.id !== postId);
-            localStorage.setItem('ratweb_posts', JSON.stringify(posts));
-            renderPosts(target);
+            if (!confirm('¿Borrar esta publicación?')) return;
+            deletePostFromFirebase(postId);
             updateContactsFromPosts();
         }
 
@@ -2409,7 +1336,7 @@
             }
             if (btnText) {
                 const post = posts.find(p => p.id === postId);
-                const count = post ? post.replies.length : 0;
+                const count = post && post.replies ? post.replies.length : 0;
                 btnText.innerText = openRepliesBoxes[postId] ? `💬 Ocultar comentarios` : `💬 ${count === 0 ? 'Comentar' : count + ' comentarios'}`;
             }
         }
@@ -2443,20 +1370,24 @@
 
             const replyTarget = activeReplyTargets[postId] || null;
 
+            const replyData = {
+                id: Date.now(),
+                authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
+                authorHandle: currentUser ? currentUser.username : '@ScottWilh',
+                replyTo: replyTarget,
+                text: text,
+                mediaSrc: null
+            };
+
             openRepliesBoxes[postId] = true;
 
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    post.replies.push({
-                        id: Date.now(),
-                        authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
-                        authorHandle: currentUser ? currentUser.username : '@ScottWilh',
-                        replyTo: replyTarget,
-                        text: text,
-                        mediaSrc: e.target.result
-                    });
-                    localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                    replyData.mediaSrc = e.target.result;
+                    post.replies = post.replies || [];
+                    post.replies.push(replyData);
+                    updatePostInFirebase(postId, { replies: post.replies });
                     clearReplyTarget(postId);
                     if (mediaInput) mediaInput.value = '';
                     renderPosts(target);
@@ -2464,15 +1395,9 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                post.replies.push({
-                    id: Date.now(),
-                    authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
-                    authorHandle: currentUser ? currentUser.username : '@ScottWilh',
-                    replyTo: replyTarget,
-                    text: text,
-                    mediaSrc: null
-                });
-                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                post.replies = post.replies || [];
+                post.replies.push(replyData);
+                updatePostInFirebase(postId, { replies: post.replies });
                 clearReplyTarget(postId);
                 renderPosts(target);
                 updateContactsFromPosts();
@@ -2481,9 +1406,9 @@
 
         function deleteComment(postId, commentId, target) {
             const post = posts.find(p => p.id === postId);
-            if (post) {
+            if (post && post.replies) {
                 post.replies = post.replies.filter(r => r.id !== commentId);
-                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
+                updatePostInFirebase(postId, { replies: post.replies });
                 openRepliesBoxes[postId] = true;
                 renderPosts(target);
                 updateContactsFromPosts();
@@ -2491,7 +1416,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE FOROS
+        // FUNCIONES DE FOROS (GUARDAN EN FIREBASE)
         // ==========================================
         function getMyForumsCount() {
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
@@ -2528,35 +1453,35 @@
 
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
 
-            const newForum = {
-                id: Date.now(),
+            const forumData = {
                 title: title,
                 category: category || 'GENERAL',
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
                 desc: desc,
                 creatorHandle: myHandle,
-                members: [myHandle]
+                members: [myHandle],
+                timestamp: Date.now()
             };
 
-            forums.unshift(newForum);
-            localStorage.setItem('ratweb_forums', JSON.stringify(forums));
-            document.getElementById('forumTitle').value = '';
-            document.getElementById('forumCategory').value = '';
-            document.getElementById('forumTags').value = '';
-            document.getElementById('forumDesc').value = '';
-            renderForums();
+            saveForumToFirebase(forumData).then(() => {
+                document.getElementById('forumTitle').value = '';
+                document.getElementById('forumCategory').value = '';
+                document.getElementById('forumTags').value = '';
+                document.getElementById('forumDesc').value = '';
+            });
         }
 
         function deleteForum(forumId, event) {
             event.stopPropagation();
             if (confirm("¿Seguro que quieres borrar este foro?")) {
-                forums = forums.filter(f => f.id !== forumId);
-                posts = posts.filter(p => p.forumId !== forumId);
-                localStorage.setItem('ratweb_forums', JSON.stringify(forums));
-                localStorage.setItem('ratweb_posts', JSON.stringify(posts));
-                renderForums();
-                if (currentForumId === forumId) showSection('foros');
-                updateContactsFromPosts();
+                deleteForumFromFirebase(forumId).then(() => {
+                    // También borrar posts del foro
+                    posts.filter(p => p.forumId === forumId).forEach(p => {
+                        deletePostFromFirebase(p.id);
+                    });
+                    if (currentForumId === forumId) showSection('foros');
+                    updateContactsFromPosts();
+                });
             }
         }
 
@@ -2571,8 +1496,7 @@
             if (index === -1) forum.members.push(myHandle);
             else forum.members.splice(index, 1);
 
-            localStorage.setItem('ratweb_forums', JSON.stringify(forums));
-            renderForums();
+            updateForumInFirebase(forumId, { members: forum.members });
             if (currentForumId === forumId) openForum(forumId);
         }
 
@@ -2603,7 +1527,7 @@
             }
 
             container.innerHTML = sourceForums.map(f => {
-                const isJoined = f.members.includes(myHandle);
+                const isJoined = f.members && f.members.includes(myHandle);
                 const isCreator = f.creatorHandle === myHandle;
                 const activeCount = getActiveForumMembersCount(f.members);
 
@@ -2625,10 +1549,10 @@
                     </div>
                     <div class="forum-desc">${f.desc}</div>
                     <div class="forum-tags-container">
-                        ${f.tags.map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                        ${(f.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
                     </div>
                     <div class="forum-stats-box">
-                        <span>👥 ${f.members.length} Miembro${f.members.length === 1 ? '' : 's'}</span>
+                        <span>👥 ${(f.members && f.members.length) || 0} Miembro${(f.members && f.members.length) === 1 ? '' : 's'}</span>
                         <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
                     </div>
                 </div>
@@ -2643,7 +1567,7 @@
 
             const header = document.getElementById('forumHeader');
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const isJoined = forum.members.includes(myHandle);
+            const isJoined = forum.members && forum.members.includes(myHandle);
             const isCreator = forum.creatorHandle === myHandle;
             const activeCount = getActiveForumMembersCount(forum.members);
 
@@ -2664,10 +1588,10 @@
                 </div>
                 <div class="forum-desc">${forum.desc}</div>
                 <div class="forum-tags-container">
-                    ${forum.tags.map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                    ${(forum.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
                 </div>
                 <div class="forum-stats-box">
-                    <span>👥 ${forum.members.length} Miembro${forum.members.length === 1 ? '' : 's'}</span>
+                    <span>👥 ${(forum.members && forum.members.length) || 0} Miembro${(forum.members && forum.members.length) === 1 ? '' : 's'}</span>
                     <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
                 </div>
             `;
@@ -2796,9 +1720,9 @@
             const myHandle = currentUser.username;
             document.getElementById('statPosts').innerText = posts.filter(p => p.authorHandle === myHandle).length;
             document.getElementById('statGallery').innerText = gallery.filter(g => g.uploaderHandle === myHandle).length;
-            document.getElementById('statForums').innerText = forums.filter(f => f.members.includes(myHandle)).length;
+            document.getElementById('statForums').innerText = forums.filter(f => f.members && f.members.includes(myHandle)).length;
 
-            const myPostsLikes = posts.filter(p => p.authorHandle === myHandle).reduce((sum, p) => sum + p.likedBy.length, 0);
+            const myPostsLikes = posts.filter(p => p.authorHandle === myHandle).reduce((sum, p) => sum + (p.likedBy ? p.likedBy.length : 0), 0);
             const myGalleryLikes = gallery.filter(g => g.uploaderHandle === myHandle).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
             document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
 
@@ -3018,7 +1942,7 @@
 
             if (isForosActive) {
                 const filtered = forums.filter(f =>
-                    f.tags.some(t => t.toLowerCase().includes(query)) ||
+                    (f.tags || []).some(t => t.toLowerCase().includes(query)) ||
                     f.title.toLowerCase().includes(query) ||
                     f.category.toLowerCase().includes(query)
                 );
@@ -3066,20 +1990,21 @@
                     console.error('Error en autenticación anónima:', error);
                 });
                 
+                loadPostsFromFirebase();
+                loadForumsFromFirebase();
+                renderGallery();
+                
                 const initialChatId = getChatId(currentUser.username, 'RatBot');
                 loadChatMessages(initialChatId);
             }
-            renderPosts('main');
-            renderForums();
-            renderGallery();
+            
             updateMuteButtonUI();
             applyChatWallpaper();
-            updateContactsFromPosts();
         };
 
-        console.log('🔥 RatWeb con Firebase iniciado correctamente');
+        console.log('🔥 RatWeb con Firebase sincronizado en tiempo real');
         console.log('📱 App ID:', firebaseConfig.appId);
         console.log('👤 Usuario actual:', currentUser ? currentUser.username : 'No autenticado');
     </script>
 </body>
-    </html>
+                            </html>
