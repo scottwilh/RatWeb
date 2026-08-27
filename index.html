@@ -694,18 +694,8 @@
         }
 
         async function checkUsernameAvailability(username) {
-            try {
-                const snapshot = await database.ref('usernames').child(username).once('value');
-                if (snapshot.exists()) return false;
-                
-                const usersSnapshot = await database.ref('users').orderByChild('username').equalTo(username).once('value');
-                if (usersSnapshot.exists()) return false;
-                
-                return true;
-            } catch (error) {
-                console.error('Error al verificar username:', error);
-                return false;
-            }
+            const snapshot = await database.ref('usernames').child(username).once('value');
+            return !snapshot.exists();
         }
 
         async function registerUser() {
@@ -742,6 +732,14 @@
             registerBtn.textContent = 'Verificando...';
             
             try {
+                // PASO 1: autenticar primero (antes de leer/escribir en la DB)
+                let authUser = auth.currentUser;
+                if (!authUser) {
+                    const userCredential = await auth.signInAnonymously();
+                    authUser = userCredential.user;
+                }
+
+                // PASO 2: verificar disponibilidad ya autenticado
                 const isAvailable = await checkUsernameAvailability(username);
                 
                 if (!isAvailable) {
@@ -751,12 +749,6 @@
                     registerBtn.disabled = false;
                     registerBtn.textContent = 'Entrar a RatWeb';
                     return;
-                }
-                
-                let authUser = auth.currentUser;
-                if (!authUser) {
-                    const userCredential = await auth.signInAnonymously();
-                    authUser = userCredential.user;
                 }
                 
                 const userData = {
@@ -771,11 +763,11 @@
                     avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
                 };
                 
-                await database.ref(`users/${authUser.uid}`).set(userData);
-                await database.ref(`usernames/${username}`).set({ 
-                    uid: authUser.uid, 
-                    displayName: displayName 
-                });
+                // PASO 3: escritura atómica (todo o nada, no deja huérfanos si falla)
+                const updates = {};
+                updates[`users/${authUser.uid}`] = userData;
+                updates[`usernames/${username}`] = { uid: authUser.uid, displayName: displayName };
+                await database.ref().update(updates);
                 
                 currentUser = userData;
                 currentAuthUser = authUser;
@@ -799,14 +791,6 @@
                 console.error('Error al registrar:', error);
                 errorEl.textContent = `❌ Error al registrarse: ${error.message}`;
                 errorEl.classList.add('show');
-                
-                if (auth.currentUser) {
-                    try {
-                        await auth.currentUser.delete();
-                    } catch (e) {
-                        console.error('Error al limpiar auth:', e);
-                    }
-                }
             } finally {
                 isRegistering = false;
                 registerBtn.disabled = false;
