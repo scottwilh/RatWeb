@@ -259,6 +259,7 @@
             <input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch()">
         </div>
         <div class="user-header-profile">
+            <!-- 🔔 CAMPANITA DE NOTIFICACIONES -->
             <div class="notification-wrapper">
                 <button class="notif-btn" onclick="toggleNotificationDropdown()">
                     🔔
@@ -568,46 +569,8 @@
             }
         }
 
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                refreshCurrentUser();
-            } else {
-                currentUser = null;
-                currentAuthUser = null;
-                localStorage.removeItem('ratweb_user');
-                document.getElementById('authOverlay').style.display = 'flex';
-                document.getElementById('authOverlay').style.position = 'fixed';
-                Object.values(chatListeners).forEach(unsub => unsub());
-                chatListeners = {};
-                if (notificationListener) {
-                    notificationListener();
-                    notificationListener = null;
-                }
-            }
-        });
-
-        function logoutUser() {
-            if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
-            Object.values(chatListeners).forEach(unsub => unsub());
-            chatListeners = {};
-            if (notificationListener) {
-                notificationListener();
-                notificationListener = null;
-            }
-            auth.signOut().then(() => {
-                currentUser = null;
-                currentAuthUser = null;
-                localStorage.removeItem('ratweb_user');
-                document.getElementById('authOverlay').style.display = 'flex';
-                document.getElementById('authOverlay').style.position = 'fixed';
-            }).catch(err => {
-                console.error('Error al cerrar sesión:', err);
-                alert('Error al cerrar sesión');
-            });
-        }
-
         // ============================================================
-        // FUNCIONES DE NOTIFICACIONES (NUEVO)
+        // FUNCIONES DE NOTIFICACIONES
         // ============================================================
 
         function sendNotification(targetUid, type, fromUid, fromHandle, message, link) {
@@ -747,207 +710,6 @@
                     }
                 });
             }
-        }
-
-        // ============================================================
-        // FUNCIONES DE FIREBASE
-        // ============================================================
-        
-        function loadPostsFromFirebase() {
-            const postsRef = database.ref('posts');
-            postsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    posts = Object.keys(data).map(key => ({
-                        id: key,
-                        firebaseKey: key,
-                        ...data[key]
-                    }));
-                    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                } else {
-                    posts = [];
-                }
-                renderPostsBasedOnActiveSection();
-                updateContactsFromPosts();
-                if (document.getElementById('perfil').classList.contains('active')) {
-                    renderProfile();
-                }
-            });
-        }
-
-        function renderPostsBasedOnActiveSection() {
-            const isForumActive = document.getElementById('forumView').classList.contains('active');
-            if (isForumActive && currentForumId) {
-                renderPosts('forum');
-            } else {
-                renderPosts('main');
-            }
-        }
-
-        function savePostToFirebase(postData) {
-            const postsRef = database.ref('posts');
-            const newPostRef = postsRef.push();
-            return newPostRef.set({
-                ...postData,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-
-        function deletePostFromFirebase(postId) {
-            return database.ref(`posts/${postId}`).remove();
-        }
-
-        function updatePostInFirebase(postId, data) {
-            return database.ref(`posts/${postId}`).update(data);
-        }
-
-        function loadForumsFromFirebase() {
-            const forumsRef = database.ref('forums');
-            forumsRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    forums = Object.keys(data).map(key => ({
-                        id: key,
-                        firebaseKey: key,
-                        ...data[key]
-                    }));
-                    forums.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                } else {
-                    forums = [];
-                }
-                renderForums();
-                if (document.getElementById('perfil').classList.contains('active')) {
-                    renderProfile();
-                }
-            });
-        }
-
-        function saveForumToFirebase(forumData) {
-            const forumsRef = database.ref('forums');
-            const newForumRef = forumsRef.push();
-            return newForumRef.set({
-                ...forumData,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-
-        function deleteForumFromFirebase(forumId) {
-            return database.ref(`forums/${forumId}`).remove();
-        }
-
-        function updateForumInFirebase(forumId, data) {
-            return database.ref(`forums/${forumId}`).update(data);
-        }
-
-        // ============================================================
-        // FUNCIONES DE CONTACTOS
-        // ============================================================
-        
-        function loadContacts() {
-            if (!currentUser) return;
-            database.ref(`contacts/${currentUser.uid}`).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    contacts = Object.keys(data);
-                } else {
-                    contacts = [];
-                }
-                updateContactsList();
-            });
-        }
-
-        function addContact() {
-            if (!currentUser || !currentAuthUser) {
-                alert('Debes iniciar sesión');
-                return;
-            }
-            const username = prompt('🔍 Ingresa el @usuario que quieres agregar:');
-            if (!username) return;
-            const cleanUsername = username.startsWith('@') ? username : '@' + username;
-            if (cleanUsername === currentUser.username) {
-                alert('❌ No puedes agregarte a ti mismo');
-                return;
-            }
-            database.ref('usernames').child(cleanUsername).once('value')
-                .then(snapshot => {
-                    if (snapshot.exists()) {
-                        const userData = snapshot.val();
-                        const targetUid = userData.uid;
-                        return database.ref(`users/${targetUid}`).once('value')
-                            .then(userSnap => {
-                                if (!userSnap.exists()) {
-                                    alert('❌ Usuario no encontrado');
-                                    return;
-                                }
-                                return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).once('value')
-                                    .then(contactSnap => {
-                                        if (contactSnap.exists()) {
-                                            alert('⚠️ Ya tienes este contacto');
-                                            return;
-                                        }
-                                        return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).set({
-                                            addedAt: firebase.database.ServerValue.TIMESTAMP,
-                                            displayName: userData.displayName || cleanUsername,
-                                            targetUid: targetUid
-                                        }).then(() => {
-                                            alert(`✅ ${cleanUsername} agregado a tus contactos`);
-                                            // Enviar notificación
-                                            sendNotification(
-                                                targetUid,
-                                                'friend_request',
-                                                currentAuthUser.uid,
-                                                currentUser.username,
-                                                `${currentUser.username} te ha enviado una solicitud de amistad 🤝`,
-                                                '#social'
-                                            );
-                                            loadContacts();
-                                        });
-                                    });
-                            });
-                    } else {
-                        alert('❌ Usuario no encontrado');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al agregar contacto:', error);
-                    alert('❌ Error al buscar el usuario');
-                });
-        }
-
-        function removeContact(username) {
-            if (!confirm(`¿Eliminar a ${username} de tus contactos?`)) return;
-            database.ref(`contacts/${currentUser.uid}/${username}`).remove()
-                .then(() => {
-                    alert(`✅ ${username} eliminado de tus contactos`);
-                    loadContacts();
-                    if (activeChatContact === username) {
-                        switchChat('RatBot');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al eliminar contacto:', error);
-                    alert('❌ Error al eliminar contacto');
-                });
-        }
-
-        function updateContactsList() {
-            const drawer = document.getElementById('contactsDrawer');
-            if (!drawer) return;
-            const currentContact = activeChatContact;
-            let html = `
-                <div class="contact-item ${'RatBot' === currentContact ? 'active' : ''}" onclick="switchChat('RatBot')">
-                    <span class="active-dot"></span> RatBot
-                </div>
-            `;
-            contacts.forEach(handle => {
-                html += `
-                    <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
-                        <span class="active-dot"></span> ${handle}
-                        <span class="remove-contact" onclick="event.stopPropagation(); removeContact('${handle}')">✕</span>
-                    </div>
-                `;
-            });
-            drawer.innerHTML = html;
         }
 
         // ============================================================
@@ -1164,6 +926,707 @@
                 console.error('Error al eliminar cuenta:', error);
                 alert(`❌ Error al eliminar cuenta: ${error.message}`);
             }
+        }
+
+        // ============================================================
+        // FUNCIONES DE POSTS
+        // ============================================================
+        
+        function loadPostsFromFirebase() {
+            const postsRef = database.ref('posts');
+            postsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    posts = Object.keys(data).map(key => ({
+                        id: key,
+                        firebaseKey: key,
+                        ...data[key]
+                    }));
+                    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                } else {
+                    posts = [];
+                }
+                renderPostsBasedOnActiveSection();
+                updateContactsFromPosts();
+                if (document.getElementById('perfil').classList.contains('active')) {
+                    renderProfile();
+                }
+            });
+        }
+
+        function renderPostsBasedOnActiveSection() {
+            const isForumActive = document.getElementById('forumView').classList.contains('active');
+            if (isForumActive && currentForumId) {
+                renderPosts('forum');
+            } else {
+                renderPosts('main');
+            }
+        }
+
+        function savePostToFirebase(postData) {
+            const postsRef = database.ref('posts');
+            const newPostRef = postsRef.push();
+            return newPostRef.set({
+                ...postData,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        function deletePostFromFirebase(postId) {
+            return database.ref(`posts/${postId}`).remove();
+        }
+
+        function updatePostInFirebase(postId, data) {
+            return database.ref(`posts/${postId}`).update(data);
+        }
+
+        function createPost(target) {
+            if (!currentUser || !currentAuthUser) {
+                alert('Debes iniciar sesión primero');
+                return;
+            }
+            
+            const isForum = target === 'forum';
+            const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
+            const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
+            const userText = textInput.value.trim();
+
+            if (userText === "" && fileInput.files.length === 0) {
+                alert('Escribe algo o adjunta un archivo');
+                return;
+            }
+
+            const postData = {
+                authorUid: currentAuthUser.uid,
+                authorName: currentUser.displayName,
+                authorHandle: currentUser.username,
+                avatar: currentUser.avatar || '',
+                text: userText,
+                mediaSrc: null,
+                mediaType: null,
+                forumId: isForum ? currentForumId : null,
+                likedBy: [],
+                replies: [],
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    postData.mediaSrc = e.target.result;
+                    postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                    savePostToFirebase(postData).then(() => {
+                        textInput.value = '';
+                        fileInput.value = '';
+                    }).catch(err => {
+                        console.error('Error al guardar post:', err);
+                        alert('No tienes permiso para publicar');
+                    });
+                };
+                reader.readAsDataURL(file);
+            } else {
+                savePostToFirebase(postData).then(() => {
+                    textInput.value = '';
+                    fileInput.value = '';
+                }).catch(err => {
+                    console.error('Error al guardar post:', err);
+                    alert('No tienes permiso para publicar');
+                });
+            }
+        }
+
+        function renderPosts(target) {
+            const isForum = target === 'forum';
+            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
+            if (!listContainer) return;
+
+            const filteredPosts = isForum 
+                ? posts.filter(p => p.forumId === currentForumId)
+                : posts;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (filteredPosts.length === 0) {
+                listContainer.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún. ¡Sé el primero en publicar!</p>`;
+                return;
+            }
+
+            listContainer.innerHTML = filteredPosts.map(post => {
+                const isLiked = post.likedBy && post.likedBy.includes(myHandle);
+                const isMyPost = currentAuthUser && post.authorUid === currentAuthUser.uid;
+                const isRepliesOpen = !!openRepliesBoxes[post.id];
+                const replyCount = (post.replies && post.replies.length) || 0;
+                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${replyCount === 0 ? 'Comentar' : replyCount + ' comentarios'}`;
+
+                return `
+                <div class="post-card">
+                    <img class="avatar-circle" src="${post.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
+                    <div class="post-bubble">
+                        <div class="post-header">
+                            <span class="post-author">${post.authorName} (${post.authorHandle}) ${post.forumId ? '🧀' : ''}</span>
+                            ${isMyPost ? `
+                                <button class="post-options-btn" onclick="toggleMenu('${post.id}')">⋮</button>
+                                <div id="menu-${post.id}" class="options-menu">
+                                    <button onclick="deletePost('${post.id}', '${target}')">🗑️ Borrar</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="post-content">${post.text}</div>
+
+                        ${post.mediaSrc ? (
+                            post.mediaType === 'image' 
+                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
+                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`
+                        ) : ''}
+
+                        <div class="post-actions">
+                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}', '${target}')">
+                                🐾 ${(post.likedBy && post.likedBy.length) || 0}
+                            </span>
+                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies('${post.id}')">
+                                ${replyBtnLabel}
+                            </span>
+                        </div>
+
+                        <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
+                            ${(post.replies || []).map((r, index) => `
+                                <div class="reply-item">
+                                    <div class="reply-header">
+                                        <div class="reply-user-info">
+                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
+                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
+                                        </div>
+                                        <div class="reply-actions-right">
+                                            <span class="reply-action-btn" onclick="setReplyTarget('${post.id}', '${r.authorHandle}')">Responder</span>
+                                            ${(currentAuthUser && r.authorUid === currentAuthUser.uid) ? `
+                                                <button class="delete-comment-btn" onclick="deleteComment('${post.id}', ${index}, '${target}')">🗑️</button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                    <div>${r.text}</div>
+                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
+                                </div>
+                            `).join('')}
+
+                            <div class="reply-input-wrapper">
+                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
+                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
+                                    <span style="cursor:pointer;" onclick="clearReplyTarget('${post.id}')">✕</span>
+                                </div>
+                                <div class="reply-input-row">
+                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply('${post.id}', '${target}')">
+                                    <label class="file-label">
+                                        📷
+                                        <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
+                                    </label>
+                                    <button class="btn-publish" onclick="addReply('${post.id}', '${target}')">Enviar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLike(postId, target) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
+            
+            if (!post.likedBy) post.likedBy = [];
+            const index = post.likedBy.indexOf(myHandle);
+
+            if (index === -1) {
+                post.likedBy.push(myHandle);
+            } else {
+                post.likedBy.splice(index, 1);
+            }
+
+            updatePostInFirebase(postId, { likedBy: post.likedBy })
+                .then(() => {
+                    renderPosts(target);
+                    if (!wasLiked && post.authorUid !== currentAuthUser.uid) {
+                        sendNotification(
+                            post.authorUid,
+                            'post_like',
+                            currentAuthUser.uid,
+                            currentUser.username,
+                            `${currentUser.username} le dio like a tu publicación 🐾`,
+                            '#menu'
+                        );
+                    }
+                })
+                .catch(err => console.error('Error al actualizar like:', err));
+        }
+
+        function toggleMenu(postId) {
+            const menu = document.getElementById(`menu-${postId}`);
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        function deletePost(postId, target) {
+            if (!confirm('¿Borrar esta publicación?')) return;
+            deletePostFromFirebase(postId)
+                .then(() => updateContactsFromPosts())
+                .catch(err => {
+                    console.error('Error al borrar post:', err);
+                    alert('No tienes permiso para borrar este post');
+                });
+        }
+
+        function toggleReplies(postId) {
+            openRepliesBoxes[postId] = !openRepliesBoxes[postId];
+            const box = document.getElementById(`replies-${postId}`);
+            const btnText = document.getElementById(`reply-btn-text-${postId}`);
+            
+            if (box) {
+                box.classList.toggle('open', openRepliesBoxes[postId]);
+            }
+            if (btnText) {
+                const post = posts.find(p => p.id === postId);
+                const count = post && post.replies ? post.replies.length : 0;
+                btnText.innerText = openRepliesBoxes[postId] ? `💬 Ocultar comentarios` : `💬 ${count === 0 ? 'Comentar' : count + ' comentarios'}`;
+            }
+        }
+
+        function setReplyTarget(postId, authorHandle) {
+            activeReplyTargets[postId] = authorHandle;
+            const indicator = document.getElementById(`target-indicator-${postId}`);
+            const textSpan = document.getElementById(`target-text-${postId}`);
+            if (indicator && textSpan) {
+                textSpan.innerText = `Respondiendo a ${authorHandle}`;
+                indicator.classList.add('active');
+            }
+        }
+
+        function clearReplyTarget(postId) {
+            delete activeReplyTargets[postId];
+            const indicator = document.getElementById(`target-indicator-${postId}`);
+            if (indicator) indicator.classList.remove('active');
+        }
+
+        function addReply(postId, target) {
+            const input = document.getElementById(`reply-input-${postId}`);
+            const mediaInput = document.getElementById(`reply-media-${postId}`);
+            const text = input.value.trim();
+            const file = mediaInput ? mediaInput.files[0] : null;
+
+            if (text === "" && !file) return;
+
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const replyTarget = activeReplyTargets[postId] || null;
+
+            const replyData = {
+                id: Date.now(),
+                authorUid: currentAuthUser ? currentAuthUser.uid : 'anonymous',
+                authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
+                authorHandle: currentUser ? currentUser.username : '@ScottWilh',
+                replyTo: replyTarget,
+                text: text,
+                mediaSrc: null
+            };
+
+            openRepliesBoxes[postId] = true;
+
+            const processReply = () => {
+                post.replies = post.replies || [];
+                post.replies.push(replyData);
+                updatePostInFirebase(postId, { replies: post.replies })
+                    .then(() => {
+                        clearReplyTarget(postId);
+                        if (mediaInput) mediaInput.value = '';
+                        renderPosts(target);
+                        updateContactsFromPosts();
+                        if (post.authorUid !== currentAuthUser.uid) {
+                            sendNotification(
+                                post.authorUid,
+                                'post_reply',
+                                currentAuthUser.uid,
+                                currentUser.username,
+                                `${currentUser.username} comentó tu publicación: "${post.text.slice(0, 30)}..."`,
+                                '#menu'
+                            );
+                        }
+                    })
+                    .catch(err => console.error('Error al añadir reply:', err));
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    replyData.mediaSrc = e.target.result;
+                    processReply();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                processReply();
+            }
+        }
+
+        function deleteComment(postId, commentIndex, target) {
+            const post = posts.find(p => p.id === postId);
+            if (post && post.replies) {
+                post.replies.splice(commentIndex, 1);
+                updatePostInFirebase(postId, { replies: post.replies })
+                    .then(() => {
+                        openRepliesBoxes[postId] = true;
+                        renderPosts(target);
+                        updateContactsFromPosts();
+                    })
+                    .catch(err => console.error('Error al borrar comentario:', err));
+            }
+        }
+
+        // ============================================================
+        // FUNCIONES DE FOROS
+        // ============================================================
+        
+        function loadForumsFromFirebase() {
+            const forumsRef = database.ref('forums');
+            forumsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    forums = Object.keys(data).map(key => ({
+                        id: key,
+                        firebaseKey: key,
+                        ...data[key]
+                    }));
+                    forums.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                } else {
+                    forums = [];
+                }
+                renderForums();
+                if (document.getElementById('perfil').classList.contains('active')) {
+                    renderProfile();
+                }
+            });
+        }
+
+        function saveForumToFirebase(forumData) {
+            const forumsRef = database.ref('forums');
+            const newForumRef = forumsRef.push();
+            return newForumRef.set({
+                ...forumData,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        function deleteForumFromFirebase(forumId) {
+            return database.ref(`forums/${forumId}`).remove();
+        }
+
+        function updateForumInFirebase(forumId, data) {
+            return database.ref(`forums/${forumId}`).update(data);
+        }
+
+        function getMyForumsCount() {
+            const myUid = currentAuthUser ? currentAuthUser.uid : null;
+            return forums.filter(f => f.creatorUid === myUid).length;
+        }
+
+        function updateForumCounter() {
+            const counterEl = document.getElementById('forumCounter');
+            const createBtn = document.getElementById('createForumBtn');
+            const count = getMyForumsCount();
+            const limitReached = count >= MAX_FORUMS_PER_USER;
+
+            if (counterEl) {
+                counterEl.innerText = `📋 Foros creados: ${count}/${MAX_FORUMS_PER_USER}${limitReached ? ' (límite alcanzado)' : ''}`;
+                counterEl.classList.toggle('limit-reached', limitReached);
+            }
+            if (createBtn) {
+                createBtn.disabled = limitReached;
+            }
+        }
+
+        function createForum() {
+            if (!currentUser || !currentAuthUser) {
+                alert('Debes iniciar sesión');
+                return;
+            }
+            
+            if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
+                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros creados a la vez. Borra uno de los tuyos para crear otro.`);
+                return;
+            }
+
+            const title = document.getElementById('forumTitle').value.trim();
+            const category = document.getElementById('forumCategory').value.trim();
+            const tags = document.getElementById('forumTags').value.trim();
+            const desc = document.getElementById('forumDesc').value.trim();
+
+            if (!title) return;
+
+            const forumData = {
+                creatorUid: currentAuthUser.uid,
+                title: title,
+                category: category || 'GENERAL',
+                tags: tags ? tags.split(',').map(t => t.trim()) : [],
+                desc: desc,
+                creatorHandle: currentUser.username,
+                members: [currentUser.username],
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            saveForumToFirebase(forumData).then(() => {
+                document.getElementById('forumTitle').value = '';
+                document.getElementById('forumCategory').value = '';
+                document.getElementById('forumTags').value = '';
+                document.getElementById('forumDesc').value = '';
+            }).catch(err => {
+                console.error('Error al crear foro:', err);
+                alert('No tienes permiso para crear foros');
+            });
+        }
+
+        function deleteForum(forumId, event) {
+            event.stopPropagation();
+            if (!confirm("¿Seguro que quieres borrar este foro?")) return;
+            
+            deleteForumFromFirebase(forumId).then(() => {
+                posts.filter(p => p.forumId === forumId).forEach(p => {
+                    deletePostFromFirebase(p.id);
+                });
+                if (currentForumId === forumId) showSection('foros');
+                updateContactsFromPosts();
+            }).catch(err => {
+                console.error('Error al borrar foro:', err);
+                alert('No tienes permiso para borrar este foro');
+            });
+        }
+
+        function toggleJoinForum(forumId, event) {
+            event.stopPropagation();
+            const forum = forums.find(f => f.id === forumId);
+            if (!forum) return;
+
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const index = forum.members.indexOf(myHandle);
+
+            if (index === -1) forum.members.push(myHandle);
+            else forum.members.splice(index, 1);
+
+            updateForumInFirebase(forumId, { members: forum.members });
+            if (currentForumId === forumId) openForum(forumId);
+        }
+
+        function getActiveForumMembersCount(forumMembers) {
+            const now = Date.now();
+            let activeCount = 0;
+            if (!forumMembers) return 0;
+            
+            for (let memberHandle of forumMembers) {
+                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) {
+                    activeCount++;
+                }
+            }
+            return activeCount;
+        }
+
+        function renderForums(filteredList) {
+            const container = document.getElementById('forumsList');
+            updateForumCounter();
+            if (!container) return;
+
+            const sourceForums = filteredList || forums;
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+
+            if (sourceForums.length === 0) {
+                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron foros con esa etiqueta.</p>`;
+                return;
+            }
+
+            container.innerHTML = sourceForums.map(f => {
+                const isJoined = f.members && f.members.includes(myHandle);
+                const isCreator = f.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
+                const activeCount = getActiveForumMembersCount(f.members);
+
+                return `
+                <div class="forum-card" onclick="openForum('${f.id}')">
+                    <div class="forum-header-container">
+                        <div>
+                            <div class="forum-category">${f.category}</div>
+                            <div class="forum-title">${f.title}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${f.id}', event)">
+                                ${isJoined ? 'Unido' : 'Unirme'}
+                            </button>
+                            ${isCreator ? `
+                                <button class="btn-delete-forum" onclick="deleteForum('${f.id}', event)">🗑️ Borrar</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="forum-desc">${f.desc}</div>
+                    <div class="forum-tags-container">
+                        ${(f.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                    </div>
+                    <div class="forum-stats-box">
+                        <span>👥 ${(f.members && f.members.length) || 0} Miembro${(f.members && f.members.length) === 1 ? '' : 's'}</span>
+                        <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function openForum(forumId) {
+            currentForumId = forumId;
+            const forum = forums.find(f => f.id === forumId);
+            if (!forum) return;
+
+            const header = document.getElementById('forumHeader');
+            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const isJoined = forum.members && forum.members.includes(myHandle);
+            const isCreator = forum.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
+            const activeCount = getActiveForumMembersCount(forum.members);
+
+            header.innerHTML = `
+                <div class="forum-header-container">
+                    <div>
+                        <div class="forum-category">${forum.category}</div>
+                        <div class="forum-title">${forum.title}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${forum.id}', event)">
+                            ${isJoined ? 'Unido' : 'Unirme'}
+                        </button>
+                        ${isCreator ? `
+                            <button class="btn-delete-forum" onclick="deleteForum('${forum.id}', event)">🗑️ Borrar</button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="forum-desc">${forum.desc}</div>
+                <div class="forum-tags-container">
+                    ${(forum.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
+                </div>
+                <div class="forum-stats-box">
+                    <span>👥 ${(forum.members && forum.members.length) || 0} Miembro${(forum.members && forum.members.length) === 1 ? '' : 's'}</span>
+                    <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
+                </div>
+            `;
+
+            showSection('forumView');
+            renderPosts('forum');
+        }
+
+        // ============================================================
+        // FUNCIONES DE CONTACTOS
+        // ============================================================
+        
+        function loadContacts() {
+            if (!currentUser) return;
+            database.ref(`contacts/${currentUser.uid}`).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    contacts = Object.keys(data);
+                } else {
+                    contacts = [];
+                }
+                updateContactsList();
+            });
+        }
+
+        function addContact() {
+            if (!currentUser || !currentAuthUser) {
+                alert('Debes iniciar sesión');
+                return;
+            }
+            const username = prompt('🔍 Ingresa el @usuario que quieres agregar:');
+            if (!username) return;
+            const cleanUsername = username.startsWith('@') ? username : '@' + username;
+            if (cleanUsername === currentUser.username) {
+                alert('❌ No puedes agregarte a ti mismo');
+                return;
+            }
+            database.ref('usernames').child(cleanUsername).once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const userData = snapshot.val();
+                        const targetUid = userData.uid;
+                        return database.ref(`users/${targetUid}`).once('value')
+                            .then(userSnap => {
+                                if (!userSnap.exists()) {
+                                    alert('❌ Usuario no encontrado');
+                                    return;
+                                }
+                                return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).once('value')
+                                    .then(contactSnap => {
+                                        if (contactSnap.exists()) {
+                                            alert('⚠️ Ya tienes este contacto');
+                                            return;
+                                        }
+                                        return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).set({
+                                            addedAt: firebase.database.ServerValue.TIMESTAMP,
+                                            displayName: userData.displayName || cleanUsername,
+                                            targetUid: targetUid
+                                        }).then(() => {
+                                            alert(`✅ ${cleanUsername} agregado a tus contactos`);
+                                            sendNotification(
+                                                targetUid,
+                                                'friend_request',
+                                                currentAuthUser.uid,
+                                                currentUser.username,
+                                                `${currentUser.username} te ha enviado una solicitud de amistad 🤝`,
+                                                '#social'
+                                            );
+                                            loadContacts();
+                                        });
+                                    });
+                            });
+                    } else {
+                        alert('❌ Usuario no encontrado');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al agregar contacto:', error);
+                    alert('❌ Error al buscar el usuario');
+                });
+        }
+
+        function removeContact(username) {
+            if (!confirm(`¿Eliminar a ${username} de tus contactos?`)) return;
+            database.ref(`contacts/${currentUser.uid}/${username}`).remove()
+                .then(() => {
+                    alert(`✅ ${username} eliminado de tus contactos`);
+                    loadContacts();
+                    if (activeChatContact === username) {
+                        switchChat('RatBot');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al eliminar contacto:', error);
+                    alert('❌ Error al eliminar contacto');
+                });
+        }
+
+        function updateContactsList() {
+            const drawer = document.getElementById('contactsDrawer');
+            if (!drawer) return;
+            const currentContact = activeChatContact;
+            let html = `
+                <div class="contact-item ${'RatBot' === currentContact ? 'active' : ''}" onclick="switchChat('RatBot')">
+                    <span class="active-dot"></span> RatBot
+                </div>
+            `;
+            contacts.forEach(handle => {
+                html += `
+                    <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
+                        <span class="active-dot"></span> ${handle}
+                        <span class="remove-contact" onclick="event.stopPropagation(); removeContact('${handle}')">✕</span>
+                    </div>
+                `;
+            });
+            drawer.innerHTML = html;
         }
 
         // ============================================================
@@ -1532,49 +1995,6 @@
             if (drawer) drawer.classList.toggle('open');
         }
 
-        function openWallpaperPicker() {
-            const grid = document.getElementById('wallpaperGrid');
-            const visibleItems = getVisibleGalleryItems();
-            if (visibleItems.length === 0) {
-                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes en tu Galería. ¡Sube alguna primero! 🖼️</p>`;
-            } else {
-                grid.innerHTML = `
-                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
-                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}
-                `;
-            }
-            document.getElementById('wallpaperModal').style.display = 'flex';
-        }
-
-        function closeWallpaperPicker() {
-            document.getElementById('wallpaperModal').style.display = 'none';
-        }
-
-        function selectWallpaper(src) {
-            chatWallpapers[activeChatContact] = src;
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function removeWallpaper() {
-            delete chatWallpapers[activeChatContact];
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function applyChatWallpaper() {
-            const chatMain = document.getElementById('chatMain');
-            if (!chatMain) return;
-            const wallpaper = chatWallpapers[activeChatContact];
-            if (wallpaper) {
-                chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
-            } else {
-                chatMain.style.backgroundImage = 'none';
-            }
-        }
-
         function renderChat() {
             const container = document.getElementById('chatMessages');
             if (!container) return;
@@ -1658,513 +2078,6 @@
             setTimeout(() => {
                 container.scrollTop = container.scrollHeight;
             }, 50);
-        }
-
-        // ============================================================
-        // FUNCIONES DE POSTS
-        // ============================================================
-        
-        function createPost(target) {
-            if (!currentUser || !currentAuthUser) {
-                alert('Debes iniciar sesión primero');
-                return;
-            }
-            
-            const isForum = target === 'forum';
-            const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
-            const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
-            const userText = textInput.value.trim();
-
-            if (userText === "" && fileInput.files.length === 0) {
-                alert('Escribe algo o adjunta un archivo');
-                return;
-            }
-
-            const postData = {
-                authorUid: currentAuthUser.uid,
-                authorName: currentUser.displayName,
-                authorHandle: currentUser.username,
-                avatar: currentUser.avatar || '',
-                text: userText,
-                mediaSrc: null,
-                mediaType: null,
-                forumId: isForum ? currentForumId : null,
-                likedBy: [],
-                replies: [],
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    postData.mediaSrc = e.target.result;
-                    postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                    savePostToFirebase(postData).then(() => {
-                        textInput.value = '';
-                        fileInput.value = '';
-                    }).catch(err => {
-                        console.error('Error al guardar post:', err);
-                        alert('No tienes permiso para publicar');
-                    });
-                };
-                reader.readAsDataURL(file);
-            } else {
-                savePostToFirebase(postData).then(() => {
-                    textInput.value = '';
-                    fileInput.value = '';
-                }).catch(err => {
-                    console.error('Error al guardar post:', err);
-                    alert('No tienes permiso para publicar');
-                });
-            }
-        }
-
-        function renderPosts(target) {
-            const isForum = target === 'forum';
-            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
-            if (!listContainer) return;
-
-            const filteredPosts = isForum 
-                ? posts.filter(p => p.forumId === currentForumId)
-                : posts;
-
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-
-            if (filteredPosts.length === 0) {
-                listContainer.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún. ¡Sé el primero en publicar!</p>`;
-                return;
-            }
-
-            listContainer.innerHTML = filteredPosts.map(post => {
-                const isLiked = post.likedBy && post.likedBy.includes(myHandle);
-                const isMyPost = currentAuthUser && post.authorUid === currentAuthUser.uid;
-                const isRepliesOpen = !!openRepliesBoxes[post.id];
-                const replyCount = (post.replies && post.replies.length) || 0;
-                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${replyCount === 0 ? 'Comentar' : replyCount + ' comentarios'}`;
-
-                return `
-                <div class="post-card">
-                    <img class="avatar-circle" src="${post.avatar || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23ccc\'/></svg>'}">
-                    <div class="post-bubble">
-                        <div class="post-header">
-                            <span class="post-author">${post.authorName} (${post.authorHandle}) ${post.forumId ? '🧀' : ''}</span>
-                            ${isMyPost ? `
-                                <button class="post-options-btn" onclick="toggleMenu('${post.id}')">⋮</button>
-                                <div id="menu-${post.id}" class="options-menu">
-                                    <button onclick="deletePost('${post.id}', '${target}')">🗑️ Borrar</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="post-content">${post.text}</div>
-
-                        ${post.mediaSrc ? (
-                            post.mediaType === 'image' 
-                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
-                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`
-                        ) : ''}
-
-                        <div class="post-actions">
-                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}', '${target}')">
-                                🐾 ${(post.likedBy && post.likedBy.length) || 0}
-                            </span>
-                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies('${post.id}')">
-                                ${replyBtnLabel}
-                            </span>
-                        </div>
-
-                        <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
-                            ${(post.replies || []).map((r, index) => `
-                                <div class="reply-item">
-                                    <div class="reply-header">
-                                        <div class="reply-user-info">
-                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
-                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
-                                        </div>
-                                        <div class="reply-actions-right">
-                                            <span class="reply-action-btn" onclick="setReplyTarget('${post.id}', '${r.authorHandle}')">Responder</span>
-                                            ${(currentAuthUser && r.authorUid === currentAuthUser.uid) ? `
-                                                <button class="delete-comment-btn" onclick="deleteComment('${post.id}', ${index}, '${target}')">🗑️</button>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                    <div>${r.text}</div>
-                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
-                                </div>
-                            `).join('')}
-
-                            <div class="reply-input-wrapper">
-                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
-                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
-                                    <span style="cursor:pointer;" onclick="clearReplyTarget('${post.id}')">✕</span>
-                                </div>
-                                <div class="reply-input-row">
-                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply('${post.id}', '${target}')">
-                                    <label class="file-label">
-                                        📷
-                                        <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
-                                    </label>
-                                    <button class="btn-publish" onclick="addReply('${post.id}', '${target}')">Enviar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        function toggleLike(postId, target) {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
-            
-            if (!post.likedBy) post.likedBy = [];
-            const index = post.likedBy.indexOf(myHandle);
-
-            if (index === -1) {
-                post.likedBy.push(myHandle);
-            } else {
-                post.likedBy.splice(index, 1);
-            }
-
-            updatePostInFirebase(postId, { likedBy: post.likedBy })
-                .then(() => {
-                    renderPosts(target);
-                    // Enviar notificación si es like y no es mi propio post
-                    if (!wasLiked && post.authorUid !== currentAuthUser.uid) {
-                        sendNotification(
-                            post.authorUid,
-                            'post_like',
-                            currentAuthUser.uid,
-                            currentUser.username,
-                            `${currentUser.username} le dio like a tu publicación 🐾`,
-                            '#menu'
-                        );
-                    }
-                })
-                .catch(err => console.error('Error al actualizar like:', err));
-        }
-
-        function toggleMenu(postId) {
-            const menu = document.getElementById(`menu-${postId}`);
-            if (menu) {
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            }
-        }
-
-        function deletePost(postId, target) {
-            if (!confirm('¿Borrar esta publicación?')) return;
-            deletePostFromFirebase(postId)
-                .then(() => updateContactsFromPosts())
-                .catch(err => {
-                    console.error('Error al borrar post:', err);
-                    alert('No tienes permiso para borrar este post');
-                });
-        }
-
-        function toggleReplies(postId) {
-            openRepliesBoxes[postId] = !openRepliesBoxes[postId];
-            const box = document.getElementById(`replies-${postId}`);
-            const btnText = document.getElementById(`reply-btn-text-${postId}`);
-            
-            if (box) {
-                box.classList.toggle('open', openRepliesBoxes[postId]);
-            }
-            if (btnText) {
-                const post = posts.find(p => p.id === postId);
-                const count = post && post.replies ? post.replies.length : 0;
-                btnText.innerText = openRepliesBoxes[postId] ? `💬 Ocultar comentarios` : `💬 ${count === 0 ? 'Comentar' : count + ' comentarios'}`;
-            }
-        }
-
-        function setReplyTarget(postId, authorHandle) {
-            activeReplyTargets[postId] = authorHandle;
-            const indicator = document.getElementById(`target-indicator-${postId}`);
-            const textSpan = document.getElementById(`target-text-${postId}`);
-            if (indicator && textSpan) {
-                textSpan.innerText = `Respondiendo a ${authorHandle}`;
-                indicator.classList.add('active');
-            }
-        }
-
-        function clearReplyTarget(postId) {
-            delete activeReplyTargets[postId];
-            const indicator = document.getElementById(`target-indicator-${postId}`);
-            if (indicator) indicator.classList.remove('active');
-        }
-
-        function addReply(postId, target) {
-            const input = document.getElementById(`reply-input-${postId}`);
-            const mediaInput = document.getElementById(`reply-media-${postId}`);
-            const text = input.value.trim();
-            const file = mediaInput ? mediaInput.files[0] : null;
-
-            if (text === "" && !file) return;
-
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const replyTarget = activeReplyTargets[postId] || null;
-
-            const replyData = {
-                id: Date.now(),
-                authorUid: currentAuthUser ? currentAuthUser.uid : 'anonymous',
-                authorName: currentUser ? currentUser.displayName : 'Wilhelm Reyes',
-                authorHandle: currentUser ? currentUser.username : '@ScottWilh',
-                replyTo: replyTarget,
-                text: text,
-                mediaSrc: null
-            };
-
-            openRepliesBoxes[postId] = true;
-
-            const processReply = () => {
-                post.replies = post.replies || [];
-                post.replies.push(replyData);
-                updatePostInFirebase(postId, { replies: post.replies })
-                    .then(() => {
-                        clearReplyTarget(postId);
-                        if (mediaInput) mediaInput.value = '';
-                        renderPosts(target);
-                        updateContactsFromPosts();
-                        // Enviar notificación al autor del post
-                        if (post.authorUid !== currentAuthUser.uid) {
-                            sendNotification(
-                                post.authorUid,
-                                'post_reply',
-                                currentAuthUser.uid,
-                                currentUser.username,
-                                `${currentUser.username} comentó tu publicación: "${post.text.slice(0, 30)}..."`,
-                                '#menu'
-                            );
-                        }
-                    })
-                    .catch(err => console.error('Error al añadir reply:', err));
-            };
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    replyData.mediaSrc = e.target.result;
-                    processReply();
-                };
-                reader.readAsDataURL(file);
-            } else {
-                processReply();
-            }
-        }
-
-        function deleteComment(postId, commentIndex, target) {
-            const post = posts.find(p => p.id === postId);
-            if (post && post.replies) {
-                post.replies.splice(commentIndex, 1);
-                updatePostInFirebase(postId, { replies: post.replies })
-                    .then(() => {
-                        openRepliesBoxes[postId] = true;
-                        renderPosts(target);
-                        updateContactsFromPosts();
-                    })
-                    .catch(err => console.error('Error al borrar comentario:', err));
-            }
-        }
-
-        // ============================================================
-        // FUNCIONES DE FOROS
-        // ============================================================
-        
-        function getMyForumsCount() {
-            const myUid = currentAuthUser ? currentAuthUser.uid : null;
-            return forums.filter(f => f.creatorUid === myUid).length;
-        }
-
-        function updateForumCounter() {
-            const counterEl = document.getElementById('forumCounter');
-            const createBtn = document.getElementById('createForumBtn');
-            const count = getMyForumsCount();
-            const limitReached = count >= MAX_FORUMS_PER_USER;
-
-            if (counterEl) {
-                counterEl.innerText = `📋 Foros creados: ${count}/${MAX_FORUMS_PER_USER}${limitReached ? ' (límite alcanzado)' : ''}`;
-                counterEl.classList.toggle('limit-reached', limitReached);
-            }
-            if (createBtn) {
-                createBtn.disabled = limitReached;
-            }
-        }
-
-        function createForum() {
-            if (!currentUser || !currentAuthUser) {
-                alert('Debes iniciar sesión');
-                return;
-            }
-            
-            if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
-                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros creados a la vez. Borra uno de los tuyos para crear otro.`);
-                return;
-            }
-
-            const title = document.getElementById('forumTitle').value.trim();
-            const category = document.getElementById('forumCategory').value.trim();
-            const tags = document.getElementById('forumTags').value.trim();
-            const desc = document.getElementById('forumDesc').value.trim();
-
-            if (!title) return;
-
-            const forumData = {
-                creatorUid: currentAuthUser.uid,
-                title: title,
-                category: category || 'GENERAL',
-                tags: tags ? tags.split(',').map(t => t.trim()) : [],
-                desc: desc,
-                creatorHandle: currentUser.username,
-                members: [currentUser.username],
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            saveForumToFirebase(forumData).then(() => {
-                document.getElementById('forumTitle').value = '';
-                document.getElementById('forumCategory').value = '';
-                document.getElementById('forumTags').value = '';
-                document.getElementById('forumDesc').value = '';
-            }).catch(err => {
-                console.error('Error al crear foro:', err);
-                alert('No tienes permiso para crear foros');
-            });
-        }
-
-        function deleteForum(forumId, event) {
-            event.stopPropagation();
-            if (!confirm("¿Seguro que quieres borrar este foro?")) return;
-            
-            deleteForumFromFirebase(forumId).then(() => {
-                posts.filter(p => p.forumId === forumId).forEach(p => {
-                    deletePostFromFirebase(p.id);
-                });
-                if (currentForumId === forumId) showSection('foros');
-                updateContactsFromPosts();
-            }).catch(err => {
-                console.error('Error al borrar foro:', err);
-                alert('No tienes permiso para borrar este foro');
-            });
-        }
-
-        function toggleJoinForum(forumId, event) {
-            event.stopPropagation();
-            const forum = forums.find(f => f.id === forumId);
-            if (!forum) return;
-
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const index = forum.members.indexOf(myHandle);
-
-            if (index === -1) forum.members.push(myHandle);
-            else forum.members.splice(index, 1);
-
-            updateForumInFirebase(forumId, { members: forum.members });
-            if (currentForumId === forumId) openForum(forumId);
-        }
-
-        function getActiveForumMembersCount(forumMembers) {
-            const now = Date.now();
-            let activeCount = 0;
-            if (!forumMembers) return 0;
-            
-            for (let memberHandle of forumMembers) {
-                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) {
-                    activeCount++;
-                }
-            }
-            return activeCount;
-        }
-
-        function renderForums(filteredList) {
-            const container = document.getElementById('forumsList');
-            updateForumCounter();
-            if (!container) return;
-
-            const sourceForums = filteredList || forums;
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-
-            if (sourceForums.length === 0) {
-                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron foros con esa etiqueta.</p>`;
-                return;
-            }
-
-            container.innerHTML = sourceForums.map(f => {
-                const isJoined = f.members && f.members.includes(myHandle);
-                const isCreator = f.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
-                const activeCount = getActiveForumMembersCount(f.members);
-
-                return `
-                <div class="forum-card" onclick="openForum('${f.id}')">
-                    <div class="forum-header-container">
-                        <div>
-                            <div class="forum-category">${f.category}</div>
-                            <div class="forum-title">${f.title}</div>
-                        </div>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${f.id}', event)">
-                                ${isJoined ? 'Unido' : 'Unirme'}
-                            </button>
-                            ${isCreator ? `
-                                <button class="btn-delete-forum" onclick="deleteForum('${f.id}', event)">🗑️ Borrar</button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <div class="forum-desc">${f.desc}</div>
-                    <div class="forum-tags-container">
-                        ${(f.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
-                    </div>
-                    <div class="forum-stats-box">
-                        <span>👥 ${(f.members && f.members.length) || 0} Miembro${(f.members && f.members.length) === 1 ? '' : 's'}</span>
-                        <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        function openForum(forumId) {
-            currentForumId = forumId;
-            const forum = forums.find(f => f.id === forumId);
-            if (!forum) return;
-
-            const header = document.getElementById('forumHeader');
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const isJoined = forum.members && forum.members.includes(myHandle);
-            const isCreator = forum.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
-            const activeCount = getActiveForumMembersCount(forum.members);
-
-            header.innerHTML = `
-                <div class="forum-header-container">
-                    <div>
-                        <div class="forum-category">${forum.category}</div>
-                        <div class="forum-title">${forum.title}</div>
-                    </div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${forum.id}', event)">
-                            ${isJoined ? 'Unido' : 'Unirme'}
-                        </button>
-                        ${isCreator ? `
-                            <button class="btn-delete-forum" onclick="deleteForum('${forum.id}', event)">🗑️ Borrar</button>
-                        ` : ''}
-                    </div>
-                </div>
-                <div class="forum-desc">${forum.desc}</div>
-                <div class="forum-tags-container">
-                    ${(forum.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}
-                </div>
-                <div class="forum-stats-box">
-                    <span>👥 ${(forum.members && forum.members.length) || 0} Miembro${(forum.members && forum.members.length) === 1 ? '' : 's'}</span>
-                    <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
-                </div>
-            `;
-
-            showSection('forumView');
-            renderPosts('forum');
         }
 
         // ============================================================
@@ -2269,6 +2182,49 @@
 
             localStorage.setItem('ratweb_gallery', JSON.stringify(gallery));
             renderGallery();
+        }
+
+        function openWallpaperPicker() {
+            const grid = document.getElementById('wallpaperGrid');
+            const visibleItems = getVisibleGalleryItems();
+            if (visibleItems.length === 0) {
+                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes en tu Galería. ¡Sube alguna primero! 🖼️</p>`;
+            } else {
+                grid.innerHTML = `
+                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
+                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}
+                `;
+            }
+            document.getElementById('wallpaperModal').style.display = 'flex';
+        }
+
+        function closeWallpaperPicker() {
+            document.getElementById('wallpaperModal').style.display = 'none';
+        }
+
+        function selectWallpaper(src) {
+            chatWallpapers[activeChatContact] = src;
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function removeWallpaper() {
+            delete chatWallpapers[activeChatContact];
+            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
+            applyChatWallpaper();
+            closeWallpaperPicker();
+        }
+
+        function applyChatWallpaper() {
+            const chatMain = document.getElementById('chatMain');
+            if (!chatMain) return;
+            const wallpaper = chatWallpapers[activeChatContact];
+            if (wallpaper) {
+                chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
+            } else {
+                chatMain.style.backgroundImage = 'none';
+            }
         }
 
         // ============================================================
@@ -2460,6 +2416,26 @@
             loadContacts();
         }
 
+        function logoutUser() {
+            if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
+            Object.values(chatListeners).forEach(unsub => unsub());
+            chatListeners = {};
+            if (notificationListener) {
+                notificationListener();
+                notificationListener = null;
+            }
+            auth.signOut().then(() => {
+                currentUser = null;
+                currentAuthUser = null;
+                localStorage.removeItem('ratweb_user');
+                document.getElementById('authOverlay').style.display = 'flex';
+                document.getElementById('authOverlay').style.position = 'fixed';
+            }).catch(err => {
+                console.error('Error al cerrar sesión:', err);
+                alert('Error al cerrar sesión');
+            });
+        }
+
         // ============================================================
         // FUNCIONES DE MODAL Y BÚSQUEDA
         // ============================================================
@@ -2538,76 +2514,64 @@
         window.onload = function() {
             console.log('🔥 Iniciando RatWeb...');
             
-            const savedUser = localStorage.getItem('ratweb_user');
-            
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
-                    console.log('📦 Usuario guardado encontrado:', currentUser.username);
+            // Escuchar cambios de autenticación
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    console.log('✅ Usuario autenticado:', user.uid);
+                    currentAuthUser = user;
                     
-                    auth.onAuthStateChanged((user) => {
-                        if (user) {
-                            console.log('✅ Usuario autenticado:', user.uid);
-                            currentAuthUser = user;
-                            
-                            database.ref(`users/${user.uid}`).once('value')
-                                .then(snapshot => {
-                                    if (snapshot.exists()) {
-                                        const userData = snapshot.val();
-                                        currentUser = { ...userData, uid: user.uid };
-                                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                                        
-                                        document.getElementById('authOverlay').style.display = 'none';
-                                        document.getElementById('headerAvatar').src = currentUser.avatar || '';
-                                        
-                                        loadPostsFromFirebase();
-                                        loadForumsFromFirebase();
-                                        loadContacts();
-                                        renderGallery();
-                                        pingUserPresence();
-                                        listenNotifications();
-                                        
-                                        const initialChatId = getChatId(currentUser.username, 'RatBot');
-                                        loadChatMessages(initialChatId);
-                                        
-                                        setTimeout(() => {
-                                            renderProfile();
-                                            console.log('👤 Perfil renderizado');
-                                        }, 500);
-                                    } else {
-                                        console.warn('⚠️ Usuario autenticado pero no registrado');
-                                        auth.signOut();
-                                        localStorage.removeItem('ratweb_user');
-                                        document.getElementById('authOverlay').style.display = 'flex';
-                                    }
-                                });
-                        } else {
-                            console.warn('⚠️ No hay usuario autenticado, mostrando login');
+                    // Buscar datos del usuario en la base de datos
+                    database.ref(`users/${user.uid}`).once('value')
+                        .then(snapshot => {
+                            if (snapshot.exists()) {
+                                const userData = snapshot.val();
+                                currentUser = { ...userData, uid: user.uid };
+                                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                                
+                                // Ocultar overlay de login
+                                document.getElementById('authOverlay').style.display = 'none';
+                                document.getElementById('headerAvatar').src = currentUser.avatar || '';
+                                
+                                // Cargar datos
+                                loadPostsFromFirebase();
+                                loadForumsFromFirebase();
+                                loadContacts();
+                                renderGallery();
+                                pingUserPresence();
+                                listenNotifications();
+                                
+                                const initialChatId = getChatId(currentUser.username, 'RatBot');
+                                loadChatMessages(initialChatId);
+                                
+                                setTimeout(() => {
+                                    renderProfile();
+                                    console.log('👤 Perfil renderizado');
+                                }, 500);
+                            } else {
+                                console.warn('⚠️ Usuario autenticado pero no registrado');
+                                auth.signOut();
+                                localStorage.removeItem('ratweb_user');
+                                document.getElementById('authOverlay').style.display = 'flex';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error al cargar usuario:', err);
                             document.getElementById('authOverlay').style.display = 'flex';
-                            localStorage.removeItem('ratweb_user');
-                            currentUser = null;
-                            currentAuthUser = null;
-                        }
-                    });
-                    
-                } catch (e) {
-                    console.error('❌ Error al cargar usuario:', e);
+                        });
+                } else {
+                    console.warn('⚠️ No hay usuario autenticado, mostrando login');
                     document.getElementById('authOverlay').style.display = 'flex';
                     localStorage.removeItem('ratweb_user');
+                    currentUser = null;
+                    currentAuthUser = null;
                 }
-            } else {
-                console.log('👤 No hay usuario guardado, mostrando login');
-                document.getElementById('authOverlay').style.display = 'flex';
-            }
+            });
             
             updateMuteButtonUI();
             applyChatWallpaper();
             
             console.log('✅ RatWeb iniciado correctamente');
         };
-
-        console.log('🔥 RatWeb con Firebase sincronizado y SEGURO');
-        console.log('📱 App ID:', firebaseConfig.appId);
     </script>
 </body>
     </html>
