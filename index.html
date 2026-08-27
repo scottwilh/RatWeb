@@ -25,8 +25,10 @@
         .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; }
         .error-msg { color: #e74c3c; font-size: 12px; text-align: center; min-height: 20px; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
         .error-msg.show { display: block; }
-        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; margin-top: 10px; }
-        .btn-delete-account:hover { background-color: #c0392b; }
+        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; transition: all 0.3s; }
+        .btn-delete-account:hover { background-color: #c0392b; transform: scale(1.02); }
+        .btn-add-friend { background-color: #4a7c59; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
+        .btn-add-friend:hover { background-color: #3a6a49; }
         header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
         .logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
         .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
@@ -127,10 +129,11 @@
         .chat-search-bar { display: none; padding: 6px; border-bottom: 2px solid #000; background: #fff; flex-shrink: 0; }
         .chat-search-bar.open { display: block; }
         .chat-search-bar input { width: 100%; border: 1.5px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; outline: none; font-family: inherit; }
-        .contacts-drawer { display: none; background: #f1f3f4; border-bottom: 2px solid #000; max-height: 120px; overflow-y: auto; flex-shrink: 0; }
+        .contacts-drawer { display: none; background: #f1f3f4; border-bottom: 2px solid #000; max-height: 150px; overflow-y: auto; flex-shrink: 0; }
         .contacts-drawer.open { display: block; }
         .contact-item { padding: 8px 12px; border-bottom: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px; }
         .contact-item.active { background: #ffd8df; }
+        .contact-item .remove-contact { margin-left: auto; color: #e74c3c; font-size: 14px; cursor: pointer; }
         .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff6f8; overflow: hidden; min-height: 0; background-size: cover; background-position: center; }
         .chat-messages { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
         .msg-row { display: flex; flex-direction: column; max-width: 85%; }
@@ -174,7 +177,12 @@
         .wallpaper-thumb { width: 100%; height: 70px; object-fit: cover; border: 2px solid #000; border-radius: 6px; cursor: pointer; }
         .wallpaper-none-thumb { width: 100%; height: 70px; border: 2px dashed #000; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; background: #f5f5f5; }
         .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
-        .modal-viewer img, .modal-viewer video { max-width: 90%; max-height: 80%; border-radius: 8px; }
+        .modal-viewer img, .modal-viewer video { 
+            max-width: 95vw; 
+            max-height: 90vh; 
+            border-radius: 8px; 
+            object-fit: contain; 
+        }
         .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
@@ -302,6 +310,7 @@
                     <div class="chat-toggle-bar">
                         <span>💬 Chat con: <strong id="chatWithUser">@RatBot</strong></span>
                         <div class="chat-toggle-actions">
+                            <button class="chat-icon-btn" onclick="addContact()" title="Agregar amigo">➕</button>
                             <button class="chat-icon-btn" id="searchToggleBtn" onclick="toggleChatSearch()" title="Buscar">🔍</button>
                             <button class="chat-icon-btn" id="muteToggleBtn" onclick="toggleMuteContact()" title="Silenciar">🔔</button>
                             <button class="chat-icon-btn" onclick="openWallpaperPicker()" title="Fondo">🖼️</button>
@@ -315,7 +324,7 @@
 
                     <div id="contactsDrawer" class="contacts-drawer">
                         <div class="contact-item active" onclick="switchChat('RatBot')">
-                            <span class="active-dot"></span> @RatBot
+                            <span class="active-dot"></span> RatBot
                         </div>
                     </div>
 
@@ -441,6 +450,7 @@
         // VARIABLES GLOBALES
         // ==========================================
         let currentUser = null;
+        let currentAuthUser = null;
         let chatListeners = {};
         let chatId = '';
         let activeChatContact = 'RatBot';
@@ -463,7 +473,7 @@
         let isRecording = false;
         let chatReplyTargets = {};
         let isRegistering = false;
-        let currentAuthUser = null;
+        let contacts = [];
 
         const NAME_COOLDOWN_DAYS = 15;
         const USERNAME_COOLDOWN_DAYS = 30;
@@ -473,10 +483,9 @@
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ==========================================
-        // FUNCIONES DE FIREBASE CON SEGURIDAD
+        // FUNCIONES DE FIREBASE
         // ==========================================
         
-        // Cargar posts en tiempo real
         function loadPostsFromFirebase() {
             const postsRef = database.ref('posts');
             postsRef.on('value', (snapshot) => {
@@ -491,7 +500,6 @@
                 } else {
                     posts = [];
                 }
-                
                 renderPostsBasedOnActiveSection();
                 updateContactsFromPosts();
                 if (document.getElementById('perfil').classList.contains('active')) {
@@ -509,28 +517,23 @@
             }
         }
 
-        // Guardar post en Firebase con seguridad
         function savePostToFirebase(postData) {
             const postsRef = database.ref('posts');
             const newPostRef = postsRef.push();
-            
             return newPostRef.set({
                 ...postData,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         }
 
-        // Eliminar post de Firebase
         function deletePostFromFirebase(postId) {
             return database.ref(`posts/${postId}`).remove();
         }
 
-        // Actualizar post en Firebase
         function updatePostInFirebase(postId, data) {
             return database.ref(`posts/${postId}`).update(data);
         }
 
-        // Cargar foros en tiempo real
         function loadForumsFromFirebase() {
             const forumsRef = database.ref('forums');
             forumsRef.on('value', (snapshot) => {
@@ -552,29 +555,130 @@
             });
         }
 
-        // Guardar foro en Firebase con seguridad
         function saveForumToFirebase(forumData) {
             const forumsRef = database.ref('forums');
             const newForumRef = forumsRef.push();
-            
             return newForumRef.set({
                 ...forumData,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         }
 
-        // Eliminar foro de Firebase
         function deleteForumFromFirebase(forumId) {
             return database.ref(`forums/${forumId}`).remove();
         }
 
-        // Actualizar foro en Firebase
         function updateForumInFirebase(forumId, data) {
             return database.ref(`forums/${forumId}`).update(data);
         }
 
         // ==========================================
-        // REGISTRO DE USUARIO CON SEGURIDAD
+        // FUNCIONES DE CONTACTOS / AMIGOS
+        // ==========================================
+        
+        function loadContacts() {
+            if (!currentUser) return;
+            
+            database.ref(`contacts/${currentUser.uid}`).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    contacts = Object.keys(data);
+                } else {
+                    contacts = [];
+                }
+                updateContactsList();
+            });
+        }
+
+        function addContact() {
+            if (!currentUser) {
+                alert('Debes iniciar sesión');
+                return;
+            }
+            
+            const username = prompt('🔍 Ingresa el @usuario que quieres agregar:');
+            if (!username) return;
+            
+            const cleanUsername = username.startsWith('@') ? username : '@' + username;
+            
+            if (cleanUsername === currentUser.username) {
+                alert('❌ No puedes agregarte a ti mismo');
+                return;
+            }
+            
+            // Verificar que el usuario existe
+            database.ref('usernames').child(cleanUsername).once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        // Verificar si ya es contacto
+                        return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).once('value')
+                            .then(contactSnap => {
+                                if (contactSnap.exists()) {
+                                    alert('⚠️ Ya tienes este contacto');
+                                    return;
+                                }
+                                // Agregar contacto
+                                return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).set({
+                                    addedAt: firebase.database.ServerValue.TIMESTAMP,
+                                    displayName: snapshot.val().displayName || cleanUsername
+                                }).then(() => {
+                                    alert(`✅ ${cleanUsername} agregado a tus contactos`);
+                                    loadContacts();
+                                });
+                            });
+                    } else {
+                        alert('❌ Usuario no encontrado');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al agregar contacto:', error);
+                    alert('❌ Error al buscar el usuario');
+                });
+        }
+
+        function removeContact(username) {
+            if (!confirm(`¿Eliminar a ${username} de tus contactos?`)) return;
+            
+            database.ref(`contacts/${currentUser.uid}/${username}`).remove()
+                .then(() => {
+                    alert(`✅ ${username} eliminado de tus contactos`);
+                    loadContacts();
+                    if (activeChatContact === username) {
+                        switchChat('RatBot');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al eliminar contacto:', error);
+                    alert('❌ Error al eliminar contacto');
+                });
+        }
+
+        function updateContactsList() {
+            const drawer = document.getElementById('contactsDrawer');
+            if (!drawer) return;
+            
+            const currentContact = activeChatContact;
+            
+            let html = `
+                <div class="contact-item ${'RatBot' === currentContact ? 'active' : ''}" onclick="switchChat('RatBot')">
+                    <span class="active-dot"></span> RatBot
+                </div>
+            `;
+            
+            contacts.forEach(handle => {
+                html += `
+                    <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
+                        <span class="active-dot"></span> ${handle}
+                        <span class="remove-contact" onclick="event.stopPropagation(); removeContact('${handle}')">✕</span>
+                    </div>
+                `;
+            });
+            
+            drawer.innerHTML = html;
+        }
+
+        // ==========================================
+        // REGISTRO DE USUARIO
         // ==========================================
         
         function previewAvatar(event) {
@@ -592,7 +696,12 @@
         async function checkUsernameAvailability(username) {
             try {
                 const snapshot = await database.ref('usernames').child(username).once('value');
-                return !snapshot.exists();
+                if (snapshot.exists()) return false;
+                
+                const usersSnapshot = await database.ref('users').orderByChild('username').equalTo(username).once('value');
+                if (usersSnapshot.exists()) return false;
+                
+                return true;
             } catch (error) {
                 console.error('Error al verificar username:', error);
                 return false;
@@ -633,7 +742,6 @@
             registerBtn.textContent = 'Verificando...';
             
             try {
-                // Verificar username disponible
                 const isAvailable = await checkUsernameAvailability(username);
                 
                 if (!isAvailable) {
@@ -645,10 +753,11 @@
                     return;
                 }
                 
-                // Autenticar anónimamente
-                const userCredential = await auth.signInAnonymously();
-                const authUser = userCredential.user;
-                currentAuthUser = authUser;
+                let authUser = auth.currentUser;
+                if (!authUser) {
+                    const userCredential = await auth.signInAnonymously();
+                    authUser = userCredential.user;
+                }
                 
                 const userData = {
                     uid: authUser.uid,
@@ -662,33 +771,42 @@
                     avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
                 };
                 
-                // Guardar en Firebase
-                await Promise.all([
-                    database.ref(`users/${authUser.uid}`).set(userData),
-                    database.ref(`usernames/${username}`).set({ 
-                        uid: authUser.uid, 
-                        displayName: displayName 
-                    })
-                ]);
+                await database.ref(`users/${authUser.uid}`).set(userData);
+                await database.ref(`usernames/${username}`).set({ 
+                    uid: authUser.uid, 
+                    displayName: displayName 
+                });
                 
                 currentUser = userData;
+                currentAuthUser = authUser;
                 localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                
                 document.getElementById('headerAvatar').src = currentUser.avatar;
                 document.getElementById('authOverlay').style.display = 'none';
                 
-                // Inicializar
                 loadPostsFromFirebase();
                 loadForumsFromFirebase();
+                loadContacts();
                 renderGallery();
                 pingUserPresence();
                 
                 const initialChatId = getChatId(currentUser.username, 'RatBot');
                 loadChatMessages(initialChatId);
                 
+                setTimeout(() => renderProfile(), 500);
+                
             } catch (error) {
                 console.error('Error al registrar:', error);
-                errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
+                errorEl.textContent = `❌ Error al registrarse: ${error.message}`;
                 errorEl.classList.add('show');
+                
+                if (auth.currentUser) {
+                    try {
+                        await auth.currentUser.delete();
+                    } catch (e) {
+                        console.error('Error al limpiar auth:', e);
+                    }
+                }
             } finally {
                 isRegistering = false;
                 registerBtn.disabled = false;
@@ -697,7 +815,7 @@
         }
 
         // ==========================================
-        // ELIMINAR CUENTA COMPLETA
+        // ELIMINAR CUENTA
         // ==========================================
         
         async function deleteAccount() {
@@ -706,7 +824,6 @@
                 return;
             }
 
-            // Confirmación doble para evitar eliminaciones accidentales
             const confirm1 = confirm('⚠️ ¿Estás seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.');
             if (!confirm1) return;
 
@@ -717,11 +834,8 @@
                 const userUid = currentUser.uid;
                 const username = currentUser.username;
 
-                // 1. Eliminar todos los posts del usuario
-                const postsRef = database.ref('posts');
-                const postsSnapshot = await postsRef.orderByChild('authorUid').equalTo(userUid).once('value');
+                const postsSnapshot = await database.ref('posts').orderByChild('authorUid').equalTo(userUid).once('value');
                 const userPosts = postsSnapshot.val();
-                
                 if (userPosts) {
                     const deletePromises = Object.keys(userPosts).map(postId => 
                         database.ref(`posts/${postId}`).remove()
@@ -729,11 +843,8 @@
                     await Promise.all(deletePromises);
                 }
 
-                // 2. Eliminar todos los foros creados por el usuario
-                const forumsRef = database.ref('forums');
-                const forumsSnapshot = await forumsRef.orderByChild('creatorUid').equalTo(userUid).once('value');
+                const forumsSnapshot = await database.ref('forums').orderByChild('creatorUid').equalTo(userUid).once('value');
                 const userForums = forumsSnapshot.val();
-                
                 if (userForums) {
                     const deletePromises = Object.keys(userForums).map(forumId => 
                         database.ref(`forums/${forumId}`).remove()
@@ -741,26 +852,23 @@
                     await Promise.all(deletePromises);
                 }
 
-                // 3. Eliminar username del registro
                 if (username) {
                     await database.ref(`usernames/${username}`).remove();
                 }
 
-                // 4. Eliminar usuario de la base de datos
                 await database.ref(`users/${userUid}`).remove();
+                await database.ref(`contacts/${userUid}`).remove();
 
-                // 5. Eliminar datos del localStorage
                 localStorage.removeItem('ratweb_user');
                 localStorage.removeItem('ratweb_gallery');
                 localStorage.removeItem('ratweb_chats');
                 
-                // 6. Eliminar usuario de Firebase Auth
                 await currentAuthUser.delete();
 
-                // 7. Redirigir al login
                 alert('✅ Cuenta eliminada correctamente');
                 currentUser = null;
                 currentAuthUser = null;
+                
                 document.getElementById('authOverlay').style.display = 'flex';
                 document.getElementById('authOverlay').style.position = 'fixed';
                 document.getElementById('authOverlay').style.top = '0';
@@ -769,12 +877,10 @@
                 document.getElementById('authOverlay').style.height = '100vh';
                 document.getElementById('authOverlay').style.zIndex = '10000';
                 
-                // Recargar la página para limpiar todo
                 window.location.reload();
 
             } catch (error) {
                 console.error('Error al eliminar cuenta:', error);
-                // Si el error es porque el usuario necesita re-autenticarse
                 if (error.code === 'auth/requires-recent-login') {
                     alert('Por seguridad, necesitas iniciar sesión nuevamente para eliminar tu cuenta.');
                     await auth.signOut();
@@ -786,7 +892,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE CHAT CON SEGURIDAD
+        // FUNCIONES DE CHAT
         // ==========================================
         
         function getChatId(user1, user2) {
@@ -1280,7 +1386,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE POSTS CON SEGURIDAD
+        // FUNCIONES DE POSTS
         // ==========================================
         
         function createPost(target) {
@@ -1566,7 +1672,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE FOROS CON SEGURIDAD
+        // FUNCIONES DE FOROS
         // ==========================================
         
         function getMyForumsCount() {
@@ -2045,31 +2151,11 @@
         }
 
         function updateContactsFromPosts() {
-            const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            const contactsSet = new Set(['RatBot']);
+            if (!currentUser) return;
             
-            posts.forEach(post => {
-                if (post.authorHandle && post.authorHandle !== myHandle) {
-                    contactsSet.add(post.authorHandle);
-                }
-                if (post.replies) {
-                    post.replies.forEach(reply => {
-                        if (reply.authorHandle && reply.authorHandle !== myHandle) {
-                            contactsSet.add(reply.authorHandle);
-                        }
-                    });
-                }
-            });
-            
-            const drawer = document.getElementById('contactsDrawer');
-            if (!drawer) return;
-            
-            const currentContact = activeChatContact;
-            drawer.innerHTML = Array.from(contactsSet).map(handle => `
-                <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
-                    <span class="active-dot"></span> ${handle}
-                </div>
-            `).join('');
+            // Los contactos ahora se manejan desde Firebase, no desde posts
+            // Esta función solo actualiza los contactos existentes
+            loadContacts();
         }
 
         // ==========================================
@@ -2082,9 +2168,9 @@
             if (!modal || !content) return;
 
             if (type === 'image') {
-                content.innerHTML = `<img src="${src}">`;
+                content.innerHTML = `<img src="${src}" style="max-width: 95vw; max-height: 90vh; object-fit: contain;">`;
             } else {
-                content.innerHTML = `<video src="${src}" controls autoplay></video>`;
+                content.innerHTML = `<video src="${src}" controls autoplay style="max-width: 95vw; max-height: 90vh;"></video>`;
             }
             modal.style.display = 'flex';
         }
@@ -2148,44 +2234,63 @@
         // ==========================================
         
         window.onload = function() {
-            // Verificar si hay usuario guardado
+            console.log('🔥 Iniciando RatWeb...');
+            
             const savedUser = localStorage.getItem('ratweb_user');
+            
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
-                    document.getElementById('authOverlay').style.display = 'none';
-                    document.getElementById('headerAvatar').src = currentUser.avatar || '';
+                    console.log('📦 Usuario guardado encontrado:', currentUser.username);
                     
-                    // Autenticar anónimamente
-                    auth.signInAnonymously().then((userCredential) => {
-                        currentAuthUser = userCredential.user;
-                        pingUserPresence();
-                        loadPostsFromFirebase();
-                        loadForumsFromFirebase();
-                        renderGallery();
-                        
-                        const initialChatId = getChatId(currentUser.username, 'RatBot');
-                        loadChatMessages(initialChatId);
-                    }).catch((error) => {
-                        console.error('Error en autenticación anónima:', error);
-                        // Si falla, mostrar login
-                        document.getElementById('authOverlay').style.display = 'flex';
+                    auth.onAuthStateChanged((user) => {
+                        if (user) {
+                            console.log('✅ Usuario autenticado:', user.uid);
+                            currentAuthUser = user;
+                            
+                            document.getElementById('authOverlay').style.display = 'none';
+                            document.getElementById('headerAvatar').src = currentUser.avatar || '';
+                            
+                            loadPostsFromFirebase();
+                            loadForumsFromFirebase();
+                            loadContacts();
+                            renderGallery();
+                            pingUserPresence();
+                            
+                            const initialChatId = getChatId(currentUser.username, 'RatBot');
+                            loadChatMessages(initialChatId);
+                            
+                            setTimeout(() => {
+                                renderProfile();
+                                console.log('👤 Perfil renderizado');
+                            }, 500);
+                            
+                        } else {
+                            console.warn('⚠️ No hay usuario autenticado, mostrando login');
+                            document.getElementById('authOverlay').style.display = 'flex';
+                            localStorage.removeItem('ratweb_user');
+                            currentUser = null;
+                        }
                     });
+                    
                 } catch (e) {
-                    console.error('Error al cargar usuario:', e);
+                    console.error('❌ Error al cargar usuario:', e);
                     document.getElementById('authOverlay').style.display = 'flex';
+                    localStorage.removeItem('ratweb_user');
                 }
             } else {
+                console.log('👤 No hay usuario guardado, mostrando login');
                 document.getElementById('authOverlay').style.display = 'flex';
             }
             
             updateMuteButtonUI();
             applyChatWallpaper();
+            
+            console.log('✅ RatWeb iniciado correctamente');
         };
 
         console.log('🔥 RatWeb con Firebase sincronizado y SEGURO');
         console.log('📱 App ID:', firebaseConfig.appId);
-        console.log('👤 Usuario actual:', currentUser ? currentUser.username : 'No autenticado');
         console.log('🔒 Las reglas de seguridad protegen los datos');
     </script>
 </body>
