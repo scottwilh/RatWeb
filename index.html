@@ -468,27 +468,26 @@
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ==========================================
-        // POSTS EN FIREBASE
+        // FUNCIONES DE FIREBASE CON SEGURIDAD
         // ==========================================
+        
+        // Cargar posts en tiempo real
         function loadPostsFromFirebase() {
             const postsRef = database.ref('posts');
             postsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     posts = Object.keys(data).map(key => ({
-                        id: parseInt(key),
+                        id: key,
+                        firebaseKey: key,
                         ...data[key]
                     }));
-                    posts.sort((a, b) => b.id - a.id);
+                    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 } else {
                     posts = [];
                 }
-                const isForumActive = document.getElementById('forumView').classList.contains('active');
-                if (isForumActive && currentForumId) {
-                    renderPosts('forum');
-                } else {
-                    renderPosts('main');
-                }
+                
+                renderPostsBasedOnActiveSection();
                 updateContactsFromPosts();
                 if (document.getElementById('perfil').classList.contains('active')) {
                     renderProfile();
@@ -496,36 +495,48 @@
             });
         }
 
+        function renderPostsBasedOnActiveSection() {
+            const isForumActive = document.getElementById('forumView').classList.contains('active');
+            if (isForumActive && currentForumId) {
+                renderPosts('forum');
+            } else {
+                renderPosts('main');
+            }
+        }
+
+        // Guardar post en Firebase con seguridad
         function savePostToFirebase(postData) {
             const postsRef = database.ref('posts');
             const newPostRef = postsRef.push();
+            
             return newPostRef.set({
                 ...postData,
-                id: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         }
 
+        // Eliminar post de Firebase
         function deletePostFromFirebase(postId) {
             return database.ref(`posts/${postId}`).remove();
         }
 
+        // Actualizar post en Firebase
         function updatePostInFirebase(postId, data) {
             return database.ref(`posts/${postId}`).update(data);
         }
 
-        // ==========================================
-        // FOROS EN FIREBASE
-        // ==========================================
+        // Cargar foros en tiempo real
         function loadForumsFromFirebase() {
             const forumsRef = database.ref('forums');
             forumsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     forums = Object.keys(data).map(key => ({
-                        id: parseInt(key),
+                        id: key,
+                        firebaseKey: key,
                         ...data[key]
                     }));
-                    forums.sort((a, b) => b.id - a.id);
+                    forums.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 } else {
                     forums = [];
                 }
@@ -536,26 +547,31 @@
             });
         }
 
+        // Guardar foro en Firebase con seguridad
         function saveForumToFirebase(forumData) {
             const forumsRef = database.ref('forums');
             const newForumRef = forumsRef.push();
+            
             return newForumRef.set({
                 ...forumData,
-                id: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         }
 
+        // Eliminar foro de Firebase
         function deleteForumFromFirebase(forumId) {
             return database.ref(`forums/${forumId}`).remove();
         }
 
+        // Actualizar foro en Firebase
         function updateForumInFirebase(forumId, data) {
             return database.ref(`forums/${forumId}`).update(data);
         }
 
         // ==========================================
-        // REGISTRO DE USUARIO - CORREGIDO
+        // REGISTRO DE USUARIO CON SEGURIDAD
         // ==========================================
+        
         function previewAvatar(event) {
             const file = event.target.files[0];
             if (file) {
@@ -568,7 +584,17 @@
             }
         }
 
-        function registerUser() {
+        async function checkUsernameAvailability(username) {
+            try {
+                const snapshot = await database.ref('usernames').child(username).once('value');
+                return !snapshot.exists();
+            } catch (error) {
+                console.error('Error al verificar username:', error);
+                return false;
+            }
+        }
+
+        async function registerUser() {
             if (isRegistering) return;
             
             const username = document.getElementById('regUsername').value.trim();
@@ -577,7 +603,6 @@
             const errorEl = document.getElementById('regError');
             const registerBtn = document.getElementById('registerBtn');
 
-            // Ocultar error previo
             errorEl.classList.remove('show');
 
             if (!username || !displayName) {
@@ -601,77 +626,71 @@
             isRegistering = true;
             registerBtn.disabled = true;
             registerBtn.textContent = 'Verificando...';
-            errorEl.classList.remove('show');
-
-            // PRIMERO: Verificar si el username existe
-            database.ref('usernames').child(username).once('value')
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        errorEl.textContent = `⚠️ Ya hay un usuario con el nombre ${username}. Por favor, elige otro.`;
-                        errorEl.classList.add('show');
-                        isRegistering = false;
-                        registerBtn.disabled = false;
-                        registerBtn.textContent = 'Entrar a RatWeb';
-                        return Promise.reject('Username exists');
-                    }
-                    
-                    // Username disponible - proceder con autenticación
-                    return auth.signInAnonymously();
-                })
-                .then((userCredential) => {
-                    if (!userCredential) return Promise.reject('No user credential');
-                    const user = userCredential.user;
-                    
-                    const userData = {
-                        username: username,
-                        displayName: displayName,
-                        bio: bio || '',
-                        banner: null,
-                        joinedAt: Date.now(),
-                        lastNameChange: 0,
-                        lastUsernameChange: 0,
-                        avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
-                    };
-
-                    // Guardar usuario y username en Firebase
-                    return Promise.all([
-                        database.ref(`users/${user.uid}`).set(userData),
-                        database.ref(`usernames/${username}`).set({ uid: user.uid, displayName: displayName })
-                    ]).then(() => {
-                        currentUser = userData;
-                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                        document.getElementById('headerAvatar').src = currentUser.avatar;
-                        document.getElementById('authOverlay').style.display = 'none';
-                        
-                        // Inicializar todo
-                        loadPostsFromFirebase();
-                        loadForumsFromFirebase();
-                        renderGallery();
-                        pingUserPresence();
-                        
-                        const initialChatId = getChatId(currentUser.username, 'RatBot');
-                        loadChatMessages(initialChatId);
-                        
-                        isRegistering = false;
-                        registerBtn.disabled = false;
-                        registerBtn.textContent = 'Entrar a RatWeb';
-                    });
-                })
-                .catch((error) => {
-                    if (error !== 'Username exists') {
-                        console.error('Error al registrar usuario:', error);
-                        errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
-                        errorEl.classList.add('show');
-                    }
-                    isRegistering = false;
-                    registerBtn.disabled = false;
-                    registerBtn.textContent = 'Entrar a RatWeb';
-                });
+            
+            try {
+                // Verificar username disponible
+                const isAvailable = await checkUsernameAvailability(username);
+                
+                if (!isAvailable) {
+                    errorEl.textContent = `⚠️ Ya hay un usuario con el nombre ${username}. Por favor, elige otro.`;
+                    errorEl.classList.add('show');
+                    return;
+                }
+                
+                // Autenticar anónimamente
+                const userCredential = await auth.signInAnonymously();
+                const user = userCredential.user;
+                
+                const userData = {
+                    uid: user.uid,  // ← UID para seguridad
+                    username: username,
+                    displayName: displayName,
+                    bio: bio || '',
+                    banner: null,
+                    joinedAt: firebase.database.ServerValue.TIMESTAMP,
+                    lastNameChange: 0,
+                    lastUsernameChange: 0,
+                    avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
+                };
+                
+                // Guardar en Firebase
+                await Promise.all([
+                    database.ref(`users/${user.uid}`).set(userData),
+                    database.ref(`usernames/${username}`).set({ 
+                        uid: user.uid, 
+                        displayName: displayName 
+                    })
+                ]);
+                
+                currentUser = userData;
+                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                document.getElementById('headerAvatar').src = currentUser.avatar;
+                document.getElementById('authOverlay').style.display = 'none';
+                
+                // Inicializar
+                loadPostsFromFirebase();
+                loadForumsFromFirebase();
+                renderGallery();
+                pingUserPresence();
+                
+                const initialChatId = getChatId(currentUser.username, 'RatBot');
+                loadChatMessages(initialChatId);
+                
+            } catch (error) {
+                console.error('Error al registrar:', error);
+                errorEl.textContent = '❌ Error al registrarse. Intenta de nuevo.';
+                errorEl.classList.add('show');
+            } finally {
+                isRegistering = false;
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Entrar a RatWeb';
+            }
         }
 
         // ==========================================
-        // FUNCIONES DE CHAT CON FIREBASE
+        // FUNCIONES DE CHAT CON SEGURIDAD
         // ==========================================
+        
         function getChatId(user1, user2) {
             const users = [user1, user2].sort();
             return users.join('_');
@@ -714,11 +733,12 @@
                 if (data) {
                     Object.keys(data).forEach(key => {
                         messages.push({
-                            id: parseInt(key),
+                            id: key,
+                            firebaseKey: key,
                             ...data[key]
                         });
                     });
-                    messages.sort((a, b) => a.timestamp - b.timestamp);
+                    messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
                 }
                 
                 chats[activeChatContact] = messages;
@@ -736,12 +756,10 @@
             
             const chatId = getChatId(currentUser.username, activeChatContact);
             const messagesRef = database.ref(`chats/${chatId}`);
-            
             const newMessageRef = messagesRef.push();
-            const messageId = Date.now();
             
             const messageData = {
-                id: messageId,
+                senderUid: auth.currentUser ? auth.currentUser.uid : 'anonymous',  // ← UID para seguridad
                 sender: currentUser.username,
                 text: text || '',
                 mediaSrc: mediaSrc || null,
@@ -749,24 +767,23 @@
                 replyTo: replyTo || null,
                 reactions: {},
                 edited: false,
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
             
-            newMessageRef.set(messageData).catch((error) => {
-                console.error('Error al enviar mensaje:', error);
-                saveMessageLocally(messageData);
-            });
-            
-            document.getElementById('chatMsgInput').value = '';
-            document.getElementById('chatMedia').value = '';
-            clearChatReplyTarget();
-        }
-
-        function saveMessageLocally(messageData) {
-            if (!chats[activeChatContact]) chats[activeChatContact] = [];
-            chats[activeChatContact].push(messageData);
-            localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-            renderChat();
+            newMessageRef.set(messageData)
+                .then(() => {
+                    document.getElementById('chatMsgInput').value = '';
+                    document.getElementById('chatMedia').value = '';
+                    clearChatReplyTarget();
+                    
+                    if (activeChatContact === 'RatBot') {
+                        maybeTriggerBotReply('RatBot');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error al enviar mensaje:', error);
+                    alert('Error al enviar mensaje. Intenta de nuevo.');
+                });
         }
 
         function sendChatMessage() {
@@ -814,13 +831,6 @@
                 edited: true
             }).catch((error) => {
                 console.error('Error al editar mensaje:', error);
-                const list = chats[activeChatContact] || [];
-                const msg = list.find(m => m.id === editingMessageId);
-                if (msg) {
-                    msg.text = newText;
-                    msg.edited = true;
-                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                }
             });
             
             cancelEditMessage();
@@ -834,9 +844,7 @@
             
             messageRef.remove().catch((error) => {
                 console.error('Error al borrar mensaje:', error);
-                chats[activeChatContact] = (chats[activeChatContact] || []).filter(m => m.id !== msgId);
-                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                renderChat();
+                alert('No tienes permiso para borrar este mensaje');
             });
         }
 
@@ -863,18 +871,6 @@
                 }
             }).catch((error) => {
                 console.error('Error al actualizar reacción:', error);
-                const list = chats[activeChatContact] || [];
-                const msg = list.find(m => m.id === msgId);
-                if (msg) {
-                    if (!msg.reactions) msg.reactions = {};
-                    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
-                    const idx = msg.reactions[emoji].indexOf(myHandle);
-                    if (idx === -1) msg.reactions[emoji].push(myHandle);
-                    else msg.reactions[emoji].splice(idx, 1);
-                    if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
-                    localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                    renderChat();
-                }
             });
         }
 
@@ -960,7 +956,7 @@
                     const newMessageRef = messagesRef.push();
                     
                     const messageData = {
-                        id: Date.now(),
+                        senderUid: 'RatBot',  // ← UID del bot
                         sender: 'RatBot',
                         text: reply,
                         mediaSrc: null,
@@ -968,7 +964,7 @@
                         replyTo: null,
                         reactions: {},
                         edited: false,
-                        timestamp: Date.now()
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
                     };
                     
                     newMessageRef.set(messageData).catch((error) => {
@@ -1139,7 +1135,7 @@
                         ${reactionEntries.length > 0 ? `
                             <div class="msg-reactions">
                                 ${reactionEntries.map(([emoji, users]) => `
-                                    <span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction(${msg.id}, '${emoji}')">${emoji} ${users.length}</span>
+                                    <span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction('${msg.id}', '${emoji}')">${emoji} ${users.length}</span>
                                 `).join('')}
                             </div>
                         ` : ''}
@@ -1150,27 +1146,27 @@
 
                         ${isSent ? `
                         <div class="msg-options-wrapper" style="position:absolute; top:2px; right:4px;">
-                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions(${msg.id})">⋮</span>
+                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions('${msg.id}')">⋮</span>
                             <div id="msg-options-${msg.id}" class="msg-options-menu">
-                                ${msg.mediaType ? '' : `<button onclick="startEditMessage(${msg.id})">✏️ Editar</button>`}
-                                <button onclick="deleteChatMessage(${msg.id})">🗑️ Borrar</button>
+                                ${msg.mediaType ? '' : `<button onclick="startEditMessage('${msg.id}')">✏️ Editar</button>`}
+                                <button onclick="deleteChatMessage('${msg.id}')">🗑️ Borrar</button>
                             </div>
                         </div>
                         ` : ''}
 
                         <div class="reaction-picker" id="reaction-picker-${msg.id}">
                             <div class="reaction-picker-grid">
-                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction(${msg.id}, '${e}')">${e}</span>`).join('')}
+                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction('${msg.id}', '${e}')">${e}</span>`).join('')}
                             </div>
                             <div class="reaction-picker-custom">
-                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction(${msg.id})">
-                                <button onclick="addCustomReaction(${msg.id})">OK</button>
+                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction('${msg.id}')">
+                                <button onclick="addCustomReaction('${msg.id}')">OK</button>
                             </div>
                         </div>
                     </div>
                     <div class="msg-actions-row">
-                        <span class="msg-action-link" onclick="toggleReactionPicker(${msg.id})">Reaccionar</span>
-                        <span class="msg-action-link" onclick="setChatReplyTarget(${msg.id})">Responder</span>
+                        <span class="msg-action-link" onclick="toggleReactionPicker('${msg.id}')">Reaccionar</span>
+                        <span class="msg-action-link" onclick="setChatReplyTarget('${msg.id}')">Responder</span>
                     </div>
                 </div>
                 `;
@@ -1186,8 +1182,9 @@
         }
 
         // ==========================================
-        // FUNCIONES DE POSTS
+        // FUNCIONES DE POSTS CON SEGURIDAD
         // ==========================================
+        
         function createPost(target) {
             if (!currentUser) {
                 alert('Debes iniciar sesión primero');
@@ -1205,6 +1202,7 @@
             }
 
             const postData = {
+                authorUid: auth.currentUser ? auth.currentUser.uid : 'anonymous',  // ← UID para seguridad
                 authorName: currentUser.displayName,
                 authorHandle: currentUser.username,
                 avatar: currentUser.avatar || '',
@@ -1214,7 +1212,7 @@
                 forumId: isForum ? currentForumId : null,
                 likedBy: [],
                 replies: [],
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
             const file = fileInput.files[0];
@@ -1226,14 +1224,20 @@
                     savePostToFirebase(postData).then(() => {
                         textInput.value = '';
                         fileInput.value = '';
-                    }).catch(err => console.error('Error al guardar post:', err));
+                    }).catch(err => {
+                        console.error('Error al guardar post:', err);
+                        alert('No tienes permiso para publicar');
+                    });
                 };
                 reader.readAsDataURL(file);
             } else {
                 savePostToFirebase(postData).then(() => {
                     textInput.value = '';
                     fileInput.value = '';
-                }).catch(err => console.error('Error al guardar post:', err));
+                }).catch(err => {
+                    console.error('Error al guardar post:', err);
+                    alert('No tienes permiso para publicar');
+                });
             }
         }
 
@@ -1267,9 +1271,9 @@
                         <div class="post-header">
                             <span class="post-author">${post.authorName} (${post.authorHandle}) ${post.forumId ? '🧀' : ''}</span>
                             ${isMyPost ? `
-                                <button class="post-options-btn" onclick="toggleMenu(${post.id})">⋮</button>
+                                <button class="post-options-btn" onclick="toggleMenu('${post.id}')">⋮</button>
                                 <div id="menu-${post.id}" class="options-menu">
-                                    <button onclick="deletePost(${post.id}, '${target}')">🗑️ Borrar</button>
+                                    <button onclick="deletePost('${post.id}', '${target}')">🗑️ Borrar</button>
                                 </div>
                             ` : ''}
                         </div>
@@ -1283,10 +1287,10 @@
                         ) : ''}
 
                         <div class="post-actions">
-                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id}, '${target}')">
+                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}', '${target}')">
                                 🐾 ${(post.likedBy && post.likedBy.length) || 0}
                             </span>
-                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies(${post.id})">
+                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies('${post.id}')">
                                 ${replyBtnLabel}
                             </span>
                         </div>
@@ -1300,9 +1304,9 @@
                                             ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
                                         </div>
                                         <div class="reply-actions-right">
-                                            <span class="reply-action-btn" onclick="setReplyTarget(${post.id}, '${r.authorHandle}')">Responder</span>
+                                            <span class="reply-action-btn" onclick="setReplyTarget('${post.id}', '${r.authorHandle}')">Responder</span>
                                             ${(currentUser && r.authorHandle === currentUser.username) ? `
-                                                <button class="delete-comment-btn" onclick="deleteComment(${post.id}, ${r.id}, '${target}')">🗑️</button>
+                                                <button class="delete-comment-btn" onclick="deleteComment('${post.id}', ${r.id}, '${target}')">🗑️</button>
                                             ` : ''}
                                         </div>
                                     </div>
@@ -1314,15 +1318,15 @@
                             <div class="reply-input-wrapper">
                                 <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
                                     <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
-                                    <span style="cursor:pointer;" onclick="clearReplyTarget(${post.id})">✕</span>
+                                    <span style="cursor:pointer;" onclick="clearReplyTarget('${post.id}')">✕</span>
                                 </div>
                                 <div class="reply-input-row">
-                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply(${post.id}, '${target}')">
+                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply('${post.id}', '${target}')">
                                     <label class="file-label">
                                         📷
                                         <input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;">
                                     </label>
-                                    <button class="btn-publish" onclick="addReply(${post.id}, '${target}')">Enviar</button>
+                                    <button class="btn-publish" onclick="addReply('${post.id}', '${target}')">Enviar</button>
                                 </div>
                             </div>
                         </div>
@@ -1346,8 +1350,9 @@
                 post.likedBy.splice(index, 1);
             }
 
-            updatePostInFirebase(postId, { likedBy: post.likedBy });
-            renderPosts(target);
+            updatePostInFirebase(postId, { likedBy: post.likedBy })
+                .then(() => renderPosts(target))
+                .catch(err => console.error('Error al actualizar like:', err));
         }
 
         function toggleMenu(postId) {
@@ -1359,8 +1364,12 @@
 
         function deletePost(postId, target) {
             if (!confirm('¿Borrar esta publicación?')) return;
-            deletePostFromFirebase(postId);
-            updateContactsFromPosts();
+            deletePostFromFirebase(postId)
+                .then(() => updateContactsFromPosts())
+                .catch(err => {
+                    console.error('Error al borrar post:', err);
+                    alert('No tienes permiso para borrar este post');
+                });
         }
 
         function toggleReplies(postId) {
@@ -1418,26 +1427,28 @@
 
             openRepliesBoxes[postId] = true;
 
+            const processReply = () => {
+                post.replies = post.replies || [];
+                post.replies.push(replyData);
+                updatePostInFirebase(postId, { replies: post.replies })
+                    .then(() => {
+                        clearReplyTarget(postId);
+                        if (mediaInput) mediaInput.value = '';
+                        renderPosts(target);
+                        updateContactsFromPosts();
+                    })
+                    .catch(err => console.error('Error al añadir reply:', err));
+            };
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     replyData.mediaSrc = e.target.result;
-                    post.replies = post.replies || [];
-                    post.replies.push(replyData);
-                    updatePostInFirebase(postId, { replies: post.replies });
-                    clearReplyTarget(postId);
-                    if (mediaInput) mediaInput.value = '';
-                    renderPosts(target);
-                    updateContactsFromPosts();
+                    processReply();
                 };
                 reader.readAsDataURL(file);
             } else {
-                post.replies = post.replies || [];
-                post.replies.push(replyData);
-                updatePostInFirebase(postId, { replies: post.replies });
-                clearReplyTarget(postId);
-                renderPosts(target);
-                updateContactsFromPosts();
+                processReply();
             }
         }
 
@@ -1445,16 +1456,20 @@
             const post = posts.find(p => p.id === postId);
             if (post && post.replies) {
                 post.replies = post.replies.filter(r => r.id !== commentId);
-                updatePostInFirebase(postId, { replies: post.replies });
-                openRepliesBoxes[postId] = true;
-                renderPosts(target);
-                updateContactsFromPosts();
+                updatePostInFirebase(postId, { replies: post.replies })
+                    .then(() => {
+                        openRepliesBoxes[postId] = true;
+                        renderPosts(target);
+                        updateContactsFromPosts();
+                    })
+                    .catch(err => console.error('Error al borrar comentario:', err));
             }
         }
 
         // ==========================================
-        // FUNCIONES DE FOROS
+        // FUNCIONES DE FOROS CON SEGURIDAD
         // ==========================================
+        
         function getMyForumsCount() {
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
             return forums.filter(f => f.creatorHandle === myHandle).length;
@@ -1491,13 +1506,14 @@
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
 
             const forumData = {
+                creatorUid: auth.currentUser ? auth.currentUser.uid : 'anonymous',  // ← UID para seguridad
                 title: title,
                 category: category || 'GENERAL',
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
                 desc: desc,
                 creatorHandle: myHandle,
                 members: [myHandle],
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
             saveForumToFirebase(forumData).then(() => {
@@ -1505,6 +1521,9 @@
                 document.getElementById('forumCategory').value = '';
                 document.getElementById('forumTags').value = '';
                 document.getElementById('forumDesc').value = '';
+            }).catch(err => {
+                console.error('Error al crear foro:', err);
+                alert('No tienes permiso para crear foros');
             });
         }
 
@@ -1517,6 +1536,9 @@
                     });
                     if (currentForumId === forumId) showSection('foros');
                     updateContactsFromPosts();
+                }).catch(err => {
+                    console.error('Error al borrar foro:', err);
+                    alert('No tienes permiso para borrar este foro');
                 });
             }
         }
@@ -1568,18 +1590,18 @@
                 const activeCount = getActiveForumMembersCount(f.members);
 
                 return `
-                <div class="forum-card" onclick="openForum(${f.id})">
+                <div class="forum-card" onclick="openForum('${f.id}')">
                     <div class="forum-header-container">
                         <div>
                             <div class="forum-category">${f.category}</div>
                             <div class="forum-title">${f.title}</div>
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;">
-                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum(${f.id}, event)">
+                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${f.id}', event)">
                                 ${isJoined ? 'Unido' : 'Unirme'}
                             </button>
                             ${isCreator ? `
-                                <button class="btn-delete-forum" onclick="deleteForum(${f.id}, event)">🗑️ Borrar</button>
+                                <button class="btn-delete-forum" onclick="deleteForum('${f.id}', event)">🗑️ Borrar</button>
                             ` : ''}
                         </div>
                     </div>
@@ -1614,11 +1636,11 @@
                         <div class="forum-title">${forum.title}</div>
                     </div>
                     <div style="display:flex; gap:6px; align-items:center;">
-                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum(${forum.id}, event)">
+                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${forum.id}', event)">
                             ${isJoined ? 'Unido' : 'Unirme'}
                         </button>
                         ${isCreator ? `
-                            <button class="btn-delete-forum" onclick="deleteForum(${forum.id}, event)">🗑️ Borrar</button>
+                            <button class="btn-delete-forum" onclick="deleteForum('${forum.id}', event)">🗑️ Borrar</button>
                         ` : ''}
                     </div>
                 </div>
@@ -1639,6 +1661,7 @@
         // ==========================================
         // FUNCIONES DE GALERÍA
         // ==========================================
+        
         function uploadToGallery() {
             const title = document.getElementById('galleryTitle').value.trim();
             const category = document.getElementById('galleryCategory').value;
@@ -1711,7 +1734,10 @@
             if (!item) return;
 
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
-            if (item.uploaderHandle !== myHandle) return;
+            if (item.uploaderHandle !== myHandle) {
+                alert('No tienes permiso para borrar esta imagen');
+                return;
+            }
 
             if (confirm('¿Eliminar esta imagen de la galería?')) {
                 gallery = gallery.filter(g => g.id !== id);
@@ -1739,6 +1765,7 @@
         // ==========================================
         // FUNCIONES DE PERFIL
         // ==========================================
+        
         function renderProfile() {
             if (!currentUser) return;
 
@@ -1762,7 +1789,7 @@
             const myGalleryLikes = gallery.filter(g => g.uploaderHandle === myHandle).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
             document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
 
-            const joinedDate = new Date(currentUser.joinedAt);
+            const joinedDate = new Date(currentUser.joinedAt || Date.now());
             document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
         }
 
@@ -1792,7 +1819,7 @@
         }
 
         function getDaysRemaining(lastChangeTs, cooldownDays) {
-            const elapsed = Date.now() - lastChangeTs;
+            const elapsed = Date.now() - (lastChangeTs || 0);
             const remainingMs = (cooldownDays * DAY_MS) - elapsed;
             return Math.ceil(remainingMs / DAY_MS);
         }
@@ -1879,6 +1906,7 @@
         // ==========================================
         // FUNCIONES DE PRESENCIA Y NAVEGACIÓN
         // ==========================================
+        
         function pingUserPresence() {
             if (!currentUser) return;
             usersPresence[currentUser.username] = Date.now();
@@ -1945,6 +1973,7 @@
         // ==========================================
         // FUNCIONES DE MODAL Y BÚSQUEDA
         // ==========================================
+        
         function openModal(src, type) {
             const modal = document.getElementById('imageModal');
             const content = document.getElementById('modalContent');
@@ -2015,6 +2044,7 @@
         // ==========================================
         // INICIALIZACIÓN
         // ==========================================
+        
         window.onload = function() {
             if (currentUser) {
                 document.getElementById('authOverlay').style.display = 'none';
@@ -2037,7 +2067,7 @@
             applyChatWallpaper();
         };
 
-        console.log('🔥 RatWeb con Firebase sincronizado en tiempo real');
+        console.log('🔥 RatWeb con Firebase sincronizado y seguro');
         console.log('📱 App ID:', firebaseConfig.appId);
         console.log('👤 Usuario actual:', currentUser ? currentUser.username : 'No autenticado');
     </script>
