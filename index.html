@@ -11,9 +11,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <style>
+        /* ===== ESTILOS COMPLETOS ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
         html { height: 100%; overflow: hidden; }
         body { background-color: #fcebe6; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; }
+        
+        /* ===== AUTH OVERLAY ===== */
         .auth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: #fcebe6; z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
         .auth-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; }
         .auth-title { font-size: 22px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
@@ -23,20 +26,38 @@
         .auth-card textarea { height: 50px; resize: none; }
         .btn-auth { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
         .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-logout { background-color: #666; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
-        .btn-logout:hover { background-color: #444; }
         .error-msg { color: #e74c3c; font-size: 12px; text-align: center; min-height: 20px; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
         .error-msg.show { display: block; }
-        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; transition: all 0.3s; }
-        .btn-delete-account:hover { background-color: #c0392b; transform: scale(1.02); }
-        .btn-add-friend { background-color: #4a7c59; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
-        .btn-add-friend:hover { background-color: #3a6a49; }
+        
+        /* ===== HEADER ===== */
         header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
         .logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
         .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
         .search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; }
-        .user-header-profile { display: flex; align-items: center; gap: 6px; }
+        .user-header-profile { display: flex; align-items: center; gap: 8px; }
         .avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; cursor: pointer; }
+        
+        /* ===== NOTIFICACIONES HEADER ===== */
+        .notification-wrapper { position: relative; display: inline-block; }
+        .notif-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; padding: 4px 8px; border-radius: 50%; transition: background 0.3s; }
+        .notif-btn:hover { background: rgba(0,0,0,0.05); }
+        .notif-badge { position: absolute; top: -4px; right: -4px; background: #e74c3c; color: #fff; border-radius: 50%; padding: 1px 5px; font-size: 10px; font-weight: bold; min-width: 18px; text-align: center; }
+        .notif-dropdown { display: none; position: absolute; right: 0; top: 35px; width: 320px; max-height: 400px; background: #fff; border: 2px solid #000; border-radius: 12px; box-shadow: 3px 3px 0px #000; z-index: 1000; overflow: hidden; }
+        .notif-dropdown.open { display: block; }
+        .notif-header { padding: 10px 14px; border-bottom: 2px solid #000; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 13px; background: #f8f0ed; }
+        .notif-mark-all { background: none; border: none; font-size: 10px; color: #8c4a4a; cursor: pointer; text-decoration: underline; }
+        .notif-list { max-height: 330px; overflow-y: auto; }
+        .notif-item { padding: 10px 14px; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background 0.2s; }
+        .notif-item:hover { background: #fdf5f6; }
+        .notif-item.unread { background: #fff6f8; }
+        .notif-item.unread::before { content: ''; width: 6px; height: 6px; background: #b56565; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+        .notif-icon { font-size: 18px; flex-shrink: 0; }
+        .notif-content { flex: 1; }
+        .notif-message { font-size: 12px; color: #000; word-break: break-word; }
+        .notif-time { font-size: 10px; color: #999; margin-top: 2px; }
+        .notif-empty { padding: 20px; text-align: center; color: #999; font-size: 12px; }
+        
+        /* ===== LAYOUT ===== */
         .layout { display: flex; flex: 1; height: calc(100vh - 55px); height: calc(100dvh - 55px); min-height: 0; }
         nav { width: 75px; background-color: #dbe2e6; border-right: 3px solid #000; display: flex; flex-direction: column; flex-shrink: 0; }
         .nav-btn { padding: 12px 4px; border-bottom: 2px solid #c0c8cc; font-weight: bold; font-size: 11px; color: #000; cursor: pointer; text-align: center; word-break: break-word; }
@@ -44,13 +65,21 @@
         main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-height: 0; -webkit-overflow-scrolling: touch; }
         .section { display: none; flex-direction: column; gap: 10px; height: 100%; }
         .section.active { display: flex; min-height: 0; }
+        
+        /* ===== CREATE BOX ===== */
         .create-box { background-color: #fff; border: 2px solid #000; border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
         .create-box input, .create-box textarea, .create-box select { width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; outline: none; font-family: inherit; }
         .create-box textarea { height: 45px; resize: none; }
         .btn-publish { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 4px 10px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
         .btn-publish:disabled { background-color: #ccc; color: #777; border-color: #999; cursor: not-allowed; }
-        .forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
-        .forum-limit-counter.limit-reached { color: #b56565; }
+        .file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .btn-back { background-color: #dbe2e6; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
+        .btn-logout { background-color: #666; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+        .btn-logout:hover { background-color: #444; }
+        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; transition: all 0.3s; }
+        .btn-delete-account:hover { background-color: #c0392b; transform: scale(1.02); }
+        
+        /* ===== POSTS ===== */
         .post-card { display: flex; gap: 6px; align-items: flex-start; position: relative; }
         .avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; flex-shrink: 0; }
         .post-bubble { background-color: #ffd8df; border: 2px solid #000; border-radius: 14px; padding: 8px; flex: 1; position: relative; }
@@ -64,6 +93,8 @@
         .post-actions { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; font-weight: bold; }
         .action-btn { cursor: pointer; user-select: none; }
         .action-btn.liked { color: #b56565; }
+        
+        /* ===== REPLIES ===== */
         .replies-box { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; flex-direction: column; gap: 6px; }
         .replies-box.open { display: flex; }
         .reply-item { background-color: #fff; border: 1.5px solid #000; border-radius: 10px; padding: 6px 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
@@ -80,7 +111,10 @@
         .reply-target-indicator.active { display: flex; }
         .reply-input-row { display: flex; gap: 4px; align-items: center; }
         .reply-input-row input[type="text"] { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
-        .file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        
+        /* ===== FOROS ===== */
+        .forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
+        .forum-limit-counter.limit-reached { color: #b56565; }
         .forum-card { background-color: #e2f0d9; border: 2px solid #000; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
         .forum-header-container { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .forum-stats-box { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; font-weight: bold; color: #2b5735; background: rgba(255,255,255,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid #000; align-self: flex-start; }
@@ -92,7 +126,8 @@
         .forum-desc { font-size: 11px; color: #333; }
         .forum-tags-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
         .forum-tag-badge { font-size: 9px; font-weight: bold; background-color: #fff; color: #2b5735; border: 1px solid #000; border-radius: 6px; padding: 1px 5px; }
-        .btn-back { background-color: #dbe2e6; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
+        
+        /* ===== GALERÍA ===== */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
         .polaroid-card { background-color: #fff; border: 2px solid #000; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; position: relative; }
         .polaroid-img { width: 100%; height: 90px; object-fit: cover; border: 1px solid #000; border-radius: 4px; cursor: pointer; }
@@ -103,6 +138,8 @@
         .polaroid-like-btn.liked { color: #b56565; }
         .visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; }
         .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        
+        /* ===== PERFIL ===== */
         .profile-card { background-color: #fff; border: 2px solid #000; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
         .profile-banner { height: 100px; background-color: #ffd8df; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
         .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: #fff; border: 2px solid #000; border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
@@ -123,6 +160,8 @@
         .profile-stat-item { display: flex; flex-direction: column; align-items: center; font-size: 9.5px; font-weight: bold; gap: 2px; flex: 1; }
         .profile-stat-item strong { font-size: 14px; color: #8c4a4a; }
         .profile-joined-note { font-size: 10px; color: #777; margin-top: 8px; text-align: center; font-style: italic; }
+        
+        /* ===== CHAT ===== */
         .chat-container { display: flex; flex-direction: column; border: 2px solid #000; border-radius: 14px; background: #fff; height: 100%; min-height: 0; overflow: hidden; position: relative; }
         .chat-toggle-bar { background: #e8dff5; border-bottom: 2px solid #000; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: bold; gap: 6px; flex-shrink: 0; }
         .chat-toggle-actions { display: flex; gap: 4px; align-items: center; }
@@ -175,16 +214,15 @@
         .mic-btn.recording { background: #e74c3c; color: #fff; animation: pulse-rec 1s infinite; }
         @keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:0.5} }
         .active-dot { width: 7px; height: 7px; background-color: #4caf50; border-radius: 50%; display: inline-block; }
+        
+        /* ===== WALLPAPER ===== */
         .wallpaper-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; padding: 4px; max-height: 55vh; overflow-y: auto; }
         .wallpaper-thumb { width: 100%; height: 70px; object-fit: cover; border: 2px solid #000; border-radius: 6px; cursor: pointer; }
         .wallpaper-none-thumb { width: 100%; height: 70px; border: 2px dashed #000; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; background: #f5f5f5; }
+        
+        /* ===== MODAL ===== */
         .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
-        .modal-viewer img, .modal-viewer video { 
-            max-width: 95vw; 
-            max-height: 90vh; 
-            border-radius: 8px; 
-            object-fit: contain; 
-        }
+        .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
         .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
@@ -221,6 +259,21 @@
             <input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch()">
         </div>
         <div class="user-header-profile">
+            <div class="notification-wrapper">
+                <button class="notif-btn" onclick="toggleNotificationDropdown()">
+                    🔔
+                    <span id="notificationBadge" class="notif-badge" style="display:none;">0</span>
+                </button>
+                <div id="notificationDropdown" class="notif-dropdown">
+                    <div class="notif-header">
+                        <span>Notificaciones</span>
+                        <button class="notif-mark-all" onclick="markAllAsRead()">Marcar todas como leídas</button>
+                    </div>
+                    <div id="notificationList" class="notif-list">
+                        <div class="notif-empty">🎉 No hay notificaciones</div>
+                    </div>
+                </div>
+            </div>
             <img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
         </div>
     </header>
@@ -431,9 +484,9 @@
     </div>
 
     <script>
-        // ==========================================
+        // ============================================================
         // CONFIGURACIÓN DE FIREBASE
-        // ==========================================
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QDGBpMZIPk",
             authDomain: "ratweb-431ce.firebaseapp.com",
@@ -449,9 +502,9 @@
         const database = firebase.database();
         const auth = firebase.auth();
 
-        // ==========================================
+        // ============================================================
         // VARIABLES GLOBALES
-        // ==========================================
+        // ============================================================
         let currentUser = null;
         let currentAuthUser = null;
         let chatListeners = {};
@@ -477,6 +530,7 @@
         let chatReplyTargets = {};
         let isRegistering = false;
         let contacts = [];
+        let notificationListener = null;
 
         const NAME_COOLDOWN_DAYS = 15;
         const USERNAME_COOLDOWN_DAYS = 30;
@@ -485,9 +539,9 @@
         const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
-        // ==========================================
-        // FUNCIONES DE AUTENTICACIÓN MEJORADAS
-        // ==========================================
+        // ============================================================
+        // FUNCIONES DE AUTENTICACIÓN
+        // ============================================================
 
         function refreshCurrentUser() {
             const user = auth.currentUser;
@@ -502,8 +556,6 @@
                             document.getElementById('headerAvatar').src = currentUser.avatar || '';
                             renderProfile();
                             console.log('🔄 Usuario actualizado:', currentUser.username);
-                        } else {
-                            console.warn('⚠️ Usuario autenticado pero no registrado en DB');
                         }
                     })
                     .catch(err => console.error('Error al refrescar usuario:', err));
@@ -516,48 +568,190 @@
             }
         }
 
-        // Escuchar cambios de autenticación
         auth.onAuthStateChanged((user) => {
             if (user) {
                 refreshCurrentUser();
             } else {
-                // Usuario cerró sesión o expiró
                 currentUser = null;
                 currentAuthUser = null;
                 localStorage.removeItem('ratweb_user');
                 document.getElementById('authOverlay').style.display = 'flex';
                 document.getElementById('authOverlay').style.position = 'fixed';
-                // Limpiar listeners de chat
                 Object.values(chatListeners).forEach(unsub => unsub());
                 chatListeners = {};
-                console.log('👋 Sesión cerrada automáticamente');
+                if (notificationListener) {
+                    notificationListener();
+                    notificationListener = null;
+                }
             }
         });
 
         function logoutUser() {
             if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
-            
-            // Limpiar listeners
             Object.values(chatListeners).forEach(unsub => unsub());
             chatListeners = {};
-            
-            // Cerrar sesión
+            if (notificationListener) {
+                notificationListener();
+                notificationListener = null;
+            }
             auth.signOut().then(() => {
                 currentUser = null;
                 currentAuthUser = null;
                 localStorage.removeItem('ratweb_user');
                 document.getElementById('authOverlay').style.display = 'flex';
                 document.getElementById('authOverlay').style.position = 'fixed';
-                console.log('👋 Sesión cerrada');
             }).catch(err => {
                 console.error('Error al cerrar sesión:', err);
                 alert('Error al cerrar sesión');
             });
         }
 
-        // ==========================================
+        // ============================================================
+        // FUNCIONES DE NOTIFICACIONES (NUEVO)
+        // ============================================================
+
+        function sendNotification(targetUid, type, fromUid, fromHandle, message, link) {
+            if (!targetUid || !fromUid || targetUid === fromUid) return;
+            
+            const notificationRef = database.ref(`notifications/${targetUid}`).push();
+            return notificationRef.set({
+                type: type,
+                from: fromHandle,
+                fromUid: fromUid,
+                message: message,
+                link: link || '',
+                read: false,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).catch(err => console.error('Error al enviar notificación:', err));
+        }
+
+        function markNotificationAsRead(notificationId) {
+            if (!currentUser) return;
+            database.ref(`notifications/${currentUser.uid}/${notificationId}/read`).set(true)
+                .catch(err => console.error('Error al marcar como leída:', err));
+        }
+
+        function markAllAsRead() {
+            if (!currentUser) return;
+            database.ref(`notifications/${currentUser.uid}`).once('value')
+                .then(snapshot => {
+                    const notifs = snapshot.val();
+                    if (notifs) {
+                        const updates = {};
+                        Object.keys(notifs).forEach(key => {
+                            if (!notifs[key].read) {
+                                updates[`${key}/read`] = true;
+                            }
+                        });
+                        if (Object.keys(updates).length > 0) {
+                            database.ref(`notifications/${currentUser.uid}`).update(updates);
+                        }
+                    }
+                })
+                .catch(err => console.error('Error al marcar todas como leídas:', err));
+        }
+
+        function listenNotifications() {
+            if (!currentUser) return;
+            if (notificationListener) {
+                notificationListener();
+                notificationListener = null;
+            }
+            
+            const notifRef = database.ref(`notifications/${currentUser.uid}`);
+            const listener = notifRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const notifs = Object.keys(data).map(key => ({
+                        id: key,
+                        ...data[key]
+                    }));
+                    notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    const unreadCount = notifs.filter(n => !n.read).length;
+                    updateNotificationBadge(unreadCount, notifs);
+                } else {
+                    updateNotificationBadge(0, []);
+                }
+            });
+            
+            notificationListener = () => {
+                notifRef.off('value', listener);
+            };
+        }
+
+        function updateNotificationBadge(count, notifs) {
+            const badge = document.getElementById('notificationBadge');
+            const list = document.getElementById('notificationList');
+            
+            if (badge) {
+                badge.innerText = count > 0 ? count : '';
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+            
+            if (list) {
+                if (notifs && notifs.length > 0) {
+                    list.innerHTML = notifs.slice(0, 10).map(n => `
+                        <div class="notif-item ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}', '${n.link || ''}')">
+                            <div class="notif-icon">${getNotifIcon(n.type)}</div>
+                            <div class="notif-content">
+                                <div class="notif-message">${n.message}</div>
+                                <div class="notif-time">${timeAgo(n.timestamp)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="notif-empty">🎉 No hay notificaciones</div>';
+                }
+            }
+        }
+
+        function getNotifIcon(type) {
+            const icons = {
+                'friend_request': '🤝',
+                'friend_accepted': '✅',
+                'post_reply': '💬',
+                'post_like': '❤️',
+                'forum_mention': '📢'
+            };
+            return icons[type] || '🔔';
+        }
+
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'hace un momento';
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'hace ' + seconds + 's';
+            if (seconds < 3600) return 'hace ' + Math.floor(seconds / 60) + 'm';
+            if (seconds < 86400) return 'hace ' + Math.floor(seconds / 3600) + 'h';
+            return 'hace ' + Math.floor(seconds / 86400) + 'd';
+        }
+
+        function handleNotificationClick(notifId, link) {
+            markNotificationAsRead(notifId);
+            if (link) {
+                if (link === '#social' || link === '#menu' || link === '#foros' || link === '#galeria' || link === '#perfil') {
+                    showSection(link.replace('#', ''));
+                }
+            }
+            toggleNotificationDropdown();
+        }
+
+        function toggleNotificationDropdown() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('open');
+            
+            if (dropdown.classList.contains('open')) {
+                document.addEventListener('click', function closeDropdown(e) {
+                    if (!dropdown.contains(e.target) && !e.target.closest('.notif-btn')) {
+                        dropdown.classList.remove('open');
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                });
+            }
+        }
+
+        // ============================================================
         // FUNCIONES DE FIREBASE
-        // ==========================================
+        // ============================================================
         
         function loadPostsFromFirebase() {
             const postsRef = database.ref('posts');
@@ -645,13 +839,12 @@
             return database.ref(`forums/${forumId}`).update(data);
         }
 
-        // ==========================================
-        // FUNCIONES DE CONTACTOS / AMIGOS
-        // ==========================================
+        // ============================================================
+        // FUNCIONES DE CONTACTOS
+        // ============================================================
         
         function loadContacts() {
             if (!currentUser) return;
-            
             database.ref(`contacts/${currentUser.uid}`).on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -668,47 +861,45 @@
                 alert('Debes iniciar sesión');
                 return;
             }
-            
             const username = prompt('🔍 Ingresa el @usuario que quieres agregar:');
             if (!username) return;
-            
             const cleanUsername = username.startsWith('@') ? username : '@' + username;
-            
             if (cleanUsername === currentUser.username) {
                 alert('❌ No puedes agregarte a ti mismo');
                 return;
             }
-            
-            // Buscar en usernames
             database.ref('usernames').child(cleanUsername).once('value')
                 .then(snapshot => {
                     if (snapshot.exists()) {
                         const userData = snapshot.val();
                         const targetUid = userData.uid;
-                        
-                        // Verificar que el usuario existe en users
                         return database.ref(`users/${targetUid}`).once('value')
                             .then(userSnap => {
                                 if (!userSnap.exists()) {
                                     alert('❌ Usuario no encontrado');
                                     return;
                                 }
-                                
-                                // Verificar si ya es contacto
                                 return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).once('value')
                                     .then(contactSnap => {
                                         if (contactSnap.exists()) {
                                             alert('⚠️ Ya tienes este contacto');
                                             return;
                                         }
-                                        
-                                        // Agregar contacto
                                         return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).set({
                                             addedAt: firebase.database.ServerValue.TIMESTAMP,
                                             displayName: userData.displayName || cleanUsername,
                                             targetUid: targetUid
                                         }).then(() => {
                                             alert(`✅ ${cleanUsername} agregado a tus contactos`);
+                                            // Enviar notificación
+                                            sendNotification(
+                                                targetUid,
+                                                'friend_request',
+                                                currentAuthUser.uid,
+                                                currentUser.username,
+                                                `${currentUser.username} te ha enviado una solicitud de amistad 🤝`,
+                                                '#social'
+                                            );
                                             loadContacts();
                                         });
                                     });
@@ -725,7 +916,6 @@
 
         function removeContact(username) {
             if (!confirm(`¿Eliminar a ${username} de tus contactos?`)) return;
-            
             database.ref(`contacts/${currentUser.uid}/${username}`).remove()
                 .then(() => {
                     alert(`✅ ${username} eliminado de tus contactos`);
@@ -743,15 +933,12 @@
         function updateContactsList() {
             const drawer = document.getElementById('contactsDrawer');
             if (!drawer) return;
-            
             const currentContact = activeChatContact;
-            
             let html = `
                 <div class="contact-item ${'RatBot' === currentContact ? 'active' : ''}" onclick="switchChat('RatBot')">
                     <span class="active-dot"></span> RatBot
                 </div>
             `;
-            
             contacts.forEach(handle => {
                 html += `
                     <div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
@@ -760,13 +947,12 @@
                     </div>
                 `;
             });
-            
             drawer.innerHTML = html;
         }
 
-        // ==========================================
+        // ============================================================
         // REGISTRO DE USUARIO
-        // ==========================================
+        // ============================================================
         
         function previewAvatar(event) {
             const file = event.target.files[0];
@@ -819,14 +1005,12 @@
             registerBtn.textContent = 'Verificando...';
             
             try {
-                // PASO 1: autenticar primero
                 let authUser = auth.currentUser;
                 if (!authUser) {
                     const userCredential = await auth.signInAnonymously();
                     authUser = userCredential.user;
                 }
 
-                // PASO 2: verificar disponibilidad
                 const isAvailable = await checkUsernameAvailability(username);
                 
                 if (!isAvailable) {
@@ -844,13 +1028,12 @@
                     displayName: displayName,
                     bio: bio || '',
                     banner: null,
-                    joinedAt: firebase.database.ServerValue.TIMESTAMP,
+                    joinedAt: Date.now(),
                     lastNameChange: 0,
                     lastUsernameChange: 0,
                     avatar: tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>'
                 };
                 
-                // PASO 3: escritura atómica
                 const updates = {};
                 updates[`users/${authUser.uid}`] = userData;
                 updates[`usernames/${username}`] = { uid: authUser.uid, displayName: displayName };
@@ -868,6 +1051,7 @@
                 loadContacts();
                 renderGallery();
                 pingUserPresence();
+                listenNotifications();
                 
                 const initialChatId = getChatId(currentUser.username, 'RatBot');
                 loadChatMessages(initialChatId);
@@ -885,9 +1069,9 @@
             }
         }
 
-        // ==========================================
+        // ============================================================
         // ELIMINAR CUENTA
-        // ==========================================
+        // ============================================================
         
         async function deleteAccount() {
             if (!currentUser || !currentAuthUser) {
@@ -902,69 +1086,89 @@
             if (!confirm2) return;
 
             try {
-                const userUid = currentUser.uid;
+                const userUid = currentAuthUser.uid;
                 const username = currentUser.username;
 
-                const postsSnapshot = await database.ref('posts').orderByChild('authorUid').equalTo(userUid).once('value');
-                const userPosts = postsSnapshot.val();
-                if (userPosts) {
-                    const deletePromises = Object.keys(userPosts).map(postId => 
-                        database.ref(`posts/${postId}`).remove()
-                    );
-                    await Promise.all(deletePromises);
+                try {
+                    const postsSnapshot = await database.ref('posts').orderByChild('authorUid').equalTo(userUid).once('value');
+                    const userPosts = postsSnapshot.val();
+                    if (userPosts) {
+                        const deletePromises = Object.keys(userPosts).map(postId => 
+                            database.ref(`posts/${postId}`).remove()
+                        );
+                        await Promise.all(deletePromises);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar posts:', error);
                 }
 
-                const forumsSnapshot = await database.ref('forums').orderByChild('creatorUid').equalTo(userUid).once('value');
-                const userForums = forumsSnapshot.val();
-                if (userForums) {
-                    const deletePromises = Object.keys(userForums).map(forumId => 
-                        database.ref(`forums/${forumId}`).remove()
-                    );
-                    await Promise.all(deletePromises);
+                try {
+                    const forumsSnapshot = await database.ref('forums').orderByChild('creatorUid').equalTo(userUid).once('value');
+                    const userForums = forumsSnapshot.val();
+                    if (userForums) {
+                        const deletePromises = Object.keys(userForums).map(forumId => 
+                            database.ref(`forums/${forumId}`).remove()
+                        );
+                        await Promise.all(deletePromises);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar foros:', error);
                 }
 
                 if (username) {
-                    await database.ref(`usernames/${username}`).remove();
+                    try {
+                        await database.ref(`usernames/${username}`).remove();
+                    } catch (error) {
+                        console.warn('⚠️ Error al eliminar username:', error);
+                    }
                 }
 
-                await database.ref(`users/${userUid}`).remove();
-                await database.ref(`contacts/${userUid}`).remove();
+                try {
+                    await database.ref(`users/${userUid}`).remove();
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar usuario:', error);
+                }
+
+                try {
+                    await database.ref(`contacts/${userUid}`).remove();
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar contactos:', error);
+                }
+
+                try {
+                    await database.ref(`notifications/${userUid}`).remove();
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar notificaciones:', error);
+                }
 
                 localStorage.removeItem('ratweb_user');
                 localStorage.removeItem('ratweb_gallery');
                 localStorage.removeItem('ratweb_chats');
-                
-                await currentAuthUser.delete();
+                localStorage.removeItem('ratweb_presence');
+                localStorage.removeItem('ratweb_muted_contacts');
+                localStorage.removeItem('ratweb_chat_wallpapers');
+
+                try {
+                    await currentAuthUser.delete();
+                } catch (error) {
+                    console.warn('⚠️ Error al eliminar autenticación:', error);
+                    await auth.signOut();
+                }
 
                 alert('✅ Cuenta eliminada correctamente');
                 currentUser = null;
                 currentAuthUser = null;
-                
-                document.getElementById('authOverlay').style.display = 'flex';
-                document.getElementById('authOverlay').style.position = 'fixed';
-                document.getElementById('authOverlay').style.top = '0';
-                document.getElementById('authOverlay').style.left = '0';
-                document.getElementById('authOverlay').style.width = '100vw';
-                document.getElementById('authOverlay').style.height = '100vh';
-                document.getElementById('authOverlay').style.zIndex = '10000';
-                
                 window.location.reload();
 
             } catch (error) {
                 console.error('Error al eliminar cuenta:', error);
-                if (error.code === 'auth/requires-recent-login') {
-                    alert('Por seguridad, necesitas iniciar sesión nuevamente para eliminar tu cuenta.');
-                    await auth.signOut();
-                    window.location.reload();
-                } else {
-                    alert(`❌ Error al eliminar cuenta: ${error.message}`);
-                }
+                alert(`❌ Error al eliminar cuenta: ${error.message}`);
             }
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE CHAT
-        // ==========================================
+        // ============================================================
         
         function getChatId(user1, user2) {
             const users = [user1, user2].sort();
@@ -1456,9 +1660,9 @@
             }, 50);
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE POSTS
-        // ==========================================
+        // ============================================================
         
         function createPost(target) {
             if (!currentUser || !currentAuthUser) {
@@ -1477,7 +1681,7 @@
             }
 
             const postData = {
-                authorUid: currentAuthUser.uid,  // Siempre usar currentAuthUser.uid
+                authorUid: currentAuthUser.uid,
                 authorName: currentUser.displayName,
                 authorHandle: currentUser.username,
                 avatar: currentUser.avatar || '',
@@ -1534,7 +1738,6 @@
 
             listContainer.innerHTML = filteredPosts.map(post => {
                 const isLiked = post.likedBy && post.likedBy.includes(myHandle);
-                // Usar currentAuthUser.uid para comparar
                 const isMyPost = currentAuthUser && post.authorUid === currentAuthUser.uid;
                 const isRepliesOpen = !!openRepliesBoxes[post.id];
                 const replyCount = (post.replies && post.replies.length) || 0;
@@ -1617,6 +1820,8 @@
             if (!post) return;
 
             const myHandle = currentUser ? currentUser.username : '@ScottWilh';
+            const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
+            
             if (!post.likedBy) post.likedBy = [];
             const index = post.likedBy.indexOf(myHandle);
 
@@ -1627,7 +1832,20 @@
             }
 
             updatePostInFirebase(postId, { likedBy: post.likedBy })
-                .then(() => renderPosts(target))
+                .then(() => {
+                    renderPosts(target);
+                    // Enviar notificación si es like y no es mi propio post
+                    if (!wasLiked && post.authorUid !== currentAuthUser.uid) {
+                        sendNotification(
+                            post.authorUid,
+                            'post_like',
+                            currentAuthUser.uid,
+                            currentUser.username,
+                            `${currentUser.username} le dio like a tu publicación 🐾`,
+                            '#menu'
+                        );
+                    }
+                })
                 .catch(err => console.error('Error al actualizar like:', err));
         }
 
@@ -1713,6 +1931,17 @@
                         if (mediaInput) mediaInput.value = '';
                         renderPosts(target);
                         updateContactsFromPosts();
+                        // Enviar notificación al autor del post
+                        if (post.authorUid !== currentAuthUser.uid) {
+                            sendNotification(
+                                post.authorUid,
+                                'post_reply',
+                                currentAuthUser.uid,
+                                currentUser.username,
+                                `${currentUser.username} comentó tu publicación: "${post.text.slice(0, 30)}..."`,
+                                '#menu'
+                            );
+                        }
                     })
                     .catch(err => console.error('Error al añadir reply:', err));
             };
@@ -1743,9 +1972,9 @@
             }
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE FOROS
-        // ==========================================
+        // ============================================================
         
         function getMyForumsCount() {
             const myUid = currentAuthUser ? currentAuthUser.uid : null;
@@ -1938,9 +2167,9 @@
             renderPosts('forum');
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE GALERÍA
-        // ==========================================
+        // ============================================================
         
         function uploadToGallery() {
             const title = document.getElementById('galleryTitle').value.trim();
@@ -2042,9 +2271,9 @@
             renderGallery();
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE PERFIL
-        // ==========================================
+        // ============================================================
         
         function renderProfile() {
             if (!currentUser) return;
@@ -2069,8 +2298,12 @@
             const myGalleryLikes = gallery.filter(g => g.uploaderHandle === currentUser.username).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
             document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
 
-            const joinedDate = new Date(currentUser.joinedAt || Date.now());
-            document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+            const joinedDate = currentUser.joinedAt ? new Date(currentUser.joinedAt) : new Date();
+            if (isNaN(joinedDate.getTime())) {
+                document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+            } else {
+                document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+            }
         }
 
         function changeBanner(event) {
@@ -2183,9 +2416,9 @@
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE PRESENCIA Y NAVEGACIÓN
-        // ==========================================
+        // ============================================================
         
         function pingUserPresence() {
             if (!currentUser) return;
@@ -2227,9 +2460,9 @@
             loadContacts();
         }
 
-        // ==========================================
+        // ============================================================
         // FUNCIONES DE MODAL Y BÚSQUEDA
-        // ==========================================
+        // ============================================================
         
         function openModal(src, type) {
             const modal = document.getElementById('imageModal');
@@ -2298,9 +2531,9 @@
             }
         }
 
-        // ==========================================
+        // ============================================================
         // INICIALIZACIÓN
-        // ==========================================
+        // ============================================================
         
         window.onload = function() {
             console.log('🔥 Iniciando RatWeb...');
@@ -2312,19 +2545,15 @@
                     currentUser = JSON.parse(savedUser);
                     console.log('📦 Usuario guardado encontrado:', currentUser.username);
                     
-                    // Verificar autenticación
                     auth.onAuthStateChanged((user) => {
                         if (user) {
                             console.log('✅ Usuario autenticado:', user.uid);
-                            // Actualizar currentAuthUser
                             currentAuthUser = user;
                             
-                            // Verificar que el usuario en la DB coincida
                             database.ref(`users/${user.uid}`).once('value')
                                 .then(snapshot => {
                                     if (snapshot.exists()) {
                                         const userData = snapshot.val();
-                                        // Actualizar datos locales
                                         currentUser = { ...userData, uid: user.uid };
                                         localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
                                         
@@ -2336,6 +2565,7 @@
                                         loadContacts();
                                         renderGallery();
                                         pingUserPresence();
+                                        listenNotifications();
                                         
                                         const initialChatId = getChatId(currentUser.username, 'RatBot');
                                         loadChatMessages(initialChatId);
