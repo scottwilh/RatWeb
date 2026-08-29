@@ -223,7 +223,8 @@
             <div class="avatar-preview-container">
                 <img id="avatarPreview" class="avatar-preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ccc'/></svg>">
                 <label class="file-label">
-                    🖼️ Elegir foto                    <input type="file" id="regAvatar" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
+                    🖼️ Elegir foto
+                    <input type="file" id="regAvatar" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
                 </label>
             </div>
             <input type="text" id="regUsername" placeholder="@usuario (ej: @ScottWilh)">
@@ -503,7 +504,7 @@
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ============================================================
-        // FUNCIÓN DE AUTENTICACIÓN
+        // FUNCIONES DE AUTENTICACIÓN
         // ============================================================
         function ensureAuth() {
             if (!currentAuthUser) {
@@ -520,6 +521,29 @@
                 }
             }
             return currentAuthUser && currentUser;
+        }
+
+        function refreshUserData() {
+            return new Promise((resolve, reject) => {
+                const user = auth.currentUser;
+                if (!user) {
+                    reject('No hay usuario autenticado');
+                    return;
+                }
+                database.ref(`users/${user.uid}`).once('value')
+                    .then(snapshot => {
+                        if (snapshot.exists()) {
+                            const userData = snapshot.val();
+                            currentUser = { ...userData, uid: user.uid };
+                            currentAuthUser = user;
+                            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                            resolve(currentUser);
+                        } else {
+                            reject('Usuario no registrado');
+                        }
+                    })
+                    .catch(reject);
+            });
         }
 
         // ============================================================
@@ -986,66 +1010,75 @@
             return database.ref(`posts/${postId}`).update(data);
         }
 
+        // ✅ CREATE POST CORREGIDO - USA auth.currentUser DIRECTAMENTE
         function createPost(target) {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión primero');
                 return;
             }
             
-            const isForum = target === 'forum';
-            const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
-            const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
-            const userText = textInput.value.trim();
+            refreshUserData()
+                .then(userData => {
+                    const isForum = target === 'forum';
+                    const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
+                    const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
+                    const userText = textInput.value.trim();
 
-            if (userText === "" && fileInput.files.length === 0) {
-                alert('Escribe algo o adjunta un archivo');
-                return;
-            }
+                    if (userText === "" && fileInput.files.length === 0) {
+                        alert('Escribe algo o adjunta un archivo');
+                        return;
+                    }
 
-            const postData = {
-                authorUid: currentAuthUser.uid,
-                authorName: currentUser.displayName,
-                authorHandle: currentUser.username,
-                avatar: currentUser.avatar || '',
-                text: userText,
-                mediaSrc: null,
-                mediaType: null,
-                forumId: isForum ? (currentForumId || '') : '',
-                likedBy: [],
-                replies: [],
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
+                    const postData = {
+                        authorUid: user.uid,
+                        authorName: userData.displayName,
+                        authorHandle: userData.username,
+                        avatar: userData.avatar || '',
+                        text: userText,
+                        mediaSrc: null,
+                        mediaType: null,
+                        forumId: isForum ? (currentForumId || '') : '',
+                        likedBy: [],
+                        replies: [],
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    };
 
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    postData.mediaSrc = e.target.result;
-                    postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                    savePostToFirebase(postData)
-                        .then(() => {
-                            textInput.value = '';
-                            fileInput.value = '';
-                            renderPostsBasedOnActiveSection();
-                        })
-                        .catch(err => {
-                            console.error('Error al guardar post:', err);
-                            alert('No tienes permiso para publicar. Verifica que estés logueado.');
-                        });
-                };
-                reader.readAsDataURL(file);
-            } else {
-                savePostToFirebase(postData)
-                    .then(() => {
-                        textInput.value = '';
-                        fileInput.value = '';
-                        renderPostsBasedOnActiveSection();
-                    })
-                    .catch(err => {
-                        console.error('Error al guardar post:', err);
-                        alert('No tienes permiso para publicar. Verifica que estés logueado.');
-                    });
-            }
+                    const file = fileInput.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            postData.mediaSrc = e.target.result;
+                            postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                            savePostToFirebase(postData)
+                                .then(() => {
+                                    textInput.value = '';
+                                    fileInput.value = '';
+                                    renderPostsBasedOnActiveSection();
+                                })
+                                .catch(err => {
+                                    console.error('Error al guardar post:', err);
+                                    alert('Error al publicar. Intenta de nuevo.');
+                                });
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        savePostToFirebase(postData)
+                            .then(() => {
+                                textInput.value = '';
+                                fileInput.value = '';
+                                renderPostsBasedOnActiveSection();
+                            })
+                            .catch(err => {
+                                console.error('Error al guardar post:', err);
+                                alert('Error al publicar. Intenta de nuevo.');
+                            });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error al obtener datos del usuario:', err);
+                    alert('Error al verificar tu cuenta. Intenta de nuevo.');
+                });
         }
 
         function renderPosts(target) {
@@ -1143,6 +1176,7 @@
             }).join('');
         }
 
+        // ✅ TOGGLE LIKE CORREGIDO
         function toggleLike(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para dar like');
@@ -1191,6 +1225,7 @@
             }
         }
 
+        // ✅ DELETE POST CORREGIDO
         function deletePost(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para eliminar');
@@ -1252,6 +1287,7 @@
             if (indicator) indicator.classList.remove('active');
         }
 
+        // ✅ ADD REPLY CORREGIDO
         function addReply(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para comentar');
