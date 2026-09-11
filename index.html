@@ -507,20 +507,24 @@
         // FUNCIONES DE AUTENTICACIÓN
         // ============================================================
         function ensureAuth() {
-            if (!currentAuthUser) {
-                currentAuthUser = auth.currentUser;
+            const user = auth.currentUser;
+            if (!user) {
+                return false;
             }
-            if (!currentUser) {
+            currentAuthUser = user;
+            
+            if (!currentUser || currentUser.uid !== user.uid) {
                 const saved = localStorage.getItem('ratweb_user');
                 if (saved) {
                     try {
-                        currentUser = JSON.parse(saved);
-                    } catch (e) {
-                        currentUser = null;
-                    }
+                        const parsed = JSON.parse(saved);
+                        if (parsed.uid === user.uid) {
+                            currentUser = parsed;
+                        }
+                    } catch (e) {}
                 }
             }
-            return currentAuthUser && currentUser;
+            return true;
         }
 
         function refreshUserData() {
@@ -1010,7 +1014,6 @@
             return database.ref(`posts/${postId}`).update(data);
         }
 
-        // ✅ CREATE POST - NO depende de currentAuthUser
         function createPost(target) {
             const user = auth.currentUser;
             if (!user) {
@@ -1183,7 +1186,8 @@
         }
 
         function toggleLike(postId, target) {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión para dar like');
                 return;
             }
@@ -1191,7 +1195,12 @@
             const post = posts.find(p => p.id === postId);
             if (!post) return;
 
-            const myHandle = currentUser.username;
+            const myHandle = currentUser ? currentUser.username : null;
+            if (!myHandle) {
+                alert('Error: no se encontró tu usuario');
+                return;
+            }
+            
             const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
             
             if (!post.likedBy) post.likedBy = [];
@@ -1206,13 +1215,13 @@
             updatePostInFirebase(postId, { likedBy: post.likedBy })
                 .then(() => {
                     renderPosts(target);
-                    if (!wasLiked && post.authorUid !== currentAuthUser.uid) {
+                    if (!wasLiked && post.authorUid !== user.uid) {
                         sendNotification(
                             post.authorUid,
                             'post_like',
-                            currentAuthUser.uid,
-                            currentUser.username,
-                            `${currentUser.username} le dio like a tu publicación 🐾`,
+                            user.uid,
+                            myHandle,
+                            `${myHandle} le dio like a tu publicación 🐾`,
                             '#menu'
                         );
                     }
@@ -1231,7 +1240,8 @@
         }
 
         function deletePost(postId, target) {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión para eliminar');
                 return;
             }
@@ -1242,7 +1252,7 @@
                 return;
             }
 
-            if (post.authorUid !== currentAuthUser.uid) {
+            if (post.authorUid !== user.uid) {
                 alert('No puedes eliminar este post porque no es tuyo');
                 return;
             }
@@ -1292,7 +1302,8 @@
         }
 
         function addReply(postId, target) {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión para comentar');
                 return;
             }
@@ -1313,13 +1324,20 @@
                 return;
             }
 
+            const myHandle = currentUser ? currentUser.username : null;
+            const myName = currentUser ? currentUser.displayName : null;
+            if (!myHandle) {
+                alert('Error: no se encontró tu usuario');
+                return;
+            }
+
             const replyTarget = activeReplyTargets[postId] || null;
 
             const replyData = {
                 id: Date.now(),
-                authorUid: currentAuthUser.uid,
-                authorName: currentUser.displayName,
-                authorHandle: currentUser.username,
+                authorUid: user.uid,
+                authorName: myName,
+                authorHandle: myHandle,
                 replyTo: replyTarget,
                 text: text,
                 mediaSrc: null
@@ -1336,13 +1354,13 @@
                         if (mediaInput) mediaInput.value = '';
                         renderPosts(target);
                         updateContactsFromPosts();
-                        if (post.authorUid !== currentAuthUser.uid) {
+                        if (post.authorUid !== user.uid) {
                             sendNotification(
                                 post.authorUid,
                                 'post_reply',
-                                currentAuthUser.uid,
-                                currentUser.username,
-                                `${currentUser.username} comentó tu publicación: "${post.text.slice(0, 30)}..."`,
+                                user.uid,
+                                myHandle,
+                                `${myHandle} comentó tu publicación: "${post.text.slice(0, 30)}..."`,
                                 '#menu'
                             );
                         }
@@ -1421,7 +1439,7 @@
         }
 
         function getMyForumsCount() {
-            const myUid = currentAuthUser ? currentAuthUser.uid : null;
+            const myUid = auth.currentUser ? auth.currentUser.uid : null;
             return forums.filter(f => f.creatorUid === myUid).length;
         }
 
@@ -1441,13 +1459,19 @@
         }
 
         function createForum() {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión');
                 return;
             }
             
+            if (!currentUser) {
+                alert('Cargando datos del usuario, espera un momento...');
+                return;
+            }
+            
             if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
-                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros creados a la vez. Borra uno de los tuyos para crear otro.`);
+                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros creados a la vez.`);
                 return;
             }
 
@@ -1459,7 +1483,7 @@
             if (!title) return;
 
             const forumData = {
-                creatorUid: currentAuthUser.uid,
+                creatorUid: user.uid,
                 title: title,
                 category: category || 'GENERAL',
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
@@ -1501,8 +1525,14 @@
             const forum = forums.find(f => f.id === forumId);
             if (!forum) return;
 
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión para unirte a un foro');
+                return;
+            }
+            
+            if (!currentUser) {
+                alert('Cargando datos del usuario, espera un momento...');
                 return;
             }
 
@@ -1654,8 +1684,14 @@
         }
 
         function uploadToGallery() {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión para subir imágenes');
+                return;
+            }
+            
+            if (!currentUser) {
+                alert('Cargando datos del usuario, espera un momento...');
                 return;
             }
             
@@ -1674,7 +1710,7 @@
                     category: category,
                     src: e.target.result,
                     uploaderHandle: currentUser.username,
-                    uploaderUid: currentAuthUser.uid,
+                    uploaderUid: user.uid,
                     visibility: visibility,
                     likedBy: [],
                     timestamp: firebase.database.ServerValue.TIMESTAMP
@@ -1734,12 +1770,13 @@
 
         function deleteGalleryItem(id, event) {
             event.stopPropagation();
-            if (!ensureAuth()) return;
+            const user = auth.currentUser;
+            if (!user) return;
             
             const item = gallery.find(g => g.id === id || g.firebaseKey === id);
             if (!item) return;
 
-            if (item.uploaderUid !== currentAuthUser.uid) {
+            if (item.uploaderUid !== user.uid) {
                 alert('No tienes permiso para borrar esta imagen');
                 return;
             }
@@ -1755,7 +1792,8 @@
 
         function toggleGalleryLike(id, event) {
             event.stopPropagation();
-            if (!ensureAuth()) return;
+            const user = auth.currentUser;
+            if (!user) return;
             
             const item = gallery.find(g => g.id === id || g.firebaseKey === id);
             if (!item) return;
@@ -1794,7 +1832,8 @@
         }
 
         function addContact() {
-            if (!ensureAuth()) {
+            const user = auth.currentUser;
+            if (!user) {
                 alert('Debes iniciar sesión');
                 return;
             }
@@ -1831,7 +1870,7 @@
                                             sendNotification(
                                                 targetUid,
                                                 'friend_request',
-                                                currentAuthUser.uid,
+                                                user.uid,
                                                 currentUser.username,
                                                 `${currentUser.username} te ha enviado una solicitud de amistad 🤝`,
                                                 '#social'
@@ -1957,14 +1996,15 @@
         }
 
         function sendChatMessageToFirebase(text, mediaSrc, mediaType, replyTo) {
-            if (!ensureAuth()) return;
+            const user = auth.currentUser;
+            if (!user || !currentUser) return;
             
             const chatId = getChatId(currentUser.username, activeChatContact);
             const messagesRef = database.ref(`chats/${chatId}`);
             const newMessageRef = messagesRef.push();
             
             const messageData = {
-                senderUid: currentAuthUser.uid,
+                senderUid: user.uid,
                 sender: currentUser.username,
                 text: text || '',
                 mediaSrc: mediaSrc || null,
@@ -2393,52 +2433,69 @@
         // FUNCIONES DE PERFIL
         // ============================================================
         function renderProfile() {
-            if (!currentUser) return;
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            database.ref(`users/${user.uid}`).once('value')
+                .then(snapshot => {
+                    if (!snapshot.exists()) return;
+                    
+                    const freshData = snapshot.val();
+                    currentUser = { ...freshData, uid: user.uid };
+                    localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                    
+                    const banner = document.getElementById('profileBanner');
+                    banner.style.backgroundImage = freshData.banner ? `url('${freshData.banner}')` : 'none';
 
-            const banner = document.getElementById('profileBanner');
-            banner.style.backgroundImage = currentUser.banner ? `url('${currentUser.banner}')` : 'none';
+                    document.getElementById('profileAvatarImg').src = freshData.avatar || '';
+                    document.getElementById('headerAvatar').src = freshData.avatar || '';
+                    document.getElementById('profileDisplayName').innerText = freshData.displayName;
+                    document.getElementById('profileUsername').innerText = freshData.username;
+                    document.getElementById('profileBioInput').value = freshData.bio || '';
 
-            document.getElementById('profileAvatarImg').src = currentUser.avatar || '';
-            document.getElementById('profileDisplayName').innerText = currentUser.displayName;
-            document.getElementById('profileUsername').innerText = currentUser.username;
-            document.getElementById('profileBioInput').value = currentUser.bio || '';
+                    updateNameCooldownUI();
+                    updateUsernameCooldownUI();
 
-            updateNameCooldownUI();
-            updateUsernameCooldownUI();
+                    const myUid = user.uid;
+                    document.getElementById('statPosts').innerText = posts.filter(p => p.authorUid === myUid).length;
+                    document.getElementById('statGallery').innerText = gallery.filter(g => g.uploaderUid === myUid).length;
+                    document.getElementById('statForums').innerText = forums.filter(f => f.members && f.members.includes(freshData.username)).length;
 
-            const myUid = currentAuthUser ? currentAuthUser.uid : null;
-            document.getElementById('statPosts').innerText = posts.filter(p => p.authorUid === myUid).length;
-            document.getElementById('statGallery').innerText = gallery.filter(g => g.uploaderUid === myUid).length;
-            document.getElementById('statForums').innerText = forums.filter(f => f.members && f.members.includes(currentUser.username)).length;
+                    const myPostsLikes = posts.filter(p => p.authorUid === myUid).reduce((sum, p) => sum + (p.likedBy ? p.likedBy.length : 0), 0);
+                    const myGalleryLikes = gallery.filter(g => g.uploaderUid === myUid).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
+                    document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
 
-            const myPostsLikes = posts.filter(p => p.authorUid === myUid).reduce((sum, p) => sum + (p.likedBy ? p.likedBy.length : 0), 0);
-            const myGalleryLikes = gallery.filter(g => g.uploaderUid === myUid).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
-            document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
-
-            const joinedDate = currentUser.joinedAt ? new Date(currentUser.joinedAt) : new Date();
-            if (isNaN(joinedDate.getTime())) {
-                document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
-            } else {
-                document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
-            }
+                    const joinedDate = freshData.joinedAt ? new Date(freshData.joinedAt) : new Date();
+                    if (isNaN(joinedDate.getTime())) {
+                        document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+                    } else {
+                        document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
+                    }
+                })
+                .catch(err => console.error('Error al renderizar perfil:', err));
         }
 
-        // ✅ BANNER GUARDADO EN FIREBASE (ARREGLO DEL BUG)
         function changeBanner(event) {
             const file = event.target.files[0];
-            if (!file || !currentUser) return;
+            const user = auth.currentUser;
+            
+            if (!file || !user) {
+                alert('Debes iniciar sesión para cambiar el banner');
+                return;
+            }
             
             const reader = new FileReader();
             reader.onload = function(e) {
                 const bannerData = e.target.result;
                 
-                // Guardar en Firebase (persiste al recargar)
-                database.ref(`users/${currentUser.uid}/banner`).set(bannerData)
+                database.ref(`users/${user.uid}/banner`).set(bannerData)
                     .then(() => {
-                        currentUser.banner = bannerData;
-                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        if (currentUser) {
+                            currentUser.banner = bannerData;
+                            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        }
                         renderProfile();
-                        console.log('✅ Banner guardado en Firebase');
+                        alert('✅ Banner actualizado');
                     })
                     .catch(err => {
                         console.error('Error al guardar banner:', err);
@@ -2448,23 +2505,28 @@
             reader.readAsDataURL(file);
         }
 
-        // ✅ AVATAR GUARDADO EN FIREBASE (ARREGLO DEL BUG)
         function changeProfileAvatar(event) {
             const file = event.target.files[0];
-            if (!file || !currentUser) return;
+            const user = auth.currentUser;
+            
+            if (!file || !user) {
+                alert('Debes iniciar sesión para cambiar el avatar');
+                return;
+            }
             
             const reader = new FileReader();
             reader.onload = function(e) {
                 const avatarData = e.target.result;
                 
-                // Guardar en Firebase (persiste al recargar)
-                database.ref(`users/${currentUser.uid}/avatar`).set(avatarData)
+                database.ref(`users/${user.uid}/avatar`).set(avatarData)
                     .then(() => {
-                        currentUser.avatar = avatarData;
-                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                        document.getElementById('headerAvatar').src = currentUser.avatar;
+                        if (currentUser) {
+                            currentUser.avatar = avatarData;
+                            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        }
+                        document.getElementById('headerAvatar').src = avatarData;
                         renderProfile();
-                        console.log('✅ Avatar guardado en Firebase');
+                        alert('✅ Foto de perfil actualizada');
                     })
                     .catch(err => {
                         console.error('Error al guardar avatar:', err);
@@ -2524,10 +2586,11 @@
         function saveName() {
             const newName = document.getElementById('editNameInput').value.trim();
             if (!newName) return;
+            const user = auth.currentUser;
             currentUser.displayName = newName;
             currentUser.lastNameChange = Date.now();
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-            database.ref(`users/${currentUser.uid}`).update({
+            database.ref(`users/${user.uid}`).update({
                 displayName: newName,
                 lastNameChange: Date.now()
             });
@@ -2550,12 +2613,12 @@
             let newUsername = document.getElementById('editUsernameInput').value.trim();
             if (!newUsername) return;
             if (!newUsername.startsWith('@')) newUsername = '@' + newUsername;
+            const user = auth.currentUser;
             
-            // Eliminar el username viejo y crear el nuevo
             database.ref(`usernames/${currentUser.username}`).remove()
                 .then(() => {
                     return database.ref(`usernames/${newUsername}`).set({
-                        uid: currentUser.uid,
+                        uid: user.uid,
                         displayName: currentUser.displayName
                     });
                 })
@@ -2563,7 +2626,7 @@
                     currentUser.username = newUsername;
                     currentUser.lastUsernameChange = Date.now();
                     localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                    database.ref(`users/${currentUser.uid}`).update({
+                    database.ref(`users/${user.uid}`).update({
                         username: newUsername,
                         lastUsernameChange: Date.now()
                     });
@@ -2578,10 +2641,11 @@
 
         function saveBio() {
             if (!currentUser) return;
+            const user = auth.currentUser;
             const bio = document.getElementById('profileBioInput').value.trim();
             currentUser.bio = bio;
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-            database.ref(`users/${currentUser.uid}/bio`).set(bio)
+            database.ref(`users/${user.uid}/bio`).set(bio)
                 .catch(err => console.error('Error al guardar bio:', err));
         }
 
