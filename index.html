@@ -18,7 +18,7 @@
         .auth-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; }
         .auth-title { font-size: 22px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
         .avatar-preview-container { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .avatar-preview { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #ffd8df; }
+        .avatar-preview { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; }
         .auth-card input, .auth-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
         .auth-card textarea { height: 50px; resize: none; }
         .btn-auth { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
@@ -31,7 +31,7 @@
         .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
         .search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; }
         .user-header-profile { display: flex; align-items: center; gap: 8px; }
-        .avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; cursor: pointer; }
+        .avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; cursor: pointer; }
         
         .notification-wrapper { position: relative; display: inline-block; }
         .notif-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; padding: 4px 8px; border-radius: 50%; transition: background 0.3s; }
@@ -75,7 +75,7 @@
         .btn-delete-account:hover { background-color: #c0392b; transform: scale(1.02); }
         
         .post-card { display: flex; gap: 6px; align-items: flex-start; position: relative; }
-        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #fff; flex-shrink: 0; }
+        .avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; flex-shrink: 0; }
         .post-bubble { background-color: #ffd8df; border: 2px solid #000; border-radius: 14px; padding: 8px; flex: 1; position: relative; }
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .post-author { font-size: 11px; color: #555; font-weight: bold; }
@@ -131,11 +131,11 @@
         .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
         
         .profile-card { background-color: #fff; border: 2px solid #000; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
-        .profile-banner { height: 100px; background-color: #ffd8df; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
+        .profile-banner { height: 100px; background-color: #b56565; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
         .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: #fff; border: 2px solid #000; border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
         .profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; }
         .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
-        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; outline: 2px solid #000; object-fit: cover; background-color: #fff; }
+        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; outline: 2px solid #000; object-fit: cover; background-color: #b56565; }
         .profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: #fff; border: 2px solid #000; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .profile-info { padding: 10px 12px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
         .profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
@@ -465,7 +465,7 @@
         const database = firebase.database();
         const auth = firebase.auth();
 
-        // ✅ PERSISTENCIA LOCAL — CRÍTICO PARA MANTENER SESIÓN
+        // ✅ PERSISTENCIA LOCAL
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
             .then(() => console.log('✅ Persistencia LOCAL configurada'))
             .catch(err => console.error('❌ Error persistencia:', err));
@@ -508,7 +508,7 @@
         const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ============================================================
-        // ✅ UTILIDAD: GUARDAR USUARIO SIN AVATAR/BANNER EN LOCALSTORAGE
+        // UTILIDADES
         // ============================================================
         function saveUserToLocalStorage(user) {
             try {
@@ -517,13 +517,10 @@
                 delete lightUser.banner;
                 localStorage.setItem('ratweb_user', JSON.stringify(lightUser));
             } catch (e) {
-                console.warn('⚠️ No se pudo guardar en localStorage:', e.message);
+                console.warn('⚠️ localStorage lleno:', e.message);
             }
         }
 
-        // ============================================================
-        // ✅ UTILIDAD: CONVERTIR GIF A PNG ESTÁTICO
-        // ============================================================
         function convertImageToStatic(file) {
             return new Promise((resolve) => {
                 if (file.type !== 'image/gif') {
@@ -532,7 +529,6 @@
                     reader.readAsDataURL(file);
                     return;
                 }
-                // Es GIF → convertir primer frame a PNG
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
@@ -551,20 +547,24 @@
             });
         }
 
-        // ============================================================
-        // FUNCIONES DE AUTENTICACIÓN
-        // ============================================================
-        function ensureAuth() {
+        // ✅ ASYNC: Carga de Firebase si currentUser es null
+        async function ensureAuth() {
             const user = auth.currentUser;
             if (!user) return false;
             currentAuthUser = user;
+            
             if (!currentUser || currentUser.uid !== user.uid) {
-                const saved = localStorage.getItem('ratweb_user');
-                if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        if (parsed.uid === user.uid) currentUser = parsed;
-                    } catch (e) {}
+                try {
+                    const snapshot = await database.ref(`users/${user.uid}`).once('value');
+                    if (snapshot.exists()) {
+                        currentUser = { ...snapshot.val(), uid: user.uid };
+                        saveUserToLocalStorage(currentUser);
+                    } else {
+                        return false;
+                    }
+                } catch (e) {
+                    console.error('Error al cargar usuario:', e);
+                    return false;
                 }
             }
             return true;
@@ -585,7 +585,7 @@
                 notificationData.actionText = 'Aceptar';
             }
             return database.ref(`notifications/${targetUid}`).push().set(notificationData)
-                .catch(err => console.error('Error al enviar notificación:', err));
+                .catch(err => console.error('Error notificación:', err));
         }
 
         function markNotificationAsRead(notificationId) {
@@ -705,7 +705,7 @@
         }
 
         function acceptFriendRequest(fromUid, fromHandle, notifId) {
-            if (!ensureAuth()) { alert('Debes iniciar sesión'); return; }
+            if (!auth.currentUser) { alert('Debes iniciar sesión'); return; }
             markNotificationAsRead(notifId);
             database.ref(`contacts/${currentUser.uid}/${fromHandle}`).set({
                 addedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -714,7 +714,7 @@
             }).then(() => {
                 alert(`✅ ${fromHandle} ahora es tu amigo!`);
                 loadContacts();
-                sendNotification(fromUid, 'friend_accepted', currentAuthUser.uid, currentUser.username,
+                sendNotification(fromUid, 'friend_accepted', auth.currentUser.uid, currentUser.username,
                     `${currentUser.username} aceptó tu solicitud de amistad ✅`, '#social');
                 document.getElementById('notificationDropdown').classList.remove('open');
             }).catch(err => { console.error(err); alert('Error al aceptar'); });
@@ -899,50 +899,55 @@
         function deletePostFromFirebase(postId) { return database.ref(`posts/${postId}`).remove(); }
         function updatePostInFirebase(postId, data) { return database.ref(`posts/${postId}`).update(data); }
 
-        function createPost(target) {
+        async function createPost(target) {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión primero'); return; }
 
-            database.ref(`users/${user.uid}`).once('value')
-                .then(snapshot => {
-                    if (!snapshot.exists()) { alert('Usuario no registrado'); return; }
-                    const userData = snapshot.val();
-                    const isForum = target === 'forum';
-                    const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
-                    const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
-                    const userText = textInput.value.trim();
+            try {
+                const snapshot = await database.ref(`users/${user.uid}`).once('value');
+                if (!snapshot.exists()) { alert('Usuario no registrado'); return; }
+                const userData = snapshot.val();
+                currentUser = { ...userData, uid: user.uid };
+                saveUserToLocalStorage(currentUser);
+                
+                const isForum = target === 'forum';
+                const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
+                const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
+                const userText = textInput.value.trim();
 
-                    if (userText === "" && fileInput.files.length === 0) {
-                        alert('Escribe algo o adjunta un archivo'); return;
-                    }
+                if (userText === "" && fileInput.files.length === 0) {
+                    alert('Escribe algo o adjunta un archivo'); return;
+                }
 
-                    const postData = {
-                        authorUid: user.uid, authorName: userData.displayName,
-                        authorHandle: userData.username, avatar: userData.avatar || '',
-                        text: userText, mediaSrc: null, mediaType: null,
-                        forumId: isForum ? (currentForumId || '') : '',
-                        likedBy: [], replies: [],
-                        timestamp: firebase.database.ServerValue.TIMESTAMP
-                    };
+                const postData = {
+                    authorUid: user.uid, authorName: userData.displayName,
+                    authorHandle: userData.username, avatar: userData.avatar || '',
+                    text: userText, mediaSrc: null, mediaType: null,
+                    forumId: isForum ? (currentForumId || '') : '',
+                    likedBy: [], replies: [],
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
 
-                    const file = fileInput.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            postData.mediaSrc = e.target.result;
-                            postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                            savePostToFirebase(postData)
-                                .then(() => { textInput.value = ''; fileInput.value = ''; renderPostsBasedOnActiveSection(); })
-                                .catch(err => { console.error(err); alert('Error al publicar: ' + err.message); });
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
+                const file = fileInput.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        postData.mediaSrc = e.target.result;
+                        postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                         savePostToFirebase(postData)
                             .then(() => { textInput.value = ''; fileInput.value = ''; renderPostsBasedOnActiveSection(); })
                             .catch(err => { console.error(err); alert('Error al publicar: ' + err.message); });
-                    }
-                })
-                .catch(err => { console.error(err); alert('Error al verificar tu cuenta'); });
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    savePostToFirebase(postData)
+                        .then(() => { textInput.value = ''; fileInput.value = ''; renderPostsBasedOnActiveSection(); })
+                        .catch(err => { console.error(err); alert('Error al publicar: ' + err.message); });
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error al verificar tu cuenta');
+            }
         }
 
         function renderPosts(target) {
@@ -1022,13 +1027,16 @@
             }).join('');
         }
 
-        function toggleLike(postId, target) {
+        async function toggleLike(postId, target) {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión para dar like'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            
             const post = posts.find(p => p.id === postId);
             if (!post) return;
-            const myHandle = currentUser ? currentUser.username : null;
-            if (!myHandle) { alert('Error: usuario no encontrado'); return; }
+            const myHandle = currentUser.username;
             
             const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
             if (!post.likedBy) post.likedBy = [];
@@ -1092,9 +1100,12 @@
             if (indicator) indicator.classList.remove('active');
         }
 
-        function addReply(postId, target) {
+        async function addReply(postId, target) {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión para comentar'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
             
             const input = document.getElementById(`reply-input-${postId}`);
             const mediaInput = document.getElementById(`reply-media-${postId}`);
@@ -1105,9 +1116,8 @@
             const post = posts.find(p => p.id === postId);
             if (!post) { alert('El post ya no existe'); return; }
 
-            const myHandle = currentUser ? currentUser.username : null;
-            const myName = currentUser ? currentUser.displayName : null;
-            if (!myHandle) { alert('Error: usuario no encontrado'); return; }
+            const myHandle = currentUser.username;
+            const myName = currentUser.displayName;
 
             const replyTarget = activeReplyTargets[postId] || null;
             const replyData = {
@@ -1193,10 +1203,13 @@
             if (createBtn) createBtn.disabled = limitReached;
         }
 
-        function createForum() {
+        async function createForum() {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión'); return; }
-            if (!currentUser) { alert('Espera un momento...'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            
             if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
                 alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros.`); return;
             }
@@ -1230,13 +1243,15 @@
             }).catch(err => { console.error(err); alert('Error al borrar foro'); });
         }
 
-        function toggleJoinForum(forumId, event) {
+        async function toggleJoinForum(forumId, event) {
             event.stopPropagation();
             const forum = forums.find(f => f.id === forumId);
             if (!forum) return;
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión'); return; }
-            if (!currentUser) { alert('Espera un momento...'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
             
             const myHandle = currentUser.username;
             const index = forum.members ? forum.members.indexOf(myHandle) : -1;
@@ -1347,10 +1362,13 @@
             });
         }
 
-        function uploadToGallery() {
+        async function uploadToGallery() {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión'); return; }
-            if (!currentUser) { alert('Espera un momento...'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            
             const title = document.getElementById('galleryTitle').value.trim();
             const category = document.getElementById('galleryCategory').value;
             const fileInput = document.getElementById('galleryFile');
@@ -1444,9 +1462,13 @@
             });
         }
 
-        function addContact() {
+        async function addContact() {
             const user = auth.currentUser;
             if (!user) { alert('Debes iniciar sesión'); return; }
+            
+            const ok = await ensureAuth();
+            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            
             const username = prompt('🔍 Ingresa el @usuario:');
             if (!username) return;
             const cleanUsername = username.startsWith('@') ? username : '@' + username;
@@ -2197,4 +2219,4 @@
         };
     </script>
 </body>
-                                </html>
+    </html>
