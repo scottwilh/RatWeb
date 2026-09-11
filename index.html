@@ -381,7 +381,7 @@
                     <div class="profile-banner" id="profileBanner">
                         <label class="profile-edit-banner-btn" title="Cambiar banner">
                             🖼️
-                            <input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)">
+                            <input type="file" id="bannerFile" accept="image/*,image/gif" style="display:none;" onchange="changeBanner(event)">
                         </label>
                     </div>
                     <div class="profile-avatar-row">
@@ -389,7 +389,7 @@
                             <img id="profileAvatarImg" class="profile-avatar">
                             <label class="profile-edit-avatar-btn" title="Cambiar foto de perfil">
                                 🖼️
-                                <input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)">
+                                <input type="file" id="profileAvatarFile" accept="image/*,image/gif" style="display:none;" onchange="changeProfileAvatar(event)">
                             </label>
                         </div>
                     </div>
@@ -471,6 +471,34 @@
             .catch(err => console.error('❌ Error persistencia:', err));
 
         // ============================================================
+        // 🔧 FIX BUG #1: GATILLO DE "AUTH LISTO"
+        // Antes, muchas funciones leían auth.currentUser directamente.
+        // Al recargar la pestaña (muy común en Chrome Android cuando la
+        // app la descarga en segundo plano), Firebase tarda unos
+        // milisegundos en restaurar la sesión desde el almacenamiento
+        // local. Si el usuario tocaba "like"/"publicar" en ese instante,
+        // auth.currentUser todavía era null y saltaba el alert de
+        // "inicia sesión" aunque la sesión sí existía.
+        // waitForAuth() espera a que onAuthStateChanged dispare al
+        // menos una vez antes de decidir si hay o no usuario.
+        // ============================================================
+        let authReady = false;
+        let authReadyResolve;
+        const authReadyPromise = new Promise((resolve) => { authReadyResolve = resolve; });
+
+        function markAuthReady() {
+            if (!authReady) {
+                authReady = true;
+                authReadyResolve();
+            }
+        }
+
+        function waitForAuth() {
+            if (authReady) return Promise.resolve(auth.currentUser);
+            return authReadyPromise.then(() => auth.currentUser);
+        }
+
+        // ============================================================
         // VARIABLES GLOBALES
         // ============================================================
         let currentUser = null;
@@ -521,6 +549,9 @@
             }
         }
 
+        // Usada para fotos normales (posts, comentarios, chat, galería):
+        // si es GIF, lo aplana a un frame estático en PNG para no
+        // disparar el peso de la base de datos en cada mensaje/post.
         function convertImageToStatic(file) {
             return new Promise((resolve) => {
                 if (file.type !== 'image/gif') {
@@ -547,9 +578,35 @@
             });
         }
 
+        // ============================================================
+        // 🔧 FIX BUG #2: SOPORTE DE GIFs ANIMADOS PARA AVATAR/BANNER
+        // A diferencia de convertImageToStatic, esta función NUNCA
+        // dibuja en <canvas>, así que un GIF conserva su animación.
+        // Se usa solo para avatar y banner de perfil.
+        // Nota: los GIFs pesan más que una foto normal. Como se
+        // guardan como base64 dentro de Realtime Database, un GIF muy
+        // pesado puede tardar más en subir en conexiones lentas. Si
+        // notas lentitud, lo ideal a futuro es subir estos archivos a
+        // Firebase Storage y guardar solo la URL (puedo ayudarte con
+        // eso cuando quieras).
+        // ============================================================
+        function convertImagePreserveGif(file) {
+            return new Promise((resolve, reject) => {
+                const MAX_BYTES = 4 * 1024 * 1024; // 4MB de margen para RTDB
+                if (file.size > MAX_BYTES) {
+                    reject(new Error('El archivo es muy pesado (máx. 4MB). Prueba con un GIF más liviano.'));
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+                reader.readAsDataURL(file);
+            });
+        }
+
         // ✅ ASYNC: Carga de Firebase si currentUser es null
         async function ensureAuth() {
-            const user = auth.currentUser;
+            const user = await waitForAuth();
             if (!user) return false;
             currentAuthUser = user;
             
@@ -726,8 +783,11 @@
         async function previewAvatar(event) {
             const file = event.target.files[0];
             if (file) {
-                tempAvatarData = await convertImageToStatic(file);
-                document.getElementById('avatarPreview').src = tempAvatarData;
+                tempAvatarData = await convertImagePreserveGif(file).catch(err => {
+                    alert('❌ ' + err.message);
+                    return null;
+                });
+                if (tempAvatarData) document.getElementById('avatarPreview').src = tempAvatarData;
             }
         }
 
@@ -828,12 +888,13 @@
         // ELIMINAR CUENTA
         // ============================================================
         async function deleteAccount() {
-            if (!currentUser || !currentAuthUser) { alert('No hay usuario logueado'); return; }
+            const user = await waitForAuth();
+            if (!user || !currentUser) { alert('No hay usuario logueado'); return; }
             if (!confirm('⚠️ ¿Estás seguro que quieres eliminar tu cuenta?')) return;
             if (!confirm('⚠️ ⚠️ ¿REALMENTE quieres eliminar tu cuenta?')) return;
 
             try {
-                const userUid = currentAuthUser.uid;
+                const userUid = user.uid;
                 const username = currentUser.username;
 
                 try {
@@ -859,7 +920,7 @@
 
                 localStorage.clear();
 
-                try { await currentAuthUser.delete(); }
+                try { await user.delete(); }
                 catch (e) { await auth.signOut(); }
 
                 alert('✅ Cuenta eliminada');
@@ -900,7 +961,7 @@
         function updatePostInFirebase(postId, data) { return database.ref(`posts/${postId}`).update(data); }
 
         async function createPost(target) {
-            const user = auth.currentUser;
+            const user = await waitForAuth();
             if (!user) { alert('Debes iniciar sesión primero'); return; }
 
             try {
@@ -908,6 +969,7 @@
                 if (!snapshot.exists()) { alert('Usuario no registrado'); return; }
                 const userData = snapshot.val();
                 currentUser = { ...userData, uid: user.uid };
+                currentAuthUser = user;
                 saveUserToLocalStorage(currentUser);
                 
                 const isForum = target === 'forum';
@@ -1028,12 +1090,10 @@
         }
 
         async function toggleLike(postId, target) {
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión para dar like'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión para dar like'); return; }
             
+            const user = auth.currentUser;
             const post = posts.find(p => p.id === postId);
             if (!post) return;
             const myHandle = currentUser.username;
@@ -1060,8 +1120,8 @@
             if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
-        function deletePost(postId, target) {
-            const user = auth.currentUser;
+        async function deletePost(postId, target) {
+            const user = await waitForAuth();
             if (!user) { alert('Debes iniciar sesión'); return; }
             const post = posts.find(p => p.id === postId);
             if (!post) { alert('El post ya no existe'); return; }
@@ -1101,11 +1161,9 @@
         }
 
         async function addReply(postId, target) {
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión para comentar'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión para comentar'); return; }
+            const user = auth.currentUser;
             
             const input = document.getElementById(`reply-input-${postId}`);
             const mediaInput = document.getElementById(`reply-media-${postId}`);
@@ -1204,11 +1262,9 @@
         }
 
         async function createForum() {
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión'); return; }
+            const user = auth.currentUser;
             
             if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
                 alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros.`); return;
@@ -1247,11 +1303,8 @@
             event.stopPropagation();
             const forum = forums.find(f => f.id === forumId);
             if (!forum) return;
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión'); return; }
             
             const myHandle = currentUser.username;
             const index = forum.members ? forum.members.indexOf(myHandle) : -1;
@@ -1363,11 +1416,9 @@
         }
 
         async function uploadToGallery() {
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión'); return; }
+            const user = auth.currentUser;
             
             const title = document.getElementById('galleryTitle').value.trim();
             const category = document.getElementById('galleryCategory').value;
@@ -1463,11 +1514,9 @@
         }
 
         async function addContact() {
-            const user = auth.currentUser;
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            
             const ok = await ensureAuth();
-            if (!ok) { alert('Cargando datos, espera un momento...'); return; }
+            if (!ok) { alert('Debes iniciar sesión'); return; }
+            const user = auth.currentUser;
             
             const username = prompt('🔍 Ingresa el @usuario:');
             if (!username) return;
@@ -1595,7 +1644,9 @@
                 .catch(error => { console.error(error); alert('Error al enviar'); });
         }
 
-        function sendChatMessage() {
+        async function sendChatMessage() {
+            const ok = await ensureAuth();
+            if (!ok) { alert('Debes iniciar sesión'); return; }
             const input = document.getElementById('chatMsgInput');
             const mediaInput = document.getElementById('chatMedia');
             const text = input.value.trim();
@@ -1945,35 +1996,46 @@
                 .catch(err => console.error(err));
         }
 
-        function changeBanner(event) {
+        // 🔧 FIX: ahora espera a waitForAuth() en vez de leer auth.currentUser
+        // directo, y usa convertImagePreserveGif para no romper la animación.
+        async function changeBanner(event) {
             const file = event.target.files[0];
-            const user = auth.currentUser;
-            if (!file || !user) { alert('Debes iniciar sesión'); return; }
-            convertImageToStatic(file).then((bannerData) => {
-                database.ref(`users/${user.uid}/banner`).set(bannerData)
-                    .then(() => {
-                        if (currentUser) currentUser.banner = bannerData;
-                        renderProfile();
-                        alert('✅ Banner actualizado');
-                    })
-                    .catch(err => { console.error(err); alert('Error al guardar banner'); });
-            });
+            if (!file) return;
+            const user = await waitForAuth();
+            if (!user) { alert('Debes iniciar sesión'); event.target.value = ''; return; }
+            try {
+                const bannerData = await convertImagePreserveGif(file);
+                await database.ref(`users/${user.uid}/banner`).set(bannerData);
+                if (currentUser) currentUser.banner = bannerData;
+                renderProfile();
+                alert('✅ Banner actualizado');
+            } catch (err) {
+                console.error(err);
+                alert('❌ ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
         }
 
-        function changeProfileAvatar(event) {
+        // 🔧 FIX: mismo cambio que changeBanner (waitForAuth + preserva GIF)
+        async function changeProfileAvatar(event) {
             const file = event.target.files[0];
-            const user = auth.currentUser;
-            if (!file || !user) { alert('Debes iniciar sesión'); return; }
-            convertImageToStatic(file).then((avatarData) => {
-                database.ref(`users/${user.uid}/avatar`).set(avatarData)
-                    .then(() => {
-                        if (currentUser) currentUser.avatar = avatarData;
-                        document.getElementById('headerAvatar').src = avatarData;
-                        renderProfile();
-                        alert('✅ Foto de perfil actualizada');
-                    })
-                    .catch(err => { console.error(err); alert('Error al guardar avatar'); });
-            });
+            if (!file) return;
+            const user = await waitForAuth();
+            if (!user) { alert('Debes iniciar sesión'); event.target.value = ''; return; }
+            try {
+                const avatarData = await convertImagePreserveGif(file);
+                await database.ref(`users/${user.uid}/avatar`).set(avatarData);
+                if (currentUser) currentUser.avatar = avatarData;
+                document.getElementById('headerAvatar').src = avatarData;
+                renderProfile();
+                alert('✅ Foto de perfil actualizada');
+            } catch (err) {
+                console.error(err);
+                alert('❌ ' + err.message);
+            } finally {
+                event.target.value = '';
+            }
         }
 
         function getDaysRemaining(lastChangeTs, cooldownDays) {
@@ -2020,10 +2082,11 @@
 
         function cancelEditName() { document.getElementById('editNameBox').style.display = 'none'; }
 
-        function saveName() {
+        async function saveName() {
             const newName = document.getElementById('editNameInput').value.trim();
             if (!newName) return;
-            const user = auth.currentUser;
+            const user = await waitForAuth();
+            if (!user) { alert('Debes iniciar sesión'); return; }
             currentUser.displayName = newName;
             currentUser.lastNameChange = Date.now();
             saveUserToLocalStorage(currentUser);
@@ -2041,11 +2104,12 @@
 
         function cancelEditUsername() { document.getElementById('editUsernameBox').style.display = 'none'; }
 
-        function saveUsername() {
+        async function saveUsername() {
             let newUsername = document.getElementById('editUsernameInput').value.trim();
             if (!newUsername) return;
             if (!newUsername.startsWith('@')) newUsername = '@' + newUsername;
-            const user = auth.currentUser;
+            const user = await waitForAuth();
+            if (!user) { alert('Debes iniciar sesión'); return; }
             database.ref(`usernames/${currentUser.username}`).remove()
                 .then(() => database.ref(`usernames/${newUsername}`).set({ uid: user.uid, displayName: currentUser.displayName }))
                 .then(() => {
@@ -2062,6 +2126,7 @@
         function saveBio() {
             if (!currentUser) return;
             const user = auth.currentUser;
+            if (!user) return;
             const bio = document.getElementById('profileBioInput').value.trim();
             currentUser.bio = bio;
             saveUserToLocalStorage(currentUser);
@@ -2204,6 +2269,9 @@
                         .catch(err => {
                             console.error(err);
                             document.getElementById('authOverlay').style.display = 'flex';
+                        })
+                        .finally(() => {
+                            markAuthReady();
                         });
                 } else {
                     console.warn('⚠️ No hay usuario, mostrando login');
@@ -2211,6 +2279,7 @@
                     localStorage.removeItem('ratweb_user');
                     currentUser = null;
                     currentAuthUser = null;
+                    markAuthReady();
                 }
             });
             updateMuteButtonUI();
