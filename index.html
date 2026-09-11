@@ -1010,16 +1010,22 @@
             return database.ref(`posts/${postId}`).update(data);
         }
 
-        // ✅ CREATE POST CORREGIDO - USA auth.currentUser DIRECTAMENTE
+        // ✅ CREATE POST - NO depende de currentAuthUser
         function createPost(target) {
             const user = auth.currentUser;
             if (!user) {
                 alert('Debes iniciar sesión primero');
                 return;
             }
-            
-            refreshUserData()
-                .then(userData => {
+
+            database.ref(`users/${user.uid}`).once('value')
+                .then(snapshot => {
+                    if (!snapshot.exists()) {
+                        alert('Usuario no registrado');
+                        return;
+                    }
+                    const userData = snapshot.val();
+
                     const isForum = target === 'forum';
                     const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
                     const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
@@ -1058,7 +1064,7 @@
                                 })
                                 .catch(err => {
                                     console.error('Error al guardar post:', err);
-                                    alert('Error al publicar. Intenta de nuevo.');
+                                    alert('Error al publicar: ' + err.message);
                                 });
                         };
                         reader.readAsDataURL(file);
@@ -1071,13 +1077,13 @@
                             })
                             .catch(err => {
                                 console.error('Error al guardar post:', err);
-                                alert('Error al publicar. Intenta de nuevo.');
+                                alert('Error al publicar: ' + err.message);
                             });
                     }
                 })
                 .catch(err => {
                     console.error('Error al obtener datos del usuario:', err);
-                    alert('Error al verificar tu cuenta. Intenta de nuevo.');
+                    alert('Error al verificar tu cuenta');
                 });
         }
 
@@ -1176,7 +1182,6 @@
             }).join('');
         }
 
-        // ✅ TOGGLE LIKE CORREGIDO
         function toggleLike(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para dar like');
@@ -1225,7 +1230,6 @@
             }
         }
 
-        // ✅ DELETE POST CORREGIDO
         function deletePost(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para eliminar');
@@ -1287,7 +1291,6 @@
             if (indicator) indicator.classList.remove('active');
         }
 
-        // ✅ ADD REPLY CORREGIDO
         function addReply(postId, target) {
             if (!ensureAuth()) {
                 alert('Debes iniciar sesión para comentar');
@@ -1627,7 +1630,7 @@
         }
 
         // ============================================================
-        // FUNCIONES DE GALERÍA EN FIREBASE
+        // FUNCIONES DE GALERÍA
         // ============================================================
         function loadGalleryFromFirebase() {
             const galleryRef = database.ref('gallery');
@@ -1743,9 +1746,6 @@
 
             if (confirm('¿Eliminar esta imagen de la galería?')) {
                 database.ref(`gallery/${item.firebaseKey || item.id}`).remove()
-                    .then(() => {
-                        // La vista se actualizará con el listener
-                    })
                     .catch(err => {
                         console.error('Error al eliminar imagen:', err);
                         alert('Error al eliminar la imagen');
@@ -2423,27 +2423,53 @@
             }
         }
 
+        // ✅ BANNER GUARDADO EN FIREBASE (ARREGLO DEL BUG)
         function changeBanner(event) {
             const file = event.target.files[0];
             if (!file || !currentUser) return;
+            
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentUser.banner = e.target.result;
-                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                renderProfile();
+                const bannerData = e.target.result;
+                
+                // Guardar en Firebase (persiste al recargar)
+                database.ref(`users/${currentUser.uid}/banner`).set(bannerData)
+                    .then(() => {
+                        currentUser.banner = bannerData;
+                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        renderProfile();
+                        console.log('✅ Banner guardado en Firebase');
+                    })
+                    .catch(err => {
+                        console.error('Error al guardar banner:', err);
+                        alert('Error al guardar el banner');
+                    });
             };
             reader.readAsDataURL(file);
         }
 
+        // ✅ AVATAR GUARDADO EN FIREBASE (ARREGLO DEL BUG)
         function changeProfileAvatar(event) {
             const file = event.target.files[0];
             if (!file || !currentUser) return;
+            
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentUser.avatar = e.target.result;
-                localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-                document.getElementById('headerAvatar').src = currentUser.avatar;
-                renderProfile();
+                const avatarData = e.target.result;
+                
+                // Guardar en Firebase (persiste al recargar)
+                database.ref(`users/${currentUser.uid}/avatar`).set(avatarData)
+                    .then(() => {
+                        currentUser.avatar = avatarData;
+                        localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                        document.getElementById('headerAvatar').src = currentUser.avatar;
+                        renderProfile();
+                        console.log('✅ Avatar guardado en Firebase');
+                    })
+                    .catch(err => {
+                        console.error('Error al guardar avatar:', err);
+                        alert('Error al guardar el avatar');
+                    });
             };
             reader.readAsDataURL(file);
         }
@@ -2501,6 +2527,10 @@
             currentUser.displayName = newName;
             currentUser.lastNameChange = Date.now();
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+            database.ref(`users/${currentUser.uid}`).update({
+                displayName: newName,
+                lastNameChange: Date.now()
+            });
             cancelEditName();
             renderProfile();
         }
@@ -2520,17 +2550,39 @@
             let newUsername = document.getElementById('editUsernameInput').value.trim();
             if (!newUsername) return;
             if (!newUsername.startsWith('@')) newUsername = '@' + newUsername;
-            currentUser.username = newUsername;
-            currentUser.lastUsernameChange = Date.now();
-            localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
-            cancelEditUsername();
-            renderProfile();
+            
+            // Eliminar el username viejo y crear el nuevo
+            database.ref(`usernames/${currentUser.username}`).remove()
+                .then(() => {
+                    return database.ref(`usernames/${newUsername}`).set({
+                        uid: currentUser.uid,
+                        displayName: currentUser.displayName
+                    });
+                })
+                .then(() => {
+                    currentUser.username = newUsername;
+                    currentUser.lastUsernameChange = Date.now();
+                    localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+                    database.ref(`users/${currentUser.uid}`).update({
+                        username: newUsername,
+                        lastUsernameChange: Date.now()
+                    });
+                    cancelEditUsername();
+                    renderProfile();
+                })
+                .catch(err => {
+                    console.error('Error al cambiar username:', err);
+                    alert('Error al cambiar el nombre de usuario');
+                });
         }
 
         function saveBio() {
             if (!currentUser) return;
-            currentUser.bio = document.getElementById('profileBioInput').value.trim();
+            const bio = document.getElementById('profileBioInput').value.trim();
+            currentUser.bio = bio;
             localStorage.setItem('ratweb_user', JSON.stringify(currentUser));
+            database.ref(`users/${currentUser.uid}/bio`).set(bio)
+                .catch(err => console.error('Error al guardar bio:', err));
         }
 
         // ============================================================
