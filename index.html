@@ -206,7 +206,6 @@
         </nav>
 
         <main>
-            <!-- MENÚ / FEED -->
             <div id="menu" class="section active">
                 <div class="create-box">
                     <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
@@ -221,7 +220,6 @@
                 <div id="feedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- FOROS -->
             <div id="foros" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🧀 Nuevo Foro</span>
@@ -235,7 +233,6 @@
                 <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- VISTA DE FORO INDIVIDUAL -->
             <div id="forumView" class="section">
                 <button class="btn-back" onclick="showSection('foros')">⬅ Volver</button>
                 <div id="forumHeader" class="forum-card" style="cursor: default; flex-shrink:0;"></div>
@@ -252,7 +249,6 @@
                 <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- GALERÍA -->
             <div id="galeria" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🖼️ Subir a la Galería</span>
@@ -278,7 +274,6 @@
                 <div id="galleryContainer" class="gallery-grid" style="flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <!-- PERFIL -->
             <div id="perfil" class="section">
                 <button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
                 <div class="profile-card">
@@ -307,7 +302,7 @@
                         <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
                         <div class="profile-stats-row">
                             <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
-                            <div class="stat-item profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
+                            <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
                             <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
                             <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
                         </div>
@@ -320,7 +315,6 @@
         </main>
     </div>
 
-    <!-- MODAL VISOR DE IMÁGENES -->
     <div id="imageModal" class="modal-viewer" onclick="closeModal()">
         <span class="close-modal">&times;</span>
         <div id="modalContent"></div>
@@ -360,15 +354,6 @@
             return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         }
 
-        function timeAgo(ts) {
-            if (!ts) return 'ahora';
-            const s = Math.floor((Date.now() - ts) / 1000);
-            if (s < 60) return 'hace ' + s + 's';
-            if (s < 3600) return 'hace ' + Math.floor(s / 60) + 'm';
-            if (s < 86400) return 'hace ' + Math.floor(s / 3600) + 'h';
-            return 'hace ' + Math.floor(s / 86400) + 'd';
-        }
-
         function showError(elId, msg) {
             const el = document.getElementById(elId);
             if (el) { el.textContent = '⚠️ ' + msg; el.classList.add('show'); }
@@ -399,11 +384,15 @@
         // ============================================================
         async function loginWithGoogle() {
             hideError('loginError');
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin + window.location.pathname }
-            });
-            if (error) showError('loginError', error.message);
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.origin + window.location.pathname }
+                });
+                if (error) showError('loginError', error.message);
+            } catch (err) {
+                showError('loginError', err.message);
+            }
         }
 
         async function logoutUser() {
@@ -428,7 +417,6 @@
                 return;
             }
 
-            // Hay sesión → buscar perfil
             const { data: profileData, error } = await supabase
                 .from('profiles')
                 .select('*')
@@ -436,23 +424,18 @@
                 .single();
 
             if (error || !profileData || !profileData.is_setup_complete) {
-                // No tiene perfil completo → mostrar modal de setup
                 profile = profileData || null;
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('appHeader').style.display = 'none';
                 document.getElementById('appLayout').style.display = 'none';
                 document.getElementById('setupOverlay').classList.add('show');
 
-                // Pre-rellenar con datos de Google
                 const meta = session.user.user_metadata || {};
                 if (meta.full_name) document.getElementById('setupDisplayName').value = meta.full_name;
-                if (meta.avatar_url) {
-                    document.getElementById('setupAvatarPreview').src = meta.avatar_url;
-                }
+                if (meta.avatar_url) document.getElementById('setupAvatarPreview').src = meta.avatar_url;
                 return;
             }
 
-            // Perfil completo → mostrar app
             profile = profileData;
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('setupOverlay').classList.remove('show');
@@ -495,7 +478,6 @@
             btn.innerHTML = '<span class="loading-spinner"></span> Subiendo foto...';
 
             try {
-                // Verificar username disponible
                 const { data: existing } = await supabase
                     .from('usernames')
                     .select('username')
@@ -514,7 +496,6 @@
 
                 btn.innerHTML = '<span class="loading-spinner"></span> Creando perfil...';
 
-                // Actualizar perfil (ya existe por el trigger)
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({
@@ -529,14 +510,12 @@
 
                 if (updateError) throw updateError;
 
-                // Registrar username en tabla usernames
                 const { error: unError } = await supabase
                     .from('usernames')
                     .insert([{ username: username, user_id: session.user.id }]);
 
                 if (unError) throw unError;
 
-                // Recargar
                 window.location.reload();
             } catch (err) {
                 console.error(err);
@@ -589,7 +568,7 @@
         }
 
         // ============================================================
-        // REALTIME: escuchar cambios
+        // REALTIME
         // ============================================================
         function setupRealtime() {
             if (realtimeChannel) supabase.removeChannel(realtimeChannel);
@@ -613,9 +592,6 @@
             const file = fileInput.files[0];
 
             if (!text && !file) { alert('Escribe algo o adjunta un archivo'); return; }
-
-            const btn = event?.target;
-            if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
 
             try {
                 let mediaUrl = null;
@@ -646,8 +622,6 @@
             } catch (err) {
                 console.error(err);
                 alert('Error al publicar: ' + err.message);
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Publicar'; }
             }
         }
 
@@ -736,7 +710,6 @@
             const { error } = await supabase.from('posts').update({ liked_by: likedBy }).eq('id', postId);
             if (error) { console.error(error); return; }
 
-            // Notificación si es de otro
             if (idx === -1 && post.user_id !== session.user.id) {
                 await supabase.from('notifications').insert([{
                     user_id: post.user_id,
@@ -807,7 +780,6 @@
 
                 clearReplyTarget(postId);
 
-                // Notificar al autor del post
                 const post = posts.find(p => p.id == postId);
                 if (post && post.user_id !== session.user.id) {
                     await supabase.from('notifications').insert([{
@@ -936,9 +908,7 @@
         async function deleteForum(forumId, event) {
             event.stopPropagation();
             if (!confirm('¿Borrar este foro y todos sus posts?')) return;
-            // Borrar posts del foro
             await supabase.from('posts').delete().eq('forum_id', forumId);
-            // Borrar foro
             const { error } = await supabase.from('forums').delete().eq('id', forumId);
             if (error) { alert('Error: ' + error.message); return; }
             if (currentForumId == forumId) showSection('foros');
@@ -983,9 +953,6 @@
             const file = fileInput.files[0];
             if (!file) { alert('Elige un archivo'); return; }
 
-            const btn = event?.target;
-            if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
-
             try {
                 const url = await uploadFile(file, 'gallery');
                 const { error } = await supabase.from('gallery').insert([{
@@ -1006,8 +973,6 @@
             } catch (err) {
                 console.error(err);
                 alert('Error: ' + err.message);
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Subir'; }
             }
         }
 
@@ -1189,7 +1154,6 @@
         // INICIALIZACIÓN
         // ============================================================
         window.addEventListener('load', async () => {
-            // Detectar error de OAuth en la URL
             const hash = window.location.hash;
             if (hash.includes('error=')) {
                 showError('loginError', 'Error al iniciar sesión: ' + decodeURIComponent(hash));
@@ -1197,7 +1161,6 @@
             await checkSessionAndProfile();
         });
 
-        // Escuchar cambios de sesión
         supabase.auth.onAuthStateChange((event, newSession) => {
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 if (!session || session.user.id !== newSession?.user?.id) {
@@ -1210,4 +1173,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
