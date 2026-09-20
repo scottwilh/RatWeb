@@ -147,9 +147,13 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .polaroid-like-btn.liked { color: var(--primary); }
 .visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; color: var(--text); }
 .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-.profile-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
-.profile-banner { height: 100px; background-color: var(--primary); background-size: cover; background-position: center; border-bottom: 2px solid var(--border); position: relative; }
-.profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
+
+/* ================= PERFIL ================= */
+.profile-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; display: flex; flex-direction: column; overflow: visible; }
+.profile-banner { min-height: 100px; height: 100px; background-color: var(--primary); border-bottom: 2px solid var(--border); position: relative; overflow: hidden; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.profile-banner-img { width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0; }
+.profile-banner-img.hidden { display: none; }
+.profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; z-index: 3; }
 .profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; position: relative; z-index: 2; }
 .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
 .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--bg-card); outline: 2px solid var(--border); object-fit: cover; background-color: var(--primary); }
@@ -169,6 +173,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .profile-posts-section { margin-top: 12px; }
 .profile-posts-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: var(--text); }
 .profile-posts-list { display: flex; flex-direction: column; gap: 10px; }
+.hidden { display: none !important; }
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
@@ -217,7 +222,7 @@ Iniciar sesión con Google
   🔔
   <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
 </button>
-<img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
+<img id="headerAvatar" class="avatar-top" onclick="goToMyProfile()" title="Ver mi perfil">
 <button class="btn-logout-top" onclick="logoutUser()">Salir</button>
 <div class="notif-dropdown" id="notifDropdown">
   <div class="notif-header">
@@ -313,63 +318,37 @@ Iniciar sesión con Google
 </div>
 
 <div id="perfil" class="section">
-<button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
+<button class="btn-back hidden" id="profileBackBtn" onclick="backFromUserProfile()">⬅ Volver</button>
 <div class="profile-card">
-<div class="profile-banner" id="profileBanner">
-<label class="profile-edit-banner-btn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
-</div>
-<div class="profile-avatar-row">
-<div class="profile-avatar-wrap">
-<img id="profileAvatarImg" class="profile-avatar">
-<label class="profile-edit-avatar-btn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
-</div>
-</div>
-<div class="profile-info">
-<div class="profile-name-row"><span id="profileDisplayName" class="profile-display-name"></span></div>
-<div class="profile-name-row"><span id="profileUsername" class="profile-username"></span></div>
-<textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
-<div class="profile-stats-row">
-<div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
-<div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
-<div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
-<div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
-</div>
-<button class="btn-logout" onclick="logoutUser()">🚪 Cerrar Sesión</button>
-<button class="btn-delete-account" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
-<div id="profileJoinedNote" class="profile-joined-note"></div>
-</div>
+  <div class="profile-banner" id="profileBanner">
+    <img id="profileBannerImg" class="profile-banner-img hidden" alt="">
+    <label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
+  </div>
+  <div class="profile-avatar-row">
+    <div class="profile-avatar-wrap">
+      <img id="profileAvatarImg" class="profile-avatar">
+      <label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
+    </div>
+  </div>
+  <div class="profile-info">
+    <div class="profile-name-row"><span id="profileDisplayName" class="profile-display-name"></span></div>
+    <div class="profile-name-row"><span id="profileUsername" class="profile-username"></span></div>
+    <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
+    <div id="profileBioDisplay" class="profile-bio-display hidden"></div>
+    <div class="profile-stats-row">
+      <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
+      <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
+      <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
+      <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
+    </div>
+    <button class="btn-logout" id="logoutBtn" onclick="logoutUser()">🚪 Cerrar Sesión</button>
+    <button class="btn-delete-account" id="deleteAccountBtn" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
+    <div id="profileJoinedNote" class="profile-joined-note"></div>
+  </div>
 </div>
 <div class="profile-posts-section">
-<div class="profile-posts-title">📝 Mis posts</div>
-<div id="myProfilePosts" class="profile-posts-list"></div>
-</div>
-</div>
-
-<div id="userProfile" class="section">
-<button class="btn-back" onclick="backFromUserProfile()">⬅ Volver</button>
-<div class="profile-card">
-<div class="profile-banner" id="userProfileBanner"></div>
-<div class="profile-avatar-row">
-<div class="profile-avatar-wrap">
-<img id="userProfileAvatar" class="profile-avatar">
-</div>
-</div>
-<div class="profile-info">
-<div class="profile-name-row"><span id="userProfileDisplayName" class="profile-display-name"></span></div>
-<div class="profile-name-row"><span id="userProfileUsername" class="profile-username"></span></div>
-<div id="userProfileBio" class="profile-bio-display"></div>
-<div class="profile-stats-row">
-<div class="profile-stat-item"><strong id="userStatPosts">0</strong><span>Posts</span></div>
-<div class="profile-stat-item"><strong id="userStatGallery">0</strong><span>Fotos</span></div>
-<div class="profile-stat-item"><strong id="userStatForums">0</strong><span>Foros</span></div>
-<div class="profile-stat-item"><strong id="userStatCheese">0</strong><span>🧀 Likes</span></div>
-</div>
-<div id="userProfileJoinedNote" class="profile-joined-note"></div>
-</div>
-</div>
-<div class="profile-posts-section">
-<div class="profile-posts-title">📝 Posts de este usuario</div>
-<div id="userProfilePosts" class="profile-posts-list"></div>
+  <div class="profile-posts-title" id="profilePostsTitle">📝 Mis posts</div>
+  <div id="myProfilePosts" class="profile-posts-list"></div>
 </div>
 </div>
 </main>
@@ -403,7 +382,6 @@ let realtimeChannel = null;
 let notifChannel = null;
 let notifications = [];
 let viewingUserId = null;
-let previousSection = 'menu';
 
 // ======================== TEMA ========================
 function applyTheme(theme) {
@@ -458,9 +436,7 @@ function timeAgo(ts) {
 // ======================== NOTIFICACIONES ========================
 async function loadNotifications() {
   if (!session) return;
-  const { data, error } = await supabaseClient.from('notifications')
-    .select('*').eq('user_id', session.user.id)
-    .order('created_at', { ascending: false }).limit(30);
+  const { data, error } = await supabaseClient.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(30);
   if (error) { console.error(error); return; }
   notifications = data || [];
   renderNotifications();
@@ -474,14 +450,8 @@ function renderNotifications() {
   else { badge.style.display = 'none'; }
   if (notifications.length === 0) { list.innerHTML = '<div class="notif-empty">Sin notificaciones aún 🐭</div>'; return; }
   list.innerHTML = notifications.map(function(n){
-    const icon = n.type === 'post_like' ? '🐾' : n.type === 'post_reply' ? '💬' : n.type === 'comment_reply' ? '↩️' : n.type === 'mention' ? '📢' : '🔔';
-    return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="openNotification(\'' + n.id + '\')">' +
-      '<div class="notif-icon">' + icon + '</div>' +
-      '<div class="notif-content">' +
-        '<div class="notif-message"><strong>' + escapeHtml(n.from_handle) + '</strong> ' + escapeHtml(n.message) + '</div>' +
-        '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' +
-      '</div>' +
-    '</div>';
+    const icon = n.type === 'post_like' ? '🐾' : n.type === 'post_reply' ? '💬' : n.type === 'comment_reply' ? '↩️' : '🔔';
+    return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="openNotification(\'' + n.id + '\')"><div class="notif-icon">' + icon + '</div><div class="notif-content"><div class="notif-message"><strong>' + escapeHtml(n.from_handle) + '</strong> ' + escapeHtml(n.message) + '</div><div class="notif-time">' + timeAgo(n.created_at) + '</div></div></div>';
   }).join('');
 }
 function toggleNotifDropdown(event) {
@@ -525,9 +495,7 @@ async function markAllNotificationsRead(event) {
 function setupNotifRealtime() {
   if (notifChannel) supabaseClient.removeChannel(notifChannel);
   if (!session) return;
-  notifChannel = supabaseClient.channel('notif-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + session.user.id }, function(){ loadNotifications(); })
-    .subscribe();
+  notifChannel = supabaseClient.channel('notif-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + session.user.id }, function(){ loadNotifications(); }).subscribe();
 }
 
 // ======================== PREVIEW ========================
@@ -539,12 +507,9 @@ function showAttachmentPreview(previewId, contentId, infoId, file) {
   contentEl.innerHTML = '';
   const url = URL.createObjectURL(file);
   if (file.type.startsWith('video/')) {
-    const video = document.createElement('video');
-    video.src = url; video.controls = true; video.style.maxHeight = '120px';
-    contentEl.appendChild(video);
+    const video = document.createElement('video'); video.src = url; video.controls = true; video.style.maxHeight = '120px'; contentEl.appendChild(video);
   } else {
-    const img = document.createElement('img');
-    img.src = url; contentEl.appendChild(img);
+    const img = document.createElement('img'); img.src = url; contentEl.appendChild(img);
   }
   infoEl.textContent = file.name + ' (' + formatBytes(file.size) + ')';
   previewEl.classList.add('show');
@@ -552,47 +517,35 @@ function showAttachmentPreview(previewId, contentId, infoId, file) {
 function previewPostMedia(event) {
   const file = event.target.files[0]; if (!file) return;
   showAttachmentPreview('postPreview', 'postPreviewContent', 'postPreviewInfo', file);
-  const lbl = document.getElementById('postFileLabel');
-  lbl.innerHTML = '📷 1 archivo ✓';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewPostMedia;
-  lbl.appendChild(inp); inp.files = event.target.files;
+  const lbl = document.getElementById('postFileLabel'); lbl.innerHTML = '📷 1 archivo ✓';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewPostMedia; lbl.appendChild(inp); inp.files = event.target.files;
 }
 function clearPostPreview() {
   document.getElementById('postPreview').classList.remove('show');
-  const lbl = document.getElementById('postFileLabel');
-  lbl.innerHTML = '📷 Adjuntar';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewPostMedia;
-  lbl.appendChild(inp);
+  const lbl = document.getElementById('postFileLabel'); lbl.innerHTML = '📷 Adjuntar';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewPostMedia; lbl.appendChild(inp);
 }
 function previewForumPostMedia(event) {
   const file = event.target.files[0]; if (!file) return;
   showAttachmentPreview('forumPostPreview', 'forumPostPreviewContent', 'forumPostPreviewInfo', file);
-  const lbl = document.getElementById('forumFileLabel');
-  lbl.innerHTML = '📷 1 archivo ✓';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewForumPostMedia;
-  lbl.appendChild(inp); inp.files = event.target.files;
+  const lbl = document.getElementById('forumFileLabel'); lbl.innerHTML = '📷 1 archivo ✓';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewForumPostMedia; lbl.appendChild(inp); inp.files = event.target.files;
 }
 function clearForumPostPreview() {
   document.getElementById('forumPostPreview').classList.remove('show');
-  const lbl = document.getElementById('forumFileLabel');
-  lbl.innerHTML = '📷 Adjuntar';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewForumPostMedia;
-  lbl.appendChild(inp);
+  const lbl = document.getElementById('forumFileLabel'); lbl.innerHTML = '📷 Adjuntar';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none'; inp.onchange = previewForumPostMedia; lbl.appendChild(inp);
 }
 function previewGalleryFile(event) {
   const file = event.target.files[0]; if (!file) return;
   showAttachmentPreview('galleryPreview', 'galleryPreviewContent', 'galleryPreviewInfo', file);
-  const lbl = document.getElementById('galleryFileLabel');
-  lbl.innerHTML = '📁 1 archivo ✓';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none'; inp.onchange = previewGalleryFile;
-  lbl.appendChild(inp); inp.files = event.target.files;
+  const lbl = document.getElementById('galleryFileLabel'); lbl.innerHTML = '📁 1 archivo ✓';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none'; inp.onchange = previewGalleryFile; lbl.appendChild(inp); inp.files = event.target.files;
 }
 function clearGalleryPreview() {
   document.getElementById('galleryPreview').classList.remove('show');
-  const lbl = document.getElementById('galleryFileLabel');
-  lbl.innerHTML = '📁 Archivo';
-  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none'; inp.onchange = previewGalleryFile;
-  lbl.appendChild(inp);
+  const lbl = document.getElementById('galleryFileLabel'); lbl.innerHTML = '📁 Archivo';
+  const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none'; inp.onchange = previewGalleryFile; lbl.appendChild(inp);
 }
 
 // ======================== STORAGE ========================
@@ -610,10 +563,7 @@ async function uploadFile(file, folder) {
 async function loginWithGoogle() {
   hideError('loginError');
   try {
-    const { error } = await supabaseClient.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname }
-    });
+    const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } });
     if (error) showError('loginError', error.message);
   } catch (err) { showError('loginError', err.message); }
 }
@@ -685,10 +635,7 @@ async function submitSetup() {
     const { data: existing } = await supabaseClient.from('usernames').select('username').eq('username', username).maybeSingle();
     if (existing) { showError('setupError', 'El username ' + username + ' ya está ocupado'); btn.disabled = false; btn.textContent = 'Crear mi perfil 🐾'; return; }
     const avatarUrl = await uploadFile(tempAvatarFile, 'avatars');
-    const { error: updateError } = await supabaseClient.from('profiles').update({
-      username: username, display_name: displayName, bio: bio,
-      avatar_url: avatarUrl, is_setup_complete: true, joined_at: Date.now()
-    }).eq('id', session.user.id);
+    const { error: updateError } = await supabaseClient.from('profiles').update({ username: username, display_name: displayName, bio: bio, avatar_url: avatarUrl, is_setup_complete: true, joined_at: Date.now() }).eq('id', session.user.id);
     if (updateError) throw updateError;
     const { error: unError } = await supabaseClient.from('usernames').insert([{ username: username, user_id: session.user.id }]);
     if (unError) throw unError;
@@ -703,7 +650,7 @@ async function submitSetup() {
 async function loadAllData() {
   await Promise.all([loadPosts(), loadForums(), loadGallery()]);
   await loadAllComments();
-  renderPosts(); renderForums(); renderGallery(); renderProfile();
+  renderPosts(); renderForums(); renderGallery();
 }
 async function loadPosts() {
   const { data, error } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
@@ -731,8 +678,8 @@ async function loadGallery() {
 function setupRealtime() {
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient.channel('ratweb-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }); })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(renderPosts); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(function(){ renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'forums' }, function(){ loadForums().then(renderForums); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, function(){ loadGallery().then(renderGallery); })
     .subscribe();
@@ -749,18 +696,14 @@ async function createPost(target) {
   try {
     let mediaUrl = null, mediaType = null;
     if (file) { mediaUrl = await uploadFile(file, 'posts'); mediaType = file.type.startsWith('image/') ? 'image' : 'video'; }
-    const { error } = await supabaseClient.from('posts').insert([{
-      user_id: session.user.id, author_handle: profile.username, author_name: profile.display_name,
-      avatar_url: profile.avatar_url, content: text, media_url: mediaUrl, media_type: mediaType,
-      forum_id: isForum ? currentForumId : null, liked_by: [], created_at: Date.now()
-    }]);
+    const { error } = await supabaseClient.from('posts').insert([{ user_id: session.user.id, author_handle: profile.username, author_name: profile.display_name, avatar_url: profile.avatar_url, content: text, media_url: mediaUrl, media_type: mediaType, forum_id: isForum ? currentForumId : null, liked_by: [], created_at: Date.now() }]);
     if (error) throw error;
     textInput.value = '';
     if (isForum) clearForumPostPreview(); else clearPostPreview();
-    await loadPosts(); renderPosts(); renderMyProfilePosts();
+    await loadPosts(); renderPosts();
+    if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
   } catch (err) { alert('Error al publicar: ' + err.message); }
 }
-
 function renderPosts() {
   const isForumView = document.getElementById('forumView').classList.contains('active');
   const listEl = document.getElementById(isForumView ? 'forumFeedList' : 'feedList');
@@ -769,7 +712,6 @@ function renderPosts() {
   if (filtered.length === 0) { listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay publicaciones aún.</p>'; return; }
   listEl.innerHTML = filtered.map(function(p){ return renderPostCard(p); }).join('');
 }
-
 function renderPostCard(post) {
   const isMine = post.user_id === session.user.id;
   const isLiked = (post.liked_by || []).indexOf(profile.username) !== -1;
@@ -778,13 +720,12 @@ function renderPostCard(post) {
   return '<div class="post-card">' +
     '<img class="avatar-circle" src="' + escapeHtml(post.avatar_url || '') + '" onclick="openUserProfile(\'' + post.user_id + '\')">' +
     '<div class="post-bubble">' +
-      '<div class="post-header">' +
-        '<div class="post-author-wrap">' +
-          '<span class="post-author" onclick="openUserProfile(\'' + post.user_id + '\')">' + escapeHtml(post.author_name) + ' (' + escapeHtml(post.author_handle) + ')</span>' +
-          (post.forum_id ? '<span class="post-author">🧀</span>' : '') +
-          '<span class="post-time">· ' + timeAgo(post.created_at) + '</span>' +
-        '</div>' +
-        (isMine ? '<button class="post-options-btn" onclick="toggleMenu(\'' + post.id + '\')">⋮</button><div id="menu-' + post.id + '" class="options-menu"><button onclick="deletePost(\'' + post.id + '\')">🗑️ Borrar</button></div>' : '') +
+      '<div class="post-header"><div class="post-author-wrap">' +
+        '<span class="post-author" onclick="openUserProfile(\'' + post.user_id + '\')">' + escapeHtml(post.author_name) + ' (' + escapeHtml(post.author_handle) + ')</span>' +
+        (post.forum_id ? '<span class="post-author">🧀</span>' : '') +
+        '<span class="post-time">· ' + timeAgo(post.created_at) + '</span>' +
+      '</div>' +
+      (isMine ? '<button class="post-options-btn" onclick="toggleMenu(\'' + post.id + '\')">⋮</button><div id="menu-' + post.id + '" class="options-menu"><button onclick="deletePost(\'' + post.id + '\')">🗑️ Borrar</button></div>' : '') +
       '</div>' +
       '<div class="post-content">' + escapeHtml(post.content) + '</div>' +
       (post.media_url ? (post.media_type === 'image' ? '<img class="post-media" src="' + post.media_url + '" onclick="openModal(\'' + post.media_url + '\', \'image\')">' : '<video class="post-media" src="' + post.media_url + '" controls></video>') : '') +
@@ -807,25 +748,21 @@ function renderPostCard(post) {
     '</div>' +
   '</div>';
 }
-
 function renderReplyCard(postId, c) {
   return '<div class="reply-item">' +
-    '<div class="reply-header">' +
-      '<div class="reply-user-wrap">' +
-        '<span class="reply-author" onclick="openUserProfile(\'' + c.user_id + '\')">' + escapeHtml(c.author_name) + ' (' + escapeHtml(c.author_handle) + ')</span>' +
-        (c.reply_to_handle ? '<span class="reply-tag">→ ' + escapeHtml(c.reply_to_handle) + '</span>' : '') +
-        '<span class="reply-time">· ' + timeAgo(c.created_at) + '</span>' +
-      '</div>' +
-      '<div style="display:flex; gap:6px;">' +
-        '<span class="reply-action-btn" onclick="setReplyTarget(\'' + postId + '\', \'' + escapeHtml(c.author_handle) + '\')">Responder</span>' +
-        (c.user_id === session.user.id ? '<button class="delete-comment-btn" onclick="deleteComment(\'' + c.id + '\')">🗑️</button>' : '') +
-      '</div>' +
+    '<div class="reply-header"><div class="reply-user-wrap">' +
+      '<span class="reply-author" onclick="openUserProfile(\'' + c.user_id + '\')">' + escapeHtml(c.author_name) + ' (' + escapeHtml(c.author_handle) + ')</span>' +
+      (c.reply_to_handle ? '<span class="reply-tag">→ ' + escapeHtml(c.reply_to_handle) + '</span>' : '') +
+      '<span class="reply-time">· ' + timeAgo(c.created_at) + '</span>' +
     '</div>' +
+    '<div style="display:flex; gap:6px;">' +
+      '<span class="reply-action-btn" onclick="setReplyTarget(\'' + postId + '\', \'' + escapeHtml(c.author_handle) + '\')">Responder</span>' +
+      (c.user_id === session.user.id ? '<button class="delete-comment-btn" onclick="deleteComment(\'' + c.id + '\')">🗑️</button>' : '') +
+    '</div></div>' +
     '<div>' + escapeHtml(c.content) + '</div>' +
     (c.media_url ? '<img class="comment-media" src="' + c.media_url + '" onclick="openModal(\'' + c.media_url + '\', \'image\')">' : '') +
   '</div>';
 }
-
 function previewReplyMedia(postId, event) {
   const file = event.target.files[0]; if (!file) return;
   showAttachmentPreview('reply-preview-' + postId, 'reply-preview-content-' + postId, 'reply-preview-info-' + postId, file);
@@ -833,8 +770,7 @@ function previewReplyMedia(postId, event) {
   if (lbl) {
     lbl.innerHTML = '📷 ✓';
     const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'reply-media-' + postId; inp.accept = 'image/*'; inp.style.display = 'none';
-    inp.onchange = function(e){ previewReplyMedia(postId, e); };
-    lbl.appendChild(inp); inp.files = event.target.files;
+    inp.onchange = function(e){ previewReplyMedia(postId, e); }; lbl.appendChild(inp); inp.files = event.target.files;
   }
 }
 function clearReplyPreview(postId) {
@@ -844,11 +780,9 @@ function clearReplyPreview(postId) {
   if (lbl) {
     lbl.innerHTML = '📷';
     const inp = document.createElement('input'); inp.type = 'file'; inp.id = 'reply-media-' + postId; inp.accept = 'image/*'; inp.style.display = 'none';
-    inp.onchange = function(e){ previewReplyMedia(postId, e); };
-    lbl.appendChild(inp);
+    inp.onchange = function(e){ previewReplyMedia(postId, e); }; lbl.appendChild(inp);
   }
 }
-
 async function toggleLike(postId) {
   const post = posts.find(function(p){ return p.id == postId; });
   if (!post) return;
@@ -858,29 +792,15 @@ async function toggleLike(postId) {
   if (wasLiked) likedBy.splice(idx, 1);
   else likedBy.push(profile.username);
   post.liked_by = likedBy;
-  // Update all instances in DOM
-  document.querySelectorAll('#like-' + postId).forEach(function(el){
+  document.querySelectorAll('[id="like-' + postId + '"]').forEach(function(el){
     el.classList.toggle('liked', !wasLiked);
-    const c = el.querySelector('#like-count-' + postId);
+    const c = el.querySelector('[id="like-count-' + postId + '"]');
     if (c) c.textContent = likedBy.length;
   });
   const { error } = await supabaseClient.from('posts').update({ liked_by: likedBy }).eq('id', postId);
-  if (error) {
-    if (wasLiked) likedBy.push(profile.username);
-    else likedBy.splice(likedBy.indexOf(profile.username), 1);
-    post.liked_by = likedBy;
-    document.querySelectorAll('#like-' + postId).forEach(function(el){
-      el.classList.toggle('liked', wasLiked);
-      const c = el.querySelector('#like-count-' + postId);
-      if (c) c.textContent = likedBy.length;
-    });
-    return;
-  }
+  if (error) { console.error(error); return; }
   if (!wasLiked && post.user_id !== session.user.id) {
-    await supabaseClient.from('notifications').insert([{
-      user_id: post.user_id, type: 'post_like', from_handle: profile.username,
-      message: 'le dio like a tu post 🐾', link: '#menu', is_read: false, created_at: Date.now()
-    }]);
+    await supabaseClient.from('notifications').insert([{ user_id: post.user_id, type: 'post_like', from_handle: profile.username, message: 'le dio like a tu post 🐾', link: '#menu', is_read: false, created_at: Date.now() }]);
   }
 }
 function toggleMenu(postId) { const m = document.getElementById('menu-' + postId); if (m) m.style.display = m.style.display === 'block' ? 'none' : 'block'; }
@@ -888,12 +808,12 @@ async function deletePost(postId) {
   if (!confirm('¿Borrar esta publicación?')) return;
   const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadPosts(); await loadAllComments(); renderPosts(); renderMyProfilePosts(); renderUserProfilePosts();
+  await loadPosts(); await loadAllComments(); renderPosts();
+  if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
 }
-function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
-function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
-function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
-
+function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
+function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
+function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
 async function addReply(postId) {
   const input = document.getElementById('reply-input-' + postId);
   const mediaInput = document.getElementById('reply-media-' + postId);
@@ -905,30 +825,20 @@ async function addReply(postId) {
   try {
     let mediaUrl = null;
     if (file) mediaUrl = await uploadFile(file, 'comments');
-    const { error } = await supabaseClient.from('comments').insert([{
-      post_id: postId, user_id: session.user.id, author_handle: profile.username,
-      author_name: profile.display_name, content: text, media_url: mediaUrl,
-      reply_to_handle: replyToHandle, created_at: Date.now()
-    }]);
+    const { error } = await supabaseClient.from('comments').insert([{ post_id: postId, user_id: session.user.id, author_handle: profile.username, author_name: profile.display_name, content: text, media_url: mediaUrl, reply_to_handle: replyToHandle, created_at: Date.now() }]);
     if (error) throw error;
     delete activeReplyTargets[postId];
-    await loadAllComments();
-    renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
+    await loadAllComments(); renderPosts();
+    if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
     setTimeout(function(){ clearReplyPreview(postId); }, 100);
     const post = posts.find(function(p){ return p.id == postId; });
     if (post && post.user_id !== session.user.id) {
-      await supabaseClient.from('notifications').insert([{
-        user_id: post.user_id, type: 'post_reply', from_handle: profile.username,
-        message: 'comentó tu post: "' + (post.content || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now()
-      }]);
+      await supabaseClient.from('notifications').insert([{ user_id: post.user_id, type: 'post_reply', from_handle: profile.username, message: 'comentó tu post: "' + (post.content || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now() }]);
     }
     if (replyToHandle) {
       const originalComment = (allComments[postId] || []).find(function(c){ return c.author_handle === replyToHandle; });
       if (originalComment && originalComment.user_id !== session.user.id && (!post || originalComment.user_id !== post.user_id)) {
-        await supabaseClient.from('notifications').insert([{
-          user_id: originalComment.user_id, type: 'comment_reply', from_handle: profile.username,
-          message: 'respondió a tu comentario: "' + (text || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now()
-        }]);
+        await supabaseClient.from('notifications').insert([{ user_id: originalComment.user_id, type: 'comment_reply', from_handle: profile.username, message: 'respondió a tu comentario: "' + (text || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now() }]);
       }
     }
   } catch (err) { alert('Error: ' + err.message); }
@@ -937,216 +847,87 @@ async function deleteComment(commentId) {
   if (!confirm('¿Borrar comentario?')) return;
   const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadAllComments(); renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
+  await loadAllComments(); renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
 }
 
-// ======================== PERFILES PÚBLICOS ========================
+// ======================== PERFIL ========================
 async function openUserProfile(userId) {
   if (!userId) return;
-  if (userId === session.user.id) { showSection('perfil'); return; }
+  if (userId === session.user.id) { goToMyProfile(); return; }
   viewingUserId = userId;
-  previousSection = document.querySelector('.section.active').id;
-  const { data: userProfile, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
-  if (error || !userProfile) { alert('No se pudo cargar el perfil'); return; }
-  const banner = document.getElementById('userProfileBanner');
-  banner.style.backgroundImage = userProfile.banner_url ? "url('" + userProfile.banner_url + "')" : 'none';
-  document.getElementById('userProfileAvatar').src = userProfile.avatar_url || '';
-  document.getElementById('userProfileDisplayName').textContent = userProfile.display_name;
-  document.getElementById('userProfileUsername').textContent = userProfile.username;
-  document.getElementById('userProfileBio').textContent = userProfile.bio || 'Sin bio aún 🐭';
-  const userPosts = posts.filter(function(p){ return p.user_id === userId; });
-  const userGallery = gallery.filter(function(g){ return g.user_id === userId && g.visibility !== 'private'; });
-  document.getElementById('userStatPosts').textContent = userPosts.length;
-  document.getElementById('userStatGallery').textContent = userGallery.length;
-  document.getElementById('userStatForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(userProfile.username) !== -1; }).length;
-  const userLikes = userPosts.reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) + userGallery.reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
-  document.getElementById('userStatCheese').textContent = userLikes;
-  const d = userProfile.joined_at ? new Date(userProfile.joined_at) : new Date();
-  document.getElementById('userProfileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-  renderUserProfilePosts(userPosts);
-  showSection('userProfile');
+  await renderProfile(userId);
+  showSection('perfil');
 }
-function renderUserProfilePosts(userPostsList) {
-  const container = document.getElementById('userProfilePosts');
-  if (!container || !viewingUserId) return;
-  const list = userPostsList || posts.filter(function(p){ return p.user_id === viewingUserId; });
-  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Este usuario no ha publicado nada aún 🐭</p>'; return; }
-  container.innerHTML = list.map(function(p){ return renderPostCard(p); }).join('');
-}
-function renderMyProfilePosts() {
-  const container = document.getElementById('myProfilePosts');
-  if (!container || !session) return;
-  const myPosts = posts.filter(function(p){ return p.user_id === session.user.id; });
-  if (myPosts.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Aún no has publicado nada 🐭</p>'; return; }
-  container.innerHTML = myPosts.map(function(p){ return renderPostCard(p); }).join('');
+function goToMyProfile() {
+  viewingUserId = null;
+  renderProfile();
+  showSection('perfil');
 }
 function backFromUserProfile() {
   viewingUserId = null;
-  showSection(previousSection || 'menu');
+  showSection('menu');
 }
-
-// ======================== FOROS ========================
-function getMyForumsCount() { return forums.filter(function(f){ return f.creator_id === session.user.id; }).length; }
-function updateForumCounter() {
-  const counterEl = document.getElementById('forumCounter');
-  const createBtn = document.getElementById('createForumBtn');
-  const count = getMyForumsCount();
-  const limitReached = count >= MAX_FORUMS_PER_USER;
-  if (counterEl) { counterEl.textContent = '📋 Foros creados: ' + count + '/' + MAX_FORUMS_PER_USER + (limitReached ? ' (límite)' : ''); counterEl.classList.toggle('limit-reached', limitReached); }
-  if (createBtn) createBtn.disabled = limitReached;
-}
-async function createForum() {
-  if (getMyForumsCount() >= MAX_FORUMS_PER_USER) { alert('Máximo ' + MAX_FORUMS_PER_USER + ' foros'); return; }
-  const title = document.getElementById('forumTitle').value.trim();
-  const category = document.getElementById('forumCategory').value.trim();
-  const tagsRaw = document.getElementById('forumTags').value.trim();
-  const desc = document.getElementById('forumDesc').value.trim();
-  if (!title) { alert('Pon un título'); return; }
-  const tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
-  const { error } = await supabaseClient.from('forums').insert([{
-    creator_id: session.user.id, creator_handle: profile.username, title: title,
-    category: category || 'GENERAL', tags: tags, description: desc,
-    members: [profile.username], created_at: Date.now()
-  }]);
-  if (error) { alert('Error: ' + error.message); return; }
-  document.getElementById('forumTitle').value = '';
-  document.getElementById('forumCategory').value = '';
-  document.getElementById('forumTags').value = '';
-  document.getElementById('forumDesc').value = '';
-  await loadForums(); renderForums();
-}
-function renderForums(filteredList) {
-  const container = document.getElementById('forumsList');
-  if (!container) return;
-  updateForumCounter();
-  const list = filteredList || forums;
-  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay foros.</p>'; return; }
-  container.innerHTML = list.map(function(f){
-    const isJoined = (f.members || []).indexOf(profile.username) !== -1;
-    const isCreator = f.creator_id === session.user.id;
-    return '<div class="forum-card" onclick="openForum(\'' + f.id + '\')">' +
-      '<div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(f.category) + '</div><div class="forum-title">' + escapeHtml(f.title) + '</div></div>' +
-      '<div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="toggleJoinForum(\'' + f.id + '\', event)">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' +
-      (isCreator ? '<button class="btn-delete-forum" onclick="deleteForum(\'' + f.id + '\', event)">🗑️</button>' : '') + '</div></div>' +
-      '<div class="forum-desc">' + escapeHtml(f.description) + '</div>' +
-      '<div class="forum-tags-container">' + (f.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div>' +
-      '<div class="forum-stats-box"><span>👥 ' + (f.members || []).length + ' Miembros</span></div>' +
-    '</div>';
-  }).join('');
-}
-async function toggleJoinForum(forumId, event) {
-  event.stopPropagation();
-  const forum = forums.find(function(f){ return f.id == forumId; });
-  if (!forum) return;
-  const members = forum.members || [];
-  const idx = members.indexOf(profile.username);
-  if (idx === -1) members.push(profile.username); else members.splice(idx, 1);
-  const { error } = await supabaseClient.from('forums').update({ members: members }).eq('id', forumId);
-  if (error) { alert('Error: ' + error.message); return; }
-  await loadForums();
-  if (currentForumId == forumId) openForum(forumId); else renderForums();
-}
-async function deleteForum(forumId, event) {
-  event.stopPropagation();
-  if (!confirm('¿Borrar este foro y todos sus posts?')) return;
-  await supabaseClient.from('posts').delete().eq('forum_id', forumId);
-  const { error } = await supabaseClient.from('forums').delete().eq('id', forumId);
-  if (error) { alert('Error: ' + error.message); return; }
-  if (currentForumId == forumId) showSection('foros');
-  await loadForums(); await loadPosts(); renderForums();
-}
-async function openForum(forumId) {
-  currentForumId = forumId;
-  const forum = forums.find(function(f){ return f.id == forumId; });
-  if (!forum) return;
-  const isJoined = (forum.members || []).indexOf(profile.username) !== -1;
-  const isCreator = forum.creator_id === session.user.id;
-  document.getElementById('forumHeader').innerHTML =
-    '<div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(forum.category) + '</div><div class="forum-title">' + escapeHtml(forum.title) + '</div></div>' +
-    '<div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="toggleJoinForum(\'' + forum.id + '\', event)">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' +
-    (isCreator ? '<button class="btn-delete-forum" onclick="deleteForum(\'' + forum.id + '\', event)">🗑️</button>' : '') + '</div></div>' +
-    '<div class="forum-desc">' + escapeHtml(forum.description) + '</div>' +
-    '<div class="forum-tags-container">' + (forum.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div>' +
-    '<div class="forum-stats-box"><span>👥 ' + (forum.members || []).length + ' Miembros</span></div>';
-  showSection('forumView'); renderPosts();
-}
-
-// ======================== GALERÍA ========================
-async function uploadToGallery() {
-  const title = document.getElementById('galleryTitle').value.trim();
-  const category = document.getElementById('galleryCategory').value;
-  const fileInput = document.getElementById('galleryFile');
-  const visibility = document.querySelector('input[name="galleryVisibility"]:checked').value;
-  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
-  if (!file) { alert('Elige un archivo'); return; }
-  try {
-    const url = await uploadFile(file, 'gallery');
-    const { error } = await supabaseClient.from('gallery').insert([{
-      user_id: session.user.id, uploader_handle: profile.username,
-      title: title || 'Sin título', category: category, image_url: url,
-      visibility: visibility, liked_by: [], created_at: Date.now()
-    }]);
-    if (error) throw error;
-    document.getElementById('galleryTitle').value = '';
-    clearGalleryPreview();
-    await loadGallery(); renderGallery();
-  } catch (err) { alert('Error: ' + err.message); }
-}
-function renderGallery() {
-  const container = document.getElementById('galleryContainer');
-  if (!container) return;
-  const visible = gallery.filter(function(g){ return g.visibility !== 'private' || g.user_id === session.user.id; });
-  if (visible.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px; grid-column:1/-1;">🐭 No hay imágenes.</p>'; return; }
-  container.innerHTML = visible.map(function(item){
-    const isMine = item.user_id === session.user.id;
-    const isLiked = (item.liked_by || []).indexOf(profile.username) !== -1;
-    const isPrivate = item.visibility === 'private';
-    return '<div class="polaroid-card">' +
-      (isMine ? '<button class="polaroid-delete-btn" onclick="deleteGalleryItem(\'' + item.id + '\', event)">🗑️</button>' : '') +
-      '<img class="polaroid-img" src="' + item.image_url + '" onclick="openModal(\'' + item.image_url + '\', \'image\')">' +
-      '<div class="polaroid-caption">' + escapeHtml(item.title) + '</div>' +
-      '<span class="polaroid-tag">' + escapeHtml(item.category) + '</span>' +
-      '<span class="polaroid-tag" style="background:' + (isPrivate ? 'var(--bg-nav)' : 'var(--bg-forum)') + ';">' + (isPrivate ? '🔒' : '🌍') + '</span>' +
-      '<span class="polaroid-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="toggleGalleryLike(\'' + item.id + '\', event)">🐾 ' + (item.liked_by || []).length + '</span>' +
-    '</div>';
-  }).join('');
-}
-async function toggleGalleryLike(id, event) {
-  event.stopPropagation();
-  const item = gallery.find(function(g){ return g.id == id; });
-  if (!item) return;
-  const likedBy = item.liked_by || [];
-  const idx = likedBy.indexOf(profile.username);
-  if (idx === -1) likedBy.push(profile.username); else likedBy.splice(idx, 1);
-  await supabaseClient.from('gallery').update({ liked_by: likedBy }).eq('id', id);
-  await loadGallery(); renderGallery();
-}
-async function deleteGalleryItem(id, event) {
-  event.stopPropagation();
-  if (!confirm('¿Borrar esta imagen?')) return;
-  const { error } = await supabaseClient.from('gallery').delete().eq('id', id);
-  if (error) { alert('Error: ' + error.message); return; }
-  await loadGallery(); renderGallery();
-}
-
-// ======================== PERFIL PROPIO ========================
-function renderProfile() {
-  if (!profile) return;
-  document.getElementById('profileBanner').style.backgroundImage = profile.banner_url ? "url('" + profile.banner_url + "')" : 'none';
-  document.getElementById('profileAvatarImg').src = profile.avatar_url || '';
-  document.getElementById('headerAvatar').src = profile.avatar_url || '';
-  document.getElementById('profileDisplayName').textContent = profile.display_name;
-  document.getElementById('profileUsername').textContent = profile.username;
-  document.getElementById('profileBioInput').value = profile.bio || '';
-  document.getElementById('statPosts').textContent = posts.filter(function(p){ return p.user_id === session.user.id; }).length;
-  document.getElementById('statGallery').textContent = gallery.filter(function(g){ return g.user_id === session.user.id; }).length;
-  document.getElementById('statForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(profile.username) !== -1; }).length;
-  const likes = posts.filter(function(p){ return p.user_id === session.user.id; }).reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) +
-               gallery.filter(function(g){ return g.user_id === session.user.id; }).reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
+async function renderProfile(userId) {
+  const targetId = userId || (session && session.user.id);
+  if (!targetId) return;
+  const isOwn = targetId === session.user.id;
+  let profileData;
+  if (isOwn && profile) { profileData = profile; }
+  else {
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', targetId).single();
+    if (error || !data) { console.error(error); return; }
+    profileData = data;
+  }
+  // Banner - usando <img>
+  const bannerImg = document.getElementById('profileBannerImg');
+  if (profileData.banner_url) {
+    bannerImg.src = profileData.banner_url;
+    bannerImg.classList.remove('hidden');
+  } else {
+    bannerImg.src = '';
+    bannerImg.classList.add('hidden');
+  }
+  // Avatar
+  document.getElementById('profileAvatarImg').src = profileData.avatar_url || '';
+  document.getElementById('profileDisplayName').textContent = profileData.display_name;
+  document.getElementById('profileUsername').textContent = profileData.username;
+  // Bio
+  const bioInput = document.getElementById('profileBioInput');
+  const bioDisplay = document.getElementById('profileBioDisplay');
+  if (isOwn) {
+    bioInput.classList.remove('hidden');
+    bioDisplay.classList.add('hidden');
+    bioInput.value = profileData.bio || '';
+  } else {
+    bioInput.classList.add('hidden');
+    bioDisplay.classList.remove('hidden');
+    bioDisplay.textContent = profileData.bio || 'Sin bio aún 🐭';
+  }
+  // Botones
+  document.getElementById('editBannerBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('editAvatarBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('logoutBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('deleteAccountBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('profileBackBtn').classList.toggle('hidden', isOwn);
+  if (isOwn) document.getElementById('headerAvatar').src = profileData.avatar_url || '';
+  // Stats
+  const userPosts = posts.filter(function(p){ return p.user_id === targetId; });
+  const userGallery = gallery.filter(function(g){ return g.user_id === targetId && (g.visibility !== 'private' || isOwn); });
+  document.getElementById('statPosts').textContent = userPosts.length;
+  document.getElementById('statGallery').textContent = userGallery.length;
+  document.getElementById('statForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(profileData.username) !== -1; }).length;
+  const likes = userPosts.reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) + userGallery.reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
   document.getElementById('statCheese').textContent = likes;
-  const d = profile.joined_at ? new Date(profile.joined_at) : new Date();
+  const d = profileData.joined_at ? new Date(profileData.joined_at) : new Date();
   document.getElementById('profileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-  renderMyProfilePosts();
+  // Posts
+  document.getElementById('profilePostsTitle').textContent = isOwn ? '📝 Mis posts' : '📝 Posts de ' + profileData.display_name;
+  const postsContainer = document.getElementById('myProfilePosts');
+  if (userPosts.length === 0) {
+    postsContainer.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">' + (isOwn ? 'Aún no has publicado nada 🐭' : 'Este usuario no ha publicado nada aún 🐭') + '</p>';
+  } else {
+    postsContainer.innerHTML = userPosts.map(function(p){ return renderPostCard(p); }).join('');
+  }
 }
 async function changeProfileAvatar(event) {
   const file = event.target.files[0]; if (!file) return;
@@ -1192,6 +973,122 @@ async function deleteAccount() {
   } catch (err) { alert('Error: ' + err.message); }
 }
 
+// ======================== FOROS ========================
+function getMyForumsCount() { return forums.filter(function(f){ return f.creator_id === session.user.id; }).length; }
+function updateForumCounter() {
+  const counterEl = document.getElementById('forumCounter');
+  const createBtn = document.getElementById('createForumBtn');
+  const count = getMyForumsCount();
+  const limitReached = count >= MAX_FORUMS_PER_USER;
+  if (counterEl) { counterEl.textContent = '📋 Foros creados: ' + count + '/' + MAX_FORUMS_PER_USER + (limitReached ? ' (límite)' : ''); counterEl.classList.toggle('limit-reached', limitReached); }
+  if (createBtn) createBtn.disabled = limitReached;
+}
+async function createForum() {
+  if (getMyForumsCount() >= MAX_FORUMS_PER_USER) { alert('Máximo ' + MAX_FORUMS_PER_USER + ' foros'); return; }
+  const title = document.getElementById('forumTitle').value.trim();
+  const category = document.getElementById('forumCategory').value.trim();
+  const tagsRaw = document.getElementById('forumTags').value.trim();
+  const desc = document.getElementById('forumDesc').value.trim();
+  if (!title) { alert('Pon un título'); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
+  const { error } = await supabaseClient.from('forums').insert([{ creator_id: session.user.id, creator_handle: profile.username, title: title, category: category || 'GENERAL', tags: tags, description: desc, members: [profile.username], created_at: Date.now() }]);
+  if (error) { alert('Error: ' + error.message); return; }
+  document.getElementById('forumTitle').value = '';
+  document.getElementById('forumCategory').value = '';
+  document.getElementById('forumTags').value = '';
+  document.getElementById('forumDesc').value = '';
+  await loadForums(); renderForums();
+}
+function renderForums(filteredList) {
+  const container = document.getElementById('forumsList');
+  if (!container) return;
+  updateForumCounter();
+  const list = filteredList || forums;
+  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay foros.</p>'; return; }
+  container.innerHTML = list.map(function(f){
+    const isJoined = (f.members || []).indexOf(profile.username) !== -1;
+    const isCreator = f.creator_id === session.user.id;
+    return '<div class="forum-card" onclick="openForum(\'' + f.id + '\')"><div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(f.category) + '</div><div class="forum-title">' + escapeHtml(f.title) + '</div></div><div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="toggleJoinForum(\'' + f.id + '\', event)">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' + (isCreator ? '<button class="btn-delete-forum" onclick="deleteForum(\'' + f.id + '\', event)">🗑️</button>' : '') + '</div></div><div class="forum-desc">' + escapeHtml(f.description) + '</div><div class="forum-tags-container">' + (f.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div><div class="forum-stats-box"><span>👥 ' + (f.members || []).length + ' Miembros</span></div></div>';
+  }).join('');
+}
+async function toggleJoinForum(forumId, event) {
+  event.stopPropagation();
+  const forum = forums.find(function(f){ return f.id == forumId; });
+  if (!forum) return;
+  const members = forum.members || [];
+  const idx = members.indexOf(profile.username);
+  if (idx === -1) members.push(profile.username); else members.splice(idx, 1);
+  const { error } = await supabaseClient.from('forums').update({ members: members }).eq('id', forumId);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadForums();
+  if (currentForumId == forumId) openForum(forumId); else renderForums();
+}
+async function deleteForum(forumId, event) {
+  event.stopPropagation();
+  if (!confirm('¿Borrar este foro y todos sus posts?')) return;
+  await supabaseClient.from('posts').delete().eq('forum_id', forumId);
+  const { error } = await supabaseClient.from('forums').delete().eq('id', forumId);
+  if (error) { alert('Error: ' + error.message); return; }
+  if (currentForumId == forumId) showSection('foros');
+  await loadForums(); await loadPosts(); renderForums();
+}
+async function openForum(forumId) {
+  currentForumId = forumId;
+  const forum = forums.find(function(f){ return f.id == forumId; });
+  if (!forum) return;
+  const isJoined = (forum.members || []).indexOf(profile.username) !== -1;
+  const isCreator = forum.creator_id === session.user.id;
+  document.getElementById('forumHeader').innerHTML = '<div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(forum.category) + '</div><div class="forum-title">' + escapeHtml(forum.title) + '</div></div><div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="toggleJoinForum(\'' + forum.id + '\', event)">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' + (isCreator ? '<button class="btn-delete-forum" onclick="deleteForum(\'' + forum.id + '\', event)">🗑️</button>' : '') + '</div></div><div class="forum-desc">' + escapeHtml(forum.description) + '</div><div class="forum-tags-container">' + (forum.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div><div class="forum-stats-box"><span>👥 ' + (forum.members || []).length + ' Miembros</span></div>';
+  showSection('forumView'); renderPosts();
+}
+
+// ======================== GALERÍA ========================
+async function uploadToGallery() {
+  const title = document.getElementById('galleryTitle').value.trim();
+  const category = document.getElementById('galleryCategory').value;
+  const fileInput = document.getElementById('galleryFile');
+  const visibility = document.querySelector('input[name="galleryVisibility"]:checked').value;
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+  if (!file) { alert('Elige un archivo'); return; }
+  try {
+    const url = await uploadFile(file, 'gallery');
+    const { error } = await supabaseClient.from('gallery').insert([{ user_id: session.user.id, uploader_handle: profile.username, title: title || 'Sin título', category: category, image_url: url, visibility: visibility, liked_by: [], created_at: Date.now() }]);
+    if (error) throw error;
+    document.getElementById('galleryTitle').value = '';
+    clearGalleryPreview();
+    await loadGallery(); renderGallery();
+  } catch (err) { alert('Error: ' + err.message); }
+}
+function renderGallery() {
+  const container = document.getElementById('galleryContainer');
+  if (!container) return;
+  const visible = gallery.filter(function(g){ return g.visibility !== 'private' || g.user_id === session.user.id; });
+  if (visible.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px; grid-column:1/-1;">🐭 No hay imágenes.</p>'; return; }
+  container.innerHTML = visible.map(function(item){
+    const isMine = item.user_id === session.user.id;
+    const isLiked = (item.liked_by || []).indexOf(profile.username) !== -1;
+    const isPrivate = item.visibility === 'private';
+    return '<div class="polaroid-card">' + (isMine ? '<button class="polaroid-delete-btn" onclick="deleteGalleryItem(\'' + item.id + '\', event)">🗑️</button>' : '') + '<img class="polaroid-img" src="' + item.image_url + '" onclick="openModal(\'' + item.image_url + '\', \'image\')"><div class="polaroid-caption">' + escapeHtml(item.title) + '</div><span class="polaroid-tag">' + escapeHtml(item.category) + '</span><span class="polaroid-tag" style="background:' + (isPrivate ? 'var(--bg-nav)' : 'var(--bg-forum)') + ';">' + (isPrivate ? '🔒' : '🌍') + '</span><span class="polaroid-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="toggleGalleryLike(\'' + item.id + '\', event)">🐾 ' + (item.liked_by || []).length + '</span></div>';
+  }).join('');
+}
+async function toggleGalleryLike(id, event) {
+  event.stopPropagation();
+  const item = gallery.find(function(g){ return g.id == id; });
+  if (!item) return;
+  const likedBy = item.liked_by || [];
+  const idx = likedBy.indexOf(profile.username);
+  if (idx === -1) likedBy.push(profile.username); else likedBy.splice(idx, 1);
+  await supabaseClient.from('gallery').update({ liked_by: likedBy }).eq('id', id);
+  await loadGallery(); renderGallery();
+}
+async function deleteGalleryItem(id, event) {
+  event.stopPropagation();
+  if (!confirm('¿Borrar esta imagen?')) return;
+  const { error } = await supabaseClient.from('gallery').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  await loadGallery(); renderGallery();
+}
+
 // ======================== NAVEGACIÓN ========================
 function showSection(id) {
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
@@ -1200,7 +1097,7 @@ function showSection(id) {
   const btn = document.getElementById('btn-' + id);
   if (btn) btn.classList.add('active');
   else if (id === 'forumView') document.getElementById('btn-foros').classList.add('active');
-  if (id === 'perfil') renderProfile();
+  if (id === 'perfil') renderProfile(viewingUserId);
   if (id === 'menu') renderPosts();
   if (id === 'foros') renderForums();
   if (id === 'galeria') renderGallery();
@@ -1235,7 +1132,6 @@ window.addEventListener('load', async function(){
   if (hash.indexOf('error=') !== -1) showError('loginError', 'Error al iniciar sesión: ' + decodeURIComponent(hash));
   await checkSessionAndProfile();
 });
-
 supabaseClient.auth.onAuthStateChange(function(event, newSession){
   if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     if (!session || session.user.id !== (newSession && newSession.user ? newSession.user.id : null)) {
