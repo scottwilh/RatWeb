@@ -130,6 +130,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .btn-join-forum { background-color: var(--primary); color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
 .btn-join-forum.joined { background-color: var(--bg-nav); color: var(--text); }
 .btn-delete-forum { background-color: var(--danger); color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.btn-edit-forum { background-color: #4a7c59; color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
 .forum-category { font-size: 10px; font-weight: bold; color: var(--success); text-transform: uppercase; }
 .forum-title { font-size: 14px; font-weight: bold; color: var(--text); }
 .forum-desc { font-size: 11px; color: var(--text); }
@@ -175,6 +176,22 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
+
+/* ===== MODAL EDITAR FORO ===== */
+.edit-forum-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.85); z-index: 10002; justify-content: center; align-items: center; padding: 16px; overflow-y: auto; }
+.edit-forum-overlay.show { display: flex; }
+.edit-forum-card { background: var(--bg-card); border: 3px solid var(--border); border-radius: 16px; padding: 18px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; box-shadow: 4px 4px 0px var(--border); max-height: 95vh; overflow-y: auto; }
+.edit-forum-title { font-size: 18px; font-weight: bold; color: var(--text-accent); font-family: 'Georgia', serif; font-style: italic; text-align: center; }
+.edit-forum-label { font-size: 11px; font-weight: bold; color: var(--text); }
+.edit-forum-card input, .edit-forum-card textarea { width: 100%; border: 2px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; background: var(--bg-input); color: var(--text); }
+.edit-forum-card textarea { height: 65px; resize: none; }
+.edit-forum-buttons { display: flex; gap: 8px; margin-top: 4px; }
+.edit-forum-buttons button { flex: 1; padding: 10px; font-weight: bold; font-size: 12px; cursor: pointer; font-family: inherit; border-radius: 10px; border: 2px solid var(--border); }
+.btn-cancel-edit { background: var(--bg-nav); color: var(--text); }
+.btn-save-edit { background: var(--primary); color: #fff; }
+.btn-save-edit:disabled { opacity: 0.5; cursor: not-allowed; }
+.edit-forum-error { color: var(--danger); font-size: 11px; font-weight: bold; background: rgba(231,76,60,0.15); padding: 6px; border-radius: 6px; border: 1px solid var(--danger); display: none; text-align: center; }
+.edit-forum-error.show { display: block; }
 </style>
 </head>
 <body>
@@ -356,6 +373,26 @@ Iniciar sesión con Google
 <div id="modalContent"></div>
 </div>
 
+<!-- MODAL EDITAR FORO -->
+<div id="editForumOverlay" class="edit-forum-overlay">
+  <div class="edit-forum-card">
+    <div class="edit-forum-title">✏️ Editar Foro</div>
+    <label class="edit-forum-label">Título</label>
+    <input type="text" id="editForumTitle" maxlength="100" placeholder="Título del foro">
+    <label class="edit-forum-label">Categoría</label>
+    <input type="text" id="editForumCategory" maxlength="50" placeholder="Categoría">
+    <label class="edit-forum-label">Etiquetas (separadas por coma)</label>
+    <input type="text" id="editForumTags" maxlength="200" placeholder="humor, memes, arte">
+    <label class="edit-forum-label">Descripción</label>
+    <textarea id="editForumDesc" maxlength="300" placeholder="Descripción del foro..."></textarea>
+    <div id="editForumError" class="edit-forum-error"></div>
+    <div class="edit-forum-buttons">
+      <button class="btn-cancel-edit" onclick="closeEditForum()">Cancelar</button>
+      <button class="btn-save-edit" id="saveEditForumBtn" onclick="saveEditForum()">Guardar ✅</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://lpewvyxwkooqzkkzkrgy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_kEiaZfFInSjVt4D-ZGGjfQ_EdXGxF96';
@@ -370,6 +407,7 @@ let posts = [];
 let forums = [];
 let gallery = [];
 let currentForumId = null;
+let editingForumId = null;
 let openRepliesBoxes = {};
 let activeReplyTargets = {};
 let allComments = {};
@@ -878,7 +916,7 @@ async function deleteComment(commentId) {
   await loadAllComments(); renderPosts(); renderForumPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
 }
 
-// ======================== FOROS (ARREGLADO) ========================
+// ======================== FOROS ========================
 function getMyForumsCount() { return forums.filter(function(f){ return f.creator_id === session.user.id; }).length; }
 function updateForumCounter() {
   const counterEl = document.getElementById('forumCounter');
@@ -913,7 +951,7 @@ function renderForums(filteredList) {
   container.innerHTML = list.map(function(f){
     const isJoined = (f.members || []).indexOf(profile.username) !== -1;
     const isCreator = f.creator_id === session.user.id;
-    return '<div class="forum-card" onclick="openForum(\'' + f.id + '\')"><div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(f.category) + '</div><div class="forum-title">' + escapeHtml(f.title) + '</div></div><div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="event.stopPropagation(); toggleJoinForum(\'' + f.id + '\')">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' + (isCreator ? '<button class="btn-delete-forum" onclick="event.stopPropagation(); deleteForum(\'' + f.id + '\')">🗑️</button>' : '') + '</div></div><div class="forum-desc">' + escapeHtml(f.description) + '</div><div class="forum-tags-container">' + (f.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div><div class="forum-stats-box"><span>👥 ' + (f.members || []).length + ' Miembros</span></div></div>';
+    return '<div class="forum-card" onclick="openForum(\'' + f.id + '\')"><div class="forum-header-container"><div><div class="forum-category">' + escapeHtml(f.category) + '</div><div class="forum-title">' + escapeHtml(f.title) + '</div></div><div style="display:flex; gap:6px;"><button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="event.stopPropagation(); toggleJoinForum(\'' + f.id + '\')">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' + (isCreator ? '<button class="btn-edit-forum" onclick="event.stopPropagation(); openEditForum(\'' + f.id + '\')">✏️</button>' : '') + (isCreator ? '<button class="btn-delete-forum" onclick="event.stopPropagation(); deleteForum(\'' + f.id + '\')">🗑️</button>' : '') + '</div></div><div class="forum-desc">' + escapeHtml(f.description) + '</div><div class="forum-tags-container">' + (f.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div><div class="forum-stats-box"><span>👥 ' + (f.members || []).length + ' Miembros</span></div></div>';
   }).join('');
 }
 
@@ -969,12 +1007,66 @@ function renderForumHeader() {
       '</div>' +
       '<div style="display:flex; gap:6px;">' +
         '<button class="btn-join-forum ' + (isJoined ? 'joined' : '') + '" onclick="toggleJoinForum(\'' + forum.id + '\')">' + (isJoined ? 'Unido' : 'Unirme') + '</button>' +
+        (isCreator ? '<button class="btn-edit-forum" onclick="openEditForum(\'' + forum.id + '\')">✏️</button>' : '') +
         (isCreator ? '<button class="btn-delete-forum" onclick="deleteForum(\'' + forum.id + '\')">🗑️</button>' : '') +
       '</div>' +
     '</div>' +
     '<div class="forum-desc">' + escapeHtml(forum.description) + '</div>' +
     '<div class="forum-tags-container">' + (forum.tags || []).map(function(t){ return '<span class="forum-tag-badge">#' + escapeHtml(t) + '</span>'; }).join('') + '</div>' +
     '<div class="forum-stats-box"><span>👥 ' + (forum.members || []).length + ' Miembros</span></div>';
+}
+
+// ======================== EDITAR FORO ========================
+function openEditForum(forumId) {
+  const forum = forums.find(function(f){ return String(f.id) === String(forumId); });
+  if (!forum) { alert('Foro no encontrado'); return; }
+  if (forum.creator_id !== session.user.id) { alert('Solo el creador puede editar el foro'); return; }
+  editingForumId = forumId;
+  document.getElementById('editForumTitle').value = forum.title || '';
+  document.getElementById('editForumCategory').value = forum.category || '';
+  document.getElementById('editForumTags').value = (forum.tags || []).join(', ');
+  document.getElementById('editForumDesc').value = forum.description || '';
+  document.getElementById('editForumError').classList.remove('show');
+  document.getElementById('editForumOverlay').classList.add('show');
+}
+function closeEditForum() {
+  editingForumId = null;
+  document.getElementById('editForumOverlay').classList.remove('show');
+}
+async function saveEditForum() {
+  if (!editingForumId) return;
+  const title = document.getElementById('editForumTitle').value.trim();
+  const category = document.getElementById('editForumCategory').value.trim();
+  const tagsRaw = document.getElementById('editForumTags').value.trim();
+  const desc = document.getElementById('editForumDesc').value.trim();
+  const errEl = document.getElementById('editForumError');
+  const btn = document.getElementById('saveEditForumBtn');
+  errEl.classList.remove('show');
+  if (!title) { errEl.textContent = '⚠️ El título no puede estar vacío'; errEl.classList.add('show'); return; }
+  const tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    const { error } = await supabaseClient.from('forums').update({
+      title: title,
+      category: category || 'GENERAL',
+      tags: tags,
+      description: desc
+    }).eq('id', editingForumId).eq('creator_id', session.user.id);
+    if (error) throw error;
+    await loadForums();
+    renderForums();
+    if (String(currentForumId) === String(editingForumId)) {
+      renderForumHeader();
+    }
+    closeEditForum();
+  } catch (err) {
+    errEl.textContent = '⚠️ ' + err.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar ✅';
+  }
 }
 
 // ======================== GALERÍA ========================
@@ -1189,4 +1281,4 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
 });
 </script>
 </body>
-      </html>
+</html>
