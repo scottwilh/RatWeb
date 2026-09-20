@@ -169,6 +169,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .profile-posts-section { margin-top: 12px; }
 .profile-posts-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: var(--text); }
 .profile-posts-list { display: flex; flex-direction: column; gap: 10px; }
+.hidden { display: none !important; }
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
@@ -217,7 +218,7 @@ Iniciar sesión con Google
   🔔
   <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
 </button>
-<img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
+<img id="headerAvatar" class="avatar-top" onclick="goToMyProfile()" title="Ver mi perfil">
 <button class="btn-logout-top" onclick="logoutUser()">Salir</button>
 <div class="notif-dropdown" id="notifDropdown">
   <div class="notif-header">
@@ -313,63 +314,36 @@ Iniciar sesión con Google
 </div>
 
 <div id="perfil" class="section">
-<button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
+<button class="btn-back hidden" id="profileBackBtn" onclick="backFromUserProfile()">⬅ Volver</button>
 <div class="profile-card">
 <div class="profile-banner" id="profileBanner">
-<label class="profile-edit-banner-btn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
+<label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
 </div>
 <div class="profile-avatar-row">
 <div class="profile-avatar-wrap">
 <img id="profileAvatarImg" class="profile-avatar">
-<label class="profile-edit-avatar-btn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
+<label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
 </div>
 </div>
 <div class="profile-info">
 <div class="profile-name-row"><span id="profileDisplayName" class="profile-display-name"></span></div>
 <div class="profile-name-row"><span id="profileUsername" class="profile-username"></span></div>
 <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
+<div id="profileBioDisplay" class="profile-bio-display hidden"></div>
 <div class="profile-stats-row">
 <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
 <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
 <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
 <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
 </div>
-<button class="btn-logout" onclick="logoutUser()">🚪 Cerrar Sesión</button>
-<button class="btn-delete-account" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
+<button class="btn-logout" id="logoutBtn" onclick="logoutUser()">🚪 Cerrar Sesión</button>
+<button class="btn-delete-account" id="deleteAccountBtn" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
 <div id="profileJoinedNote" class="profile-joined-note"></div>
 </div>
 </div>
 <div class="profile-posts-section">
-<div class="profile-posts-title">📝 Mis posts</div>
+<div class="profile-posts-title" id="profilePostsTitle">📝 Mis posts</div>
 <div id="myProfilePosts" class="profile-posts-list"></div>
-</div>
-</div>
-
-<div id="userProfile" class="section">
-<button class="btn-back" onclick="backFromUserProfile()">⬅ Volver</button>
-<div class="profile-card">
-<div class="profile-banner" id="userProfileBanner"></div>
-<div class="profile-avatar-row">
-<div class="profile-avatar-wrap">
-<img id="userProfileAvatar" class="profile-avatar">
-</div>
-</div>
-<div class="profile-info">
-<div class="profile-name-row"><span id="userProfileDisplayName" class="profile-display-name"></span></div>
-<div class="profile-name-row"><span id="userProfileUsername" class="profile-username"></span></div>
-<div id="userProfileBio" class="profile-bio-display"></div>
-<div class="profile-stats-row">
-<div class="profile-stat-item"><strong id="userStatPosts">0</strong><span>Posts</span></div>
-<div class="profile-stat-item"><strong id="userStatGallery">0</strong><span>Fotos</span></div>
-<div class="profile-stat-item"><strong id="userStatForums">0</strong><span>Foros</span></div>
-<div class="profile-stat-item"><strong id="userStatCheese">0</strong><span>🧀 Likes</span></div>
-</div>
-<div id="userProfileJoinedNote" class="profile-joined-note"></div>
-</div>
-</div>
-<div class="profile-posts-section">
-<div class="profile-posts-title">📝 Posts de este usuario</div>
-<div id="userProfilePosts" class="profile-posts-list"></div>
 </div>
 </div>
 </main>
@@ -403,7 +377,6 @@ let realtimeChannel = null;
 let notifChannel = null;
 let notifications = [];
 let viewingUserId = null;
-let previousSection = 'menu';
 
 // ======================== TEMA ========================
 function applyTheme(theme) {
@@ -474,7 +447,7 @@ function renderNotifications() {
   else { badge.style.display = 'none'; }
   if (notifications.length === 0) { list.innerHTML = '<div class="notif-empty">Sin notificaciones aún 🐭</div>'; return; }
   list.innerHTML = notifications.map(function(n){
-    const icon = n.type === 'post_like' ? '🐾' : n.type === 'post_reply' ? '💬' : n.type === 'comment_reply' ? '↩️' : n.type === 'mention' ? '📢' : '🔔';
+    const icon = n.type === 'post_like' ? '🐾' : n.type === 'post_reply' ? '💬' : n.type === 'comment_reply' ? '↩️' : '🔔';
     return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="openNotification(\'' + n.id + '\')">' +
       '<div class="notif-icon">' + icon + '</div>' +
       '<div class="notif-content">' +
@@ -703,7 +676,7 @@ async function submitSetup() {
 async function loadAllData() {
   await Promise.all([loadPosts(), loadForums(), loadGallery()]);
   await loadAllComments();
-  renderPosts(); renderForums(); renderGallery(); renderProfile();
+  renderPosts(); renderForums(); renderGallery();
 }
 async function loadPosts() {
   const { data, error } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
@@ -731,7 +704,7 @@ async function loadGallery() {
 function setupRealtime() {
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient.channel('ratweb-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(renderPosts); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'forums' }, function(){ loadForums().then(renderForums); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, function(){ loadGallery().then(renderGallery); })
@@ -757,7 +730,7 @@ async function createPost(target) {
     if (error) throw error;
     textInput.value = '';
     if (isForum) clearForumPostPreview(); else clearPostPreview();
-    await loadPosts(); renderPosts(); renderMyProfilePosts();
+    await loadPosts(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
   } catch (err) { alert('Error al publicar: ' + err.message); }
 }
 
@@ -858,24 +831,13 @@ async function toggleLike(postId) {
   if (wasLiked) likedBy.splice(idx, 1);
   else likedBy.push(profile.username);
   post.liked_by = likedBy;
-  // Update all instances in DOM
-  document.querySelectorAll('#like-' + postId).forEach(function(el){
+  document.querySelectorAll('[id="like-' + postId + '"]').forEach(function(el){
     el.classList.toggle('liked', !wasLiked);
-    const c = el.querySelector('#like-count-' + postId);
+    const c = el.querySelector('[id="like-count-' + postId + '"]');
     if (c) c.textContent = likedBy.length;
   });
   const { error } = await supabaseClient.from('posts').update({ liked_by: likedBy }).eq('id', postId);
-  if (error) {
-    if (wasLiked) likedBy.push(profile.username);
-    else likedBy.splice(likedBy.indexOf(profile.username), 1);
-    post.liked_by = likedBy;
-    document.querySelectorAll('#like-' + postId).forEach(function(el){
-      el.classList.toggle('liked', wasLiked);
-      const c = el.querySelector('#like-count-' + postId);
-      if (c) c.textContent = likedBy.length;
-    });
-    return;
-  }
+  if (error) { console.error(error); return; }
   if (!wasLiked && post.user_id !== session.user.id) {
     await supabaseClient.from('notifications').insert([{
       user_id: post.user_id, type: 'post_like', from_handle: profile.username,
@@ -888,11 +850,11 @@ async function deletePost(postId) {
   if (!confirm('¿Borrar esta publicación?')) return;
   const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadPosts(); await loadAllComments(); renderPosts(); renderMyProfilePosts(); renderUserProfilePosts();
+  await loadPosts(); await loadAllComments(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
 }
-function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
-function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
-function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
+function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
+function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
+function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
 
 async function addReply(postId) {
   const input = document.getElementById('reply-input-' + postId);
@@ -913,7 +875,7 @@ async function addReply(postId) {
     if (error) throw error;
     delete activeReplyTargets[postId];
     await loadAllComments();
-    renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
+    renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
     setTimeout(function(){ clearReplyPreview(postId); }, 100);
     const post = posts.find(function(p){ return p.id == postId; });
     if (post && post.user_id !== session.user.id) {
@@ -937,52 +899,135 @@ async function deleteComment(commentId) {
   if (!confirm('¿Borrar comentario?')) return;
   const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadAllComments(); renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
+  await loadAllComments(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
 }
 
-// ======================== PERFILES PÚBLICOS ========================
+// ======================== PERFIL (MISMO BLOQUE PARA AMBOS) ========================
 async function openUserProfile(userId) {
   if (!userId) return;
-  if (userId === session.user.id) { showSection('perfil'); return; }
   viewingUserId = userId;
-  previousSection = document.querySelector('.section.active').id;
-  const { data: userProfile, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
-  if (error || !userProfile) { alert('No se pudo cargar el perfil'); return; }
-  const banner = document.getElementById('userProfileBanner');
-  banner.style.backgroundImage = userProfile.banner_url ? "url('" + userProfile.banner_url + "')" : 'none';
-  document.getElementById('userProfileAvatar').src = userProfile.avatar_url || '';
-  document.getElementById('userProfileDisplayName').textContent = userProfile.display_name;
-  document.getElementById('userProfileUsername').textContent = userProfile.username;
-  document.getElementById('userProfileBio').textContent = userProfile.bio || 'Sin bio aún 🐭';
-  const userPosts = posts.filter(function(p){ return p.user_id === userId; });
-  const userGallery = gallery.filter(function(g){ return g.user_id === userId && g.visibility !== 'private'; });
-  document.getElementById('userStatPosts').textContent = userPosts.length;
-  document.getElementById('userStatGallery').textContent = userGallery.length;
-  document.getElementById('userStatForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(userProfile.username) !== -1; }).length;
-  const userLikes = userPosts.reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) + userGallery.reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
-  document.getElementById('userStatCheese').textContent = userLikes;
-  const d = userProfile.joined_at ? new Date(userProfile.joined_at) : new Date();
-  document.getElementById('userProfileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-  renderUserProfilePosts(userPosts);
-  showSection('userProfile');
+  await renderProfile(userId);
+  showSection('perfil');
+  document.getElementById('profileBackBtn').classList.remove('hidden');
 }
-function renderUserProfilePosts(userPostsList) {
-  const container = document.getElementById('userProfilePosts');
-  if (!container || !viewingUserId) return;
-  const list = userPostsList || posts.filter(function(p){ return p.user_id === viewingUserId; });
-  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Este usuario no ha publicado nada aún 🐭</p>'; return; }
-  container.innerHTML = list.map(function(p){ return renderPostCard(p); }).join('');
+
+function goToMyProfile() {
+  viewingUserId = null;
+  renderProfile();
+  showSection('perfil');
 }
-function renderMyProfilePosts() {
-  const container = document.getElementById('myProfilePosts');
-  if (!container || !session) return;
-  const myPosts = posts.filter(function(p){ return p.user_id === session.user.id; });
-  if (myPosts.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Aún no has publicado nada 🐭</p>'; return; }
-  container.innerHTML = myPosts.map(function(p){ return renderPostCard(p); }).join('');
-}
+
 function backFromUserProfile() {
   viewingUserId = null;
-  showSection(previousSection || 'menu');
+  showSection('menu');
+}
+
+async function renderProfile(userId) {
+  const targetId = userId || (session && session.user.id);
+  if (!targetId) return;
+  const isOwn = targetId === session.user.id;
+
+  let profileData;
+  if (isOwn && profile) {
+    profileData = profile;
+  } else {
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', targetId).single();
+    if (error || !data) { console.error(error); return; }
+    profileData = data;
+  }
+
+  // Banner
+  document.getElementById('profileBanner').style.backgroundImage = profileData.banner_url ? "url('" + profileData.banner_url + "')" : 'none';
+  // Avatar
+  document.getElementById('profileAvatarImg').src = profileData.avatar_url || '';
+  // Nombre y username
+  document.getElementById('profileDisplayName').textContent = profileData.display_name;
+  document.getElementById('profileUsername').textContent = profileData.username;
+
+  // Bio: input si es mío, display si es ajeno
+  const bioInput = document.getElementById('profileBioInput');
+  const bioDisplay = document.getElementById('profileBioDisplay');
+  if (isOwn) {
+    bioInput.classList.remove('hidden');
+    bioDisplay.classList.add('hidden');
+    bioInput.value = profileData.bio || '';
+  } else {
+    bioInput.classList.add('hidden');
+    bioDisplay.classList.remove('hidden');
+    bioDisplay.textContent = profileData.bio || 'Sin bio aún 🐭';
+  }
+
+  // Botones de edición: solo visibles si es mío
+  document.getElementById('editBannerBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('editAvatarBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('logoutBtn').classList.toggle('hidden', !isOwn);
+  document.getElementById('deleteAccountBtn').classList.toggle('hidden', !isOwn);
+  // Header avatar solo si es mío (actualizar)
+  if (isOwn) document.getElementById('headerAvatar').src = profileData.avatar_url || '';
+
+  // Stats
+  const userPosts = posts.filter(function(p){ return p.user_id === targetId; });
+  const userGallery = gallery.filter(function(g){ return g.user_id === targetId && (g.visibility !== 'private' || isOwn); });
+  document.getElementById('statPosts').textContent = userPosts.length;
+  document.getElementById('statGallery').textContent = userGallery.length;
+  document.getElementById('statForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(profileData.username) !== -1; }).length;
+  const likes = userPosts.reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) + userGallery.reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
+  document.getElementById('statCheese').textContent = likes;
+  const d = profileData.joined_at ? new Date(profileData.joined_at) : new Date();
+  document.getElementById('profileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+
+  // Título y posts
+  document.getElementById('profilePostsTitle').textContent = isOwn ? '📝 Mis posts' : '📝 Posts de ' + profileData.display_name;
+  const postsContainer = document.getElementById('myProfilePosts');
+  if (userPosts.length === 0) {
+    postsContainer.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">' + (isOwn ? 'Aún no has publicado nada 🐭' : 'Este usuario no ha publicado nada aún 🐭') + '</p>';
+  } else {
+    postsContainer.innerHTML = userPosts.map(function(p){ return renderPostCard(p); }).join('');
+  }
+}
+
+async function changeProfileAvatar(event) {
+  const file = event.target.files[0]; if (!file) return;
+  try {
+    const url = await uploadFile(file, 'avatars');
+    const { error } = await supabaseClient.from('profiles').update({ avatar_url: url }).eq('id', session.user.id);
+    if (error) throw error;
+    profile.avatar_url = url; renderProfile(); alert('✅ Foto actualizada');
+  } catch (err) { alert('Error: ' + err.message); }
+  event.target.value = '';
+}
+async function changeBanner(event) {
+  const file = event.target.files[0]; if (!file) return;
+  try {
+    const url = await uploadFile(file, 'banners');
+    const { error } = await supabaseClient.from('profiles').update({ banner_url: url }).eq('id', session.user.id);
+    if (error) throw error;
+    profile.banner_url = url; renderProfile(); alert('✅ Banner actualizado');
+  } catch (err) { alert('Error: ' + err.message); }
+  event.target.value = '';
+}
+async function saveBio() {
+  const bio = document.getElementById('profileBioInput').value.trim();
+  if (bio === profile.bio) return;
+  const { error } = await supabaseClient.from('profiles').update({ bio: bio }).eq('id', session.user.id);
+  if (error) return;
+  profile.bio = bio;
+}
+async function deleteAccount() {
+  if (!confirm('⚠️ ¿Eliminar tu cuenta y TODOS tus datos?')) return;
+  if (!confirm('⚠️⚠️ ¿Estás 100% seguro?')) return;
+  try {
+    await supabaseClient.from('posts').delete().eq('user_id', session.user.id);
+    await supabaseClient.from('comments').delete().eq('user_id', session.user.id);
+    await supabaseClient.from('forums').delete().eq('creator_id', session.user.id);
+    await supabaseClient.from('gallery').delete().eq('user_id', session.user.id);
+    await supabaseClient.from('notifications').delete().eq('user_id', session.user.id);
+    await supabaseClient.from('usernames').delete().eq('user_id', session.user.id);
+    await supabaseClient.from('profiles').delete().eq('id', session.user.id);
+    await supabaseClient.auth.signOut();
+    alert('✅ Cuenta eliminada');
+    window.location.reload();
+  } catch (err) { alert('Error: ' + err.message); }
 }
 
 // ======================== FOROS ========================
@@ -1129,69 +1174,6 @@ async function deleteGalleryItem(id, event) {
   await loadGallery(); renderGallery();
 }
 
-// ======================== PERFIL PROPIO ========================
-function renderProfile() {
-  if (!profile) return;
-  document.getElementById('profileBanner').style.backgroundImage = profile.banner_url ? "url('" + profile.banner_url + "')" : 'none';
-  document.getElementById('profileAvatarImg').src = profile.avatar_url || '';
-  document.getElementById('headerAvatar').src = profile.avatar_url || '';
-  document.getElementById('profileDisplayName').textContent = profile.display_name;
-  document.getElementById('profileUsername').textContent = profile.username;
-  document.getElementById('profileBioInput').value = profile.bio || '';
-  document.getElementById('statPosts').textContent = posts.filter(function(p){ return p.user_id === session.user.id; }).length;
-  document.getElementById('statGallery').textContent = gallery.filter(function(g){ return g.user_id === session.user.id; }).length;
-  document.getElementById('statForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(profile.username) !== -1; }).length;
-  const likes = posts.filter(function(p){ return p.user_id === session.user.id; }).reduce(function(s, p){ return s + (p.liked_by || []).length; }, 0) +
-               gallery.filter(function(g){ return g.user_id === session.user.id; }).reduce(function(s, g){ return s + (g.liked_by || []).length; }, 0);
-  document.getElementById('statCheese').textContent = likes;
-  const d = profile.joined_at ? new Date(profile.joined_at) : new Date();
-  document.getElementById('profileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-  renderMyProfilePosts();
-}
-async function changeProfileAvatar(event) {
-  const file = event.target.files[0]; if (!file) return;
-  try {
-    const url = await uploadFile(file, 'avatars');
-    const { error } = await supabaseClient.from('profiles').update({ avatar_url: url }).eq('id', session.user.id);
-    if (error) throw error;
-    profile.avatar_url = url; renderProfile(); alert('✅ Foto actualizada');
-  } catch (err) { alert('Error: ' + err.message); }
-  event.target.value = '';
-}
-async function changeBanner(event) {
-  const file = event.target.files[0]; if (!file) return;
-  try {
-    const url = await uploadFile(file, 'banners');
-    const { error } = await supabaseClient.from('profiles').update({ banner_url: url }).eq('id', session.user.id);
-    if (error) throw error;
-    profile.banner_url = url; renderProfile(); alert('✅ Banner actualizado');
-  } catch (err) { alert('Error: ' + err.message); }
-  event.target.value = '';
-}
-async function saveBio() {
-  const bio = document.getElementById('profileBioInput').value.trim();
-  if (bio === profile.bio) return;
-  const { error } = await supabaseClient.from('profiles').update({ bio: bio }).eq('id', session.user.id);
-  if (error) return;
-  profile.bio = bio;
-}
-async function deleteAccount() {
-  if (!confirm('⚠️ ¿Eliminar tu cuenta y TODOS tus datos?')) return;
-  if (!confirm('⚠️⚠️ ¿Estás 100% seguro?')) return;
-  try {
-    await supabaseClient.from('posts').delete().eq('user_id', session.user.id);
-    await supabaseClient.from('comments').delete().eq('user_id', session.user.id);
-    await supabaseClient.from('forums').delete().eq('creator_id', session.user.id);
-    await supabaseClient.from('gallery').delete().eq('user_id', session.user.id);
-    await supabaseClient.from('notifications').delete().eq('user_id', session.user.id);
-    await supabaseClient.from('usernames').delete().eq('user_id', session.user.id);
-    await supabaseClient.from('profiles').delete().eq('id', session.user.id);
-    await supabaseClient.auth.signOut();
-    alert('✅ Cuenta eliminada');
-    window.location.reload();
-  } catch (err) { alert('Error: ' + err.message); }
-}
-
 // ======================== NAVEGACIÓN ========================
 function showSection(id) {
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
@@ -1200,7 +1182,7 @@ function showSection(id) {
   const btn = document.getElementById('btn-' + id);
   if (btn) btn.classList.add('active');
   else if (id === 'forumView') document.getElementById('btn-foros').classList.add('active');
-  if (id === 'perfil') renderProfile();
+  if (id === 'perfil') renderProfile(viewingUserId);
   if (id === 'menu') renderPosts();
   if (id === 'foros') renderForums();
   if (id === 'galeria') renderGallery();
@@ -1248,4 +1230,4 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
 });
 </script>
 </body>
-  </html>
+</html>
