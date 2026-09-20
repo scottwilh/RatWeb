@@ -189,9 +189,6 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
-
-.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -439,47 +436,69 @@ function showAttachmentPreview(previewId, contentId, infoId, file) {
   infoEl.textContent = file.name + ' (' + formatBytes(file.size) + ')';
   previewEl.classList.add('show');
 }
-function hideAttachmentPreview(previewId, inputId, labelId, defaultText) {
-  const previewEl = document.getElementById(previewId);
-  if (previewEl) previewEl.classList.remove('show');
-  const input = document.getElementById(inputId);
-  if (input) input.value = '';
-  const label = document.getElementById(labelId);
-  if (label) label.innerHTML = defaultText + '<input type="file" id="' + inputId + '" accept="' + (inputId === 'galleryFile' ? 'image/*' : 'image/*,video/*') + '" style="display: none;" onchange="' + (inputId === 'postMedia' ? 'previewPostMedia' : inputId === 'forumPostMedia' ? 'previewForumPostMedia' : 'previewGalleryFile') + '(event)">';
-}
 
 function previewPostMedia(event) {
   const file = event.target.files[0];
   if (!file) return;
   showAttachmentPreview('postPreview', 'postPreviewContent', 'postPreviewInfo', file);
-  document.getElementById('postFileLabel').innerHTML = '📷 1 archivo ✓<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;" onchange="previewPostMedia(event)">';
+  const lbl = document.getElementById('postFileLabel');
+  lbl.innerHTML = '📷 1 archivo ✓';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none';
+  inp.onchange = previewPostMedia;
+  lbl.appendChild(inp);
+  inp.files = event.target.files;
 }
 function clearPostPreview() {
   document.getElementById('postPreview').classList.remove('show');
-  document.getElementById('postMedia').value = '';
-  document.getElementById('postFileLabel').innerHTML = '📷 Adjuntar<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;" onchange="previewPostMedia(event)">';
+  const lbl = document.getElementById('postFileLabel');
+  lbl.innerHTML = '📷 Adjuntar';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'postMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none';
+  inp.onchange = previewPostMedia;
+  lbl.appendChild(inp);
 }
 function previewForumPostMedia(event) {
   const file = event.target.files[0];
   if (!file) return;
   showAttachmentPreview('forumPostPreview', 'forumPostPreviewContent', 'forumPostPreviewInfo', file);
-  document.getElementById('forumFileLabel').innerHTML = '📷 1 archivo ✓<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;" onchange="previewForumPostMedia(event)">';
+  const lbl = document.getElementById('forumFileLabel');
+  lbl.innerHTML = '📷 1 archivo ✓';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none';
+  inp.onchange = previewForumPostMedia;
+  lbl.appendChild(inp);
+  inp.files = event.target.files;
 }
 function clearForumPostPreview() {
   document.getElementById('forumPostPreview').classList.remove('show');
-  document.getElementById('forumPostMedia').value = '';
-  document.getElementById('forumFileLabel').innerHTML = '📷 Adjuntar<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;" onchange="previewForumPostMedia(event)">';
+  const lbl = document.getElementById('forumFileLabel');
+  lbl.innerHTML = '📷 Adjuntar';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'forumPostMedia'; inp.accept = 'image/*,video/*'; inp.style.display = 'none';
+  inp.onchange = previewForumPostMedia;
+  lbl.appendChild(inp);
 }
 function previewGalleryFile(event) {
   const file = event.target.files[0];
   if (!file) return;
   showAttachmentPreview('galleryPreview', 'galleryPreviewContent', 'galleryPreviewInfo', file);
-  document.getElementById('galleryFileLabel').innerHTML = '📁 1 archivo ✓<input type="file" id="galleryFile" accept="image/*" style="display: none;" onchange="previewGalleryFile(event)">';
+  const lbl = document.getElementById('galleryFileLabel');
+  lbl.innerHTML = '📁 1 archivo ✓';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none';
+  inp.onchange = previewGalleryFile;
+  lbl.appendChild(inp);
+  inp.files = event.target.files;
 }
 function clearGalleryPreview() {
   document.getElementById('galleryPreview').classList.remove('show');
-  document.getElementById('galleryFile').value = '';
-  document.getElementById('galleryFileLabel').innerHTML = '📁 Archivo<input type="file" id="galleryFile" accept="image/*" style="display: none;" onchange="previewGalleryFile(event)">';
+  const lbl = document.getElementById('galleryFileLabel');
+  lbl.innerHTML = '📁 Archivo';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.id = 'galleryFile'; inp.accept = 'image/*'; inp.style.display = 'none';
+  inp.onchange = previewGalleryFile;
+  lbl.appendChild(inp);
 }
 
 // ======================== STORAGE ========================
@@ -651,7 +670,7 @@ async function createPost(target) {
   const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
   const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
   const text = textInput.value.trim();
-  const file = fileInput.files[0];
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
   if (!text && !file) { alert('Escribe algo o adjunta un archivo'); return; }
   try {
     let mediaUrl = null, mediaType = null;
@@ -731,13 +750,27 @@ function previewReplyMedia(postId, event) {
   const file = event.target.files[0];
   if (!file) return;
   showAttachmentPreview('reply-preview-' + postId, 'reply-preview-content-' + postId, 'reply-preview-info-' + postId, file);
-  document.getElementById('reply-file-label-' + postId).innerHTML = '📷 ✓<input type="file" id="reply-media-' + postId + '" accept="image/*" style="display:none;" onchange="previewReplyMedia(\'' + postId + '\', event)">';
+  const lbl = document.getElementById('reply-file-label-' + postId);
+  if (lbl) {
+    lbl.innerHTML = '📷 ✓';
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'reply-media-' + postId; inp.accept = 'image/*'; inp.style.display = 'none';
+    inp.onchange = function(e){ previewReplyMedia(postId, e); };
+    lbl.appendChild(inp);
+    inp.files = event.target.files;
+  }
 }
 function clearReplyPreview(postId) {
-  document.getElementById('reply-preview-' + postId).classList.remove('show');
-  const input = document.getElementById('reply-media-' + postId);
-  if (input) input.value = '';
-  document.getElementById('reply-file-label-' + postId).innerHTML = '📷<input type="file" id="reply-media-' + postId + '" accept="image/*" style="display:none;" onchange="previewReplyMedia(\'' + postId + '\', event)">';
+  const prev = document.getElementById('reply-preview-' + postId);
+  if (prev) prev.classList.remove('show');
+  const lbl = document.getElementById('reply-file-label-' + postId);
+  if (lbl) {
+    lbl.innerHTML = '📷';
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'reply-media-' + postId; inp.accept = 'image/*'; inp.style.display = 'none';
+    inp.onchange = function(e){ previewReplyMedia(postId, e); };
+    lbl.appendChild(inp);
+  }
 }
 
 async function toggleLike(postId) {
@@ -763,30 +796,41 @@ async function deletePost(postId) {
 function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); }
 function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); }
 function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); }
+
 async function addReply(postId) {
   const input = document.getElementById('reply-input-' + postId);
   const mediaInput = document.getElementById('reply-media-' + postId);
+  if (!input) return;
   const text = input.value.trim();
-  const file = mediaInput ? mediaInput.files[0] : null;
-  if (!text && !file) { alert('Escribe algo'); return; }
+  const file = (mediaInput && mediaInput.files && mediaInput.files[0]) ? mediaInput.files[0] : null;
+  if (!text && !file) { alert('Escribe algo o adjunta una imagen'); return; }
+
+  const replyToHandle = activeReplyTargets[postId] || null;
+
   try {
     let mediaUrl = null;
-    if (file) mediaUrl = await uploadFile(file, 'comments');
+    if (file) {
+      mediaUrl = await uploadFile(file, 'comments');
+    }
     const { error } = await supabaseClient.from('comments').insert([{
       post_id: postId, user_id: session.user.id, author_handle: profile.username,
       author_name: profile.display_name, content: text, media_url: mediaUrl,
-      reply_to_handle: activeReplyTargets[postId] || null, created_at: Date.now()
+      reply_to_handle: replyToHandle, created_at: Date.now()
     }]);
     if (error) throw error;
-    clearReplyTarget(postId);
-    clearReplyPreview(postId);
+    delete activeReplyTargets[postId];
+    await loadAllComments();
+    renderPosts();
+    setTimeout(function(){ clearReplyPreview(postId); }, 100);
     const post = posts.find(function(p){ return p.id == postId; });
     if (post && post.user_id !== session.user.id) {
-      await supabaseClient.from('notifications').insert([{ user_id: post.user_id, type: 'post_reply', from_handle: profile.username, message: profile.username + ' comentó tu post: "' + post.content.slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now() }]);
+      await supabaseClient.from('notifications').insert([{ user_id: post.user_id, type: 'post_reply', from_handle: profile.username, message: profile.username + ' comentó tu post: "' + (post.content || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now() }]);
     }
-    await loadAllComments(); renderPosts();
-  } catch (err) { alert('Error: ' + err.message); }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
 }
+
 async function deleteComment(commentId) {
   if (!confirm('¿Borrar comentario?')) return;
   const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
@@ -890,7 +934,7 @@ async function uploadToGallery() {
   const category = document.getElementById('galleryCategory').value;
   const fileInput = document.getElementById('galleryFile');
   const visibility = document.querySelector('input[name="galleryVisibility"]:checked').value;
-  const file = fileInput.files[0];
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
   if (!file) { alert('Elige un archivo'); return; }
   try {
     const url = await uploadFile(file, 'gallery');
