@@ -150,7 +150,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .profile-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
 .profile-banner { height: 100px; background-color: var(--primary); background-size: cover; background-position: center; border-bottom: 2px solid var(--border); position: relative; }
 .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
-.profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; }
+.profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; position: relative; z-index: 2; }
 .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
 .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--bg-card); outline: 2px solid var(--border); object-fit: cover; background-color: var(--primary); }
 .profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -166,6 +166,9 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .profile-joined-note { font-size: 10px; color: var(--text-muted); margin-top: 8px; text-align: center; font-style: italic; }
 .btn-logout { background-color: #666; color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
 .btn-delete-account { background-color: var(--danger); color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; }
+.profile-posts-section { margin-top: 12px; }
+.profile-posts-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; color: var(--text); }
+.profile-posts-list { display: flex; flex-direction: column; gap: 10px; }
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
@@ -336,6 +339,10 @@ Iniciar sesión con Google
 <div id="profileJoinedNote" class="profile-joined-note"></div>
 </div>
 </div>
+<div class="profile-posts-section">
+<div class="profile-posts-title">📝 Mis posts</div>
+<div id="myProfilePosts" class="profile-posts-list"></div>
+</div>
 </div>
 
 <div id="userProfile" class="section">
@@ -360,9 +367,9 @@ Iniciar sesión con Google
 <div id="userProfileJoinedNote" class="profile-joined-note"></div>
 </div>
 </div>
-<div style="margin-top: 10px;">
-<div style="font-weight: bold; font-size: 12px; margin-bottom: 6px;">📝 Posts de este usuario</div>
-<div id="userProfilePosts" style="display: flex; flex-direction: column; gap: 10px;"></div>
+<div class="profile-posts-section">
+<div class="profile-posts-title">📝 Posts de este usuario</div>
+<div id="userProfilePosts" class="profile-posts-list"></div>
 </div>
 </div>
 </main>
@@ -724,7 +731,7 @@ async function loadGallery() {
 function setupRealtime() {
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient.channel('ratweb-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); if (viewingUserId) renderUserProfilePosts(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(renderPosts); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'forums' }, function(){ loadForums().then(renderForums); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, function(){ loadGallery().then(renderGallery); })
@@ -750,7 +757,7 @@ async function createPost(target) {
     if (error) throw error;
     textInput.value = '';
     if (isForum) clearForumPostPreview(); else clearPostPreview();
-    await loadPosts(); renderPosts();
+    await loadPosts(); renderPosts(); renderMyProfilePosts();
   } catch (err) { alert('Error al publicar: ' + err.message); }
 }
 
@@ -760,7 +767,7 @@ function renderPosts() {
   if (!listEl) return;
   const filtered = isForumView ? posts.filter(function(p){ return p.forum_id === currentForumId; }) : posts;
   if (filtered.length === 0) { listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay publicaciones aún.</p>'; return; }
-  listEl.innerHTML = filtered.map(renderPostCard).join('');
+  listEl.innerHTML = filtered.map(function(p){ return renderPostCard(p); }).join('');
 }
 
 function renderPostCard(post) {
@@ -848,23 +855,25 @@ async function toggleLike(postId) {
   const likedBy = post.liked_by || [];
   const idx = likedBy.indexOf(profile.username);
   const wasLiked = idx !== -1;
-  // Optimistic UI update
   if (wasLiked) likedBy.splice(idx, 1);
   else likedBy.push(profile.username);
   post.liked_by = likedBy;
-  const el = document.getElementById('like-' + postId);
-  const countEl = document.getElementById('like-count-' + postId);
-  if (el) el.classList.toggle('liked', !wasLiked);
-  if (countEl) countEl.textContent = likedBy.length;
-  // Update DB
+  // Update all instances in DOM
+  document.querySelectorAll('#like-' + postId).forEach(function(el){
+    el.classList.toggle('liked', !wasLiked);
+    const c = el.querySelector('#like-count-' + postId);
+    if (c) c.textContent = likedBy.length;
+  });
   const { error } = await supabaseClient.from('posts').update({ liked_by: likedBy }).eq('id', postId);
   if (error) {
-    // Revert on error
     if (wasLiked) likedBy.push(profile.username);
     else likedBy.splice(likedBy.indexOf(profile.username), 1);
     post.liked_by = likedBy;
-    if (el) el.classList.toggle('liked', wasLiked);
-    if (countEl) countEl.textContent = likedBy.length;
+    document.querySelectorAll('#like-' + postId).forEach(function(el){
+      el.classList.toggle('liked', wasLiked);
+      const c = el.querySelector('#like-count-' + postId);
+      if (c) c.textContent = likedBy.length;
+    });
     return;
   }
   if (!wasLiked && post.user_id !== session.user.id) {
@@ -879,11 +888,11 @@ async function deletePost(postId) {
   if (!confirm('¿Borrar esta publicación?')) return;
   const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadPosts(); await loadAllComments(); renderPosts();
+  await loadPosts(); await loadAllComments(); renderPosts(); renderMyProfilePosts(); renderUserProfilePosts();
 }
-function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); }
-function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); }
-function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); }
+function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
+function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
+function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); renderUserProfilePosts(); renderMyProfilePosts(); }
 
 async function addReply(postId) {
   const input = document.getElementById('reply-input-' + postId);
@@ -904,17 +913,15 @@ async function addReply(postId) {
     if (error) throw error;
     delete activeReplyTargets[postId];
     await loadAllComments();
-    renderPosts();
+    renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
     setTimeout(function(){ clearReplyPreview(postId); }, 100);
     const post = posts.find(function(p){ return p.id == postId; });
-    // Notificar al dueño del post
     if (post && post.user_id !== session.user.id) {
       await supabaseClient.from('notifications').insert([{
         user_id: post.user_id, type: 'post_reply', from_handle: profile.username,
         message: 'comentó tu post: "' + (post.content || '').slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now()
       }]);
     }
-    // Notificar al autor del comentario original (si estamos respondiendo a alguien)
     if (replyToHandle) {
       const originalComment = (allComments[postId] || []).find(function(c){ return c.author_handle === replyToHandle; });
       if (originalComment && originalComment.user_id !== session.user.id && (!post || originalComment.user_id !== post.user_id)) {
@@ -930,7 +937,7 @@ async function deleteComment(commentId) {
   if (!confirm('¿Borrar comentario?')) return;
   const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadAllComments(); renderPosts();
+  await loadAllComments(); renderPosts(); renderUserProfilePosts(); renderMyProfilePosts();
 }
 
 // ======================== PERFILES PÚBLICOS ========================
@@ -941,7 +948,8 @@ async function openUserProfile(userId) {
   previousSection = document.querySelector('.section.active').id;
   const { data: userProfile, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
   if (error || !userProfile) { alert('No se pudo cargar el perfil'); return; }
-  document.getElementById('userProfileBanner').style.backgroundImage = userProfile.banner_url ? "url('" + userProfile.banner_url + "')" : 'none';
+  const banner = document.getElementById('userProfileBanner');
+  banner.style.backgroundImage = userProfile.banner_url ? "url('" + userProfile.banner_url + "')" : 'none';
   document.getElementById('userProfileAvatar').src = userProfile.avatar_url || '';
   document.getElementById('userProfileDisplayName').textContent = userProfile.display_name;
   document.getElementById('userProfileUsername').textContent = userProfile.username;
@@ -960,10 +968,17 @@ async function openUserProfile(userId) {
 }
 function renderUserProfilePosts(userPostsList) {
   const container = document.getElementById('userProfilePosts');
-  if (!container) return;
+  if (!container || !viewingUserId) return;
   const list = userPostsList || posts.filter(function(p){ return p.user_id === viewingUserId; });
   if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Este usuario no ha publicado nada aún 🐭</p>'; return; }
-  container.innerHTML = list.map(renderPostCard).join('');
+  container.innerHTML = list.map(function(p){ return renderPostCard(p); }).join('');
+}
+function renderMyProfilePosts() {
+  const container = document.getElementById('myProfilePosts');
+  if (!container || !session) return;
+  const myPosts = posts.filter(function(p){ return p.user_id === session.user.id; });
+  if (myPosts.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Aún no has publicado nada 🐭</p>'; return; }
+  container.innerHTML = myPosts.map(function(p){ return renderPostCard(p); }).join('');
 }
 function backFromUserProfile() {
   viewingUserId = null;
@@ -1131,6 +1146,7 @@ function renderProfile() {
   document.getElementById('statCheese').textContent = likes;
   const d = profile.joined_at ? new Date(profile.joined_at) : new Date();
   document.getElementById('profileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+  renderMyProfilePosts();
 }
 async function changeProfileAvatar(event) {
   const file = event.target.files[0]; if (!file) return;
@@ -1232,4 +1248,4 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
 });
 </script>
 </body>
-</html>
+  </html>
