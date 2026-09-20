@@ -4,56 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RatWeb</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
         html { height: 100%; overflow: hidden; }
         body { background-color: #fcebe6; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; }
-        
-        .auth-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: #fcebe6; z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
-        .auth-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; }
-        .auth-title { font-size: 22px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
-        .avatar-preview-container { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .avatar-preview { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; }
-        .auth-card input, .auth-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
-        .auth-card textarea { height: 50px; resize: none; }
-        .btn-auth { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
-        .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; }
-        .error-msg { color: #e74c3c; font-size: 12px; text-align: center; min-height: 20px; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
-        .error-msg.show { display: block; }
-        
+
+        /* ========== LOGIN ========== */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: #fcebe6; z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
+        .login-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 30px 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; box-shadow: 4px 4px 0px #000; text-align: center; }
+        .login-title { font-size: 32px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
+        .login-sub { font-size: 12px; color: #666; margin-bottom: 10px; }
+        .btn-google { background: #fff; color: #000; border: 2px solid #000; border-radius: 10px; padding: 12px; font-weight: bold; font-size: 14px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-google:hover { background: #f5f5f5; }
+        .btn-google img { width: 20px; height: 20px; }
+        .login-error { color: #e74c3c; font-size: 12px; font-weight: bold; background: #fde8e8; padding: 8px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
+        .login-error.show { display: block; }
+
+        /* ========== MODAL SETUP ========== */
+        .setup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.85); z-index: 10001; display: none; justify-content: center; align-items: center; padding: 16px; overflow-y: auto; }
+        .setup-overlay.show { display: flex; }
+        .setup-card { background: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; max-height: 95vh; overflow-y: auto; }
+        .setup-title { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
+        .setup-sub { font-size: 11px; color: #666; text-align: center; margin-bottom: 6px; }
+        .setup-label { font-size: 11px; font-weight: bold; color: #333; }
+        .setup-card input, .setup-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
+        .setup-card textarea { height: 55px; resize: none; }
+        .avatar-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .avatar-preview { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #000; object-fit: cover; background: #b56565; }
+        .setup-error { color: #e74c3c; font-size: 12px; text-align: center; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
+        .setup-error.show { display: block; }
+        .btn-primary { background: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ========== APP ========== */
         header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
         .logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
         .search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
         .search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; }
         .user-header-profile { display: flex; align-items: center; gap: 8px; }
         .avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; cursor: pointer; }
-        
-        .notification-wrapper { position: relative; display: inline-block; }
-        .notif-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; padding: 4px 8px; border-radius: 50%; transition: background 0.3s; }
-        .notif-btn:hover { background: rgba(0,0,0,0.05); }
-        .notif-badge { position: absolute; top: -4px; right: -4px; background: #e74c3c; color: #fff; border-radius: 50%; padding: 1px 5px; font-size: 10px; font-weight: bold; min-width: 18px; text-align: center; }
-        .notif-dropdown { display: none; position: absolute; right: 0; top: 35px; width: 340px; max-height: 420px; background: #fff; border: 2px solid #000; border-radius: 12px; box-shadow: 3px 3px 0px #000; z-index: 1000; overflow: hidden; }
-        .notif-dropdown.open { display: block; }
-        .notif-header { padding: 10px 14px; border-bottom: 2px solid #000; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 13px; background: #f8f0ed; }
-        .notif-mark-all { background: none; border: none; font-size: 10px; color: #8c4a4a; cursor: pointer; text-decoration: underline; }
-        .notif-list { max-height: 330px; overflow-y: auto; }
-        .notif-item { padding: 10px 14px; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background 0.2s; }
-        .notif-item:hover { background: #fdf5f6; }
-        .notif-item.unread { background: #fff6f8; }
-        .notif-item.unread::before { content: ''; width: 6px; height: 6px; background: #b56565; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
-        .notif-icon { font-size: 18px; flex-shrink: 0; }
-        .notif-content { flex: 1; }
-        .notif-message { font-size: 12px; color: #000; word-break: break-word; }
-        .notif-time { font-size: 10px; color: #999; margin-top: 2px; }
-        .notif-action-btn { background: #4a7c59; color: #fff; border: 1.5px solid #000; border-radius: 6px; padding: 3px 10px; font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 4px; font-family: inherit; }
-        .notif-action-btn:hover { background: #3a6a49; }
-        .notif-empty { padding: 20px; text-align: center; color: #999; font-size: 12px; }
-        
+        .btn-logout-top { background: #666; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; font-family: inherit; }
+
         .layout { display: flex; flex: 1; height: calc(100vh - 55px); height: calc(100dvh - 55px); min-height: 0; }
         nav { width: 75px; background-color: #dbe2e6; border-right: 3px solid #000; display: flex; flex-direction: column; flex-shrink: 0; }
         .nav-btn { padding: 12px 4px; border-bottom: 2px solid #c0c8cc; font-weight: bold; font-size: 11px; color: #000; cursor: pointer; text-align: center; word-break: break-word; }
@@ -61,19 +55,15 @@
         main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-height: 0; -webkit-overflow-scrolling: touch; }
         .section { display: none; flex-direction: column; gap: 10px; height: 100%; }
         .section.active { display: flex; min-height: 0; }
-        
+
         .create-box { background-color: #fff; border: 2px solid #000; border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
         .create-box input, .create-box textarea, .create-box select { width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; outline: none; font-family: inherit; }
         .create-box textarea { height: 45px; resize: none; }
-        .btn-publish { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 4px 10px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
+        .btn-publish { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
         .btn-publish:disabled { background-color: #ccc; color: #777; border-color: #999; cursor: not-allowed; }
-        .file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 2px 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; display: inline-block; }
         .btn-back { background-color: #dbe2e6; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
-        .btn-logout { background-color: #666; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
-        .btn-logout:hover { background-color: #444; }
-        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; transition: all 0.3s; }
-        .btn-delete-account:hover { background-color: #c0392b; transform: scale(1.02); }
-        
+
         .post-card { display: flex; gap: 6px; align-items: flex-start; position: relative; }
         .avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; flex-shrink: 0; }
         .post-bubble { background-color: #ffd8df; border: 2px solid #000; border-radius: 14px; padding: 8px; flex: 1; position: relative; }
@@ -82,31 +72,25 @@
         .post-options-btn { background: none; border: none; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 4px; line-height: 1; }
         .options-menu { display: none; position: absolute; right: 8px; top: 25px; background: #fff; border: 2px solid #000; border-radius: 6px; z-index: 10; }
         .options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 11px; cursor: pointer; font-family: inherit; }
-        .post-content { font-size: 12px; color: #000; line-height: 1.2; word-break: break-word; }
-        .post-media { margin-top: 6px; max-width: 100%; border: 2px solid #000; border-radius: 8px; display: block; cursor: pointer; }
+        .post-content { font-size: 12px; color: #000; line-height: 1.3; word-break: break-word; }
+        .post-media { margin-top: 6px; max-width: 100%; max-height: 400px; border: 2px solid #000; border-radius: 8px; display: block; cursor: pointer; object-fit: contain; }
         .post-actions { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; font-weight: bold; }
         .action-btn { cursor: pointer; user-select: none; }
         .action-btn.liked { color: #b56565; }
-        
+
         .replies-box { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; flex-direction: column; gap: 6px; }
         .replies-box.open { display: flex; }
         .reply-item { background-color: #fff; border: 1.5px solid #000; border-radius: 10px; padding: 6px 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
         .reply-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .reply-user-info { display: flex; flex-direction: column; }
         .reply-author { font-weight: bold; font-size: 11px; color: #000; }
         .reply-tag { font-size: 9.5px; color: #8c4a4a; font-weight: bold; }
-        .reply-actions-right { display: flex; gap: 8px; align-items: center; }
         .reply-action-btn { font-size: 10px; color: #000; cursor: pointer; text-decoration: underline; font-weight: bold; }
-        .delete-comment-btn { color: #b56565; text-decoration: none; cursor: pointer; font-size: 12px; background: none; border: none; }
+        .delete-comment-btn { color: #b56565; cursor: pointer; font-size: 12px; background: none; border: none; }
         .comment-media { max-width: 100%; max-height: 140px; border: 1px solid #000; border-radius: 6px; margin-top: 4px; display: block; cursor: pointer; }
         .reply-input-wrapper { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 6px; }
-        .reply-target-indicator { display: none; justify-content: space-between; align-items: center; font-size: 9.5px; background: #ffd8df; border: 1px solid #000; border-radius: 6px; padding: 2px 6px; font-weight: bold; }
-        .reply-target-indicator.active { display: flex; }
         .reply-input-row { display: flex; gap: 4px; align-items: center; }
         .reply-input-row input[type="text"] { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
-        
-        .forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
-        .forum-limit-counter.limit-reached { color: #b56565; }
+
         .forum-card { background-color: #e2f0d9; border: 2px solid #000; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
         .forum-header-container { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .forum-stats-box { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; font-weight: bold; color: #2b5735; background: rgba(255,255,255,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid #000; align-self: flex-start; }
@@ -118,7 +102,9 @@
         .forum-desc { font-size: 11px; color: #333; }
         .forum-tags-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
         .forum-tag-badge { font-size: 9px; font-weight: bold; background-color: #fff; color: #2b5735; border: 1px solid #000; border-radius: 6px; padding: 1px 5px; }
-        
+        .forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
+        .forum-limit-counter.limit-reached { color: #b56565; }
+
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
         .polaroid-card { background-color: #fff; border: 2px solid #000; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; position: relative; }
         .polaroid-img { width: 100%; height: 90px; object-fit: cover; border: 1px solid #000; border-radius: 4px; cursor: pointer; }
@@ -129,7 +115,7 @@
         .polaroid-like-btn.liked { color: #b56565; }
         .visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; }
         .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-        
+
         .profile-card { background-color: #fff; border: 2px solid #000; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
         .profile-banner { height: 100px; background-color: #b56565; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
         .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: #fff; border: 2px solid #000; border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
@@ -141,133 +127,86 @@
         .profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
         .profile-display-name { font-weight: bold; font-size: 14px; color: #000; }
         .profile-username { font-size: 11px; color: #8c4a4a; font-weight: bold; }
-        .profile-edit-pencil { cursor: pointer; font-size: 11px; }
-        .profile-edit-box { display: none; gap: 4px; align-items: center; margin-top: 2px; }
-        .profile-edit-box input { flex: 1; border: 1.5px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
-        .profile-cooldown-note { font-size: 9.5px; color: #999; font-style: italic; min-height: 12px; }
         .profile-bio-input { margin-top: 6px; width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; font-family: inherit; height: 55px; resize: none; outline: none; }
         .profile-stats-row { display: flex; justify-content: space-between; margin-top: 10px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 8px 4px; }
         .profile-stat-item { display: flex; flex-direction: column; align-items: center; font-size: 9.5px; font-weight: bold; gap: 2px; flex: 1; }
         .profile-stat-item strong { font-size: 14px; color: #8c4a4a; }
         .profile-joined-note { font-size: 10px; color: #777; margin-top: 8px; text-align: center; font-style: italic; }
-        
-        .chat-container { display: flex; flex-direction: column; border: 2px solid #000; border-radius: 14px; background: #fff; height: 100%; min-height: 0; overflow: hidden; position: relative; }
-        .chat-toggle-bar { background: #e8dff5; border-bottom: 2px solid #000; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: bold; gap: 6px; flex-shrink: 0; }
-        .chat-toggle-actions { display: flex; gap: 4px; align-items: center; }
-        .chat-icon-btn { border: 1.5px solid #000; background: #fff; padding: 2px 6px; border-radius: 6px; font-size: 12px; cursor: pointer; line-height: 1.3; }
-        .chat-icon-btn.active-toggle { background: #ffd8df; }
-        .chat-search-bar { display: none; padding: 6px; border-bottom: 2px solid #000; background: #fff; flex-shrink: 0; }
-        .chat-search-bar.open { display: block; }
-        .chat-search-bar input { width: 100%; border: 1.5px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; outline: none; font-family: inherit; }
-        .contacts-drawer { display: none; background: #f1f3f4; border-bottom: 2px solid #000; max-height: 150px; overflow-y: auto; flex-shrink: 0; }
-        .contacts-drawer.open { display: block; }
-        .contact-item { padding: 8px 12px; border-bottom: 1px solid #ccc; cursor: pointer; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px; }
-        .contact-item.active { background: #ffd8df; }
-        .contact-item .remove-contact { margin-left: auto; color: #e74c3c; font-size: 14px; cursor: pointer; }
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #fff6f8; overflow: hidden; min-height: 0; background-size: cover; background-position: center; }
-        .chat-messages { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
-        .msg-row { display: flex; flex-direction: column; max-width: 85%; }
-        .msg-row.sent { align-self: flex-end; align-items: flex-end; }
-        .msg-row.received { align-self: flex-start; align-items: flex-start; }
-        .msg-bubble { max-width: 100%; padding: 6px 10px; border: 2px solid #000; border-radius: 12px; font-size: 11px; line-height: 1.2; word-break: break-word; display: flex; flex-direction: column; position: relative; }
-        .msg-bubble.sent { background-color: #ffd8df; border-bottom-right-radius: 2px; }
-        .msg-bubble.received { background-color: #fff; border-bottom-left-radius: 2px; }
-        .msg-quote { background: rgba(0,0,0,0.06); border-left: 3px solid #b56565; padding: 3px 6px; margin-bottom: 4px; font-size: 9.5px; border-radius: 4px; color: #555; }
-        .msg-quote strong { color: #8c4a4a; }
-        .edited-tag { font-size: 8.5px; color: #888; font-style: italic; margin-left: 4px; }
-        .read-status { font-size: 9px; color: #666; align-self: flex-end; margin-top: 3px; font-style: italic; }
-        .msg-media { max-width: 100%; max-height: 140px; border: 1px solid #000; border-radius: 6px; margin-top: 4px; display: block; }
-        .voice-msg audio { max-width: 190px; height: 32px; margin-top: 2px; }
-        .msg-actions-row { display: flex; gap: 8px; margin-top: 3px; font-size: 9.5px; }
-        .msg-action-link { cursor: pointer; text-decoration: underline; font-weight: bold; color: #555; }
-        .msg-options-wrapper { position: relative; }
-        .msg-options-menu { display: none; position: absolute; right: 0; top: 16px; background: #fff; border: 2px solid #000; border-radius: 6px; z-index: 15; }
-        .msg-options-menu.open { display: block; }
-        .msg-options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 10.5px; cursor: pointer; font-family: inherit; white-space: nowrap; }
-        .reaction-picker { display: none; position: absolute; bottom: -34px; right: 0; background: #fff; border: 2px solid #000; border-radius: 14px; padding: 6px; z-index: 20; flex-direction: column; gap: 4px; width: 190px; box-shadow: 3px 3px 0 #000; }
-        .reaction-picker.open { display: flex; }
-        .reaction-picker-grid { display: flex; flex-wrap: wrap; gap: 4px; max-height: 110px; overflow-y: auto; }
-        .reaction-picker-grid span { cursor: pointer; font-size: 16px; padding: 2px; }
-        .reaction-picker-custom { display: flex; gap: 4px; border-top: 1px dashed #000; padding-top: 4px; margin-top: 2px; }
-        .reaction-picker-custom input { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 2px 6px; font-size: 13px; outline: none; font-family: inherit; }
-        .reaction-picker-custom button { border: 1.5px solid #000; background: #ffd8df; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 2px 6px; }
-        .msg-reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-        .reaction-badge { font-size: 10px; background: #fff; border: 1px solid #000; border-radius: 10px; padding: 1px 6px; cursor: pointer; }
-        .reaction-badge.mine { background: #ffd8df; }
-        .typing-indicator { align-self: flex-start; background: #fff; border: 2px solid #000; border-radius: 12px; padding: 6px 10px; font-size: 10.5px; font-style: italic; color: #777; }
-        .chat-reply-preview { display: none; justify-content: space-between; align-items: center; font-size: 10px; background: #ffd8df; border: 1.5px solid #000; border-radius: 8px; padding: 4px 8px; margin: 6px 6px 0 6px; font-weight: bold; flex-shrink: 0; }
-        .chat-reply-preview.active { display: flex; }
-        .chat-input-bar { padding: 6px; background: #fff; border-top: 2px solid #000; display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-        .chat-input-bar input[type="text"] { flex: 1; border: 1px solid #ccc; border-radius: 10px; padding: 6px 8px; font-size: 11px; outline: none; font-family: inherit; }
-        .mic-btn { border: 2px solid #000; background: #ffd8df; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
-        .mic-btn.recording { background: #e74c3c; color: #fff; animation: pulse-rec 1s infinite; }
-        @keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .active-dot { width: 7px; height: 7px; background-color: #4caf50; border-radius: 50%; display: inline-block; }
-        
-        .wallpaper-modal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; padding: 4px; max-height: 55vh; overflow-y: auto; }
-        .wallpaper-thumb { width: 100%; height: 70px; object-fit: cover; border: 2px solid #000; border-radius: 6px; cursor: pointer; }
-        .wallpaper-none-thumb { width: 100%; height: 70px; border: 2px dashed #000; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; background: #f5f5f5; }
-        
+        .btn-logout { background-color: #666; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+        .btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; }
+
         .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
         .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
         .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
+
+        .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="authOverlay" class="auth-overlay">
-        <div class="auth-card">
-            <div class="auth-title">RatWeb 🐾</div>
-            <p style="font-size:11px; text-align:center;">Crea tu perfil para empezar</p>
-            <div class="avatar-preview-container">
-                <img id="avatarPreview" class="avatar-preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ccc'/></svg>">
-                <label class="file-label">
-                    🖼️ Elegir foto
-                    <input type="file" id="regAvatar" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
-                </label>
-            </div>
-            <input type="text" id="regUsername" placeholder="@usuario (ej: @ScottWilh)">
-            <input type="text" id="regDisplayName" placeholder="Nombre visible (ej: Wilhelm Reyes)">
-            <textarea id="regBio" placeholder="Descripción de tu perfil..."></textarea>
-            <div id="regError" class="error-msg">⚠️ Ya hay un usuario con este nombre. Por favor, elige otro.</div>
-            <button class="btn-auth" id="registerBtn" onclick="registerUser()">Entrar a RatWeb</button>
+    <!-- ========== PANTALLA DE LOGIN ========== -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-title">RatWeb 🐾</div>
+            <p class="login-sub">Entra con tu cuenta de Google para empezar</p>
+            <button class="btn-google" id="googleLoginBtn" onclick="loginWithGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Iniciar sesión con Google
+            </button>
+            <div id="loginError" class="login-error"></div>
         </div>
     </div>
 
-    <header>
+    <!-- ========== MODAL DE SETUP (primera vez) ========== -->
+    <div id="setupOverlay" class="setup-overlay">
+        <div class="setup-card">
+            <div class="setup-title">¡Bienvenido a RatWeb! 🐭</div>
+            <p class="setup-sub">Antes de empezar, elige tu identidad</p>
+
+            <div class="avatar-preview-wrap">
+                <img id="setupAvatarPreview" class="avatar-preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='50' fill='%23ccc'/></svg>">
+                <label class="file-label">
+                    🖼️ Elegir foto (obligatorio)
+                    <input type="file" id="setupAvatarFile" accept="image/*" style="display:none;" onchange="previewSetupAvatar(event)">
+                </label>
+            </div>
+
+            <label class="setup-label">@ Username (único, sin espacios)</label>
+            <input type="text" id="setupUsername" placeholder="@tu_nombre" maxlength="20">
+
+            <label class="setup-label">Nombre visible</label>
+            <input type="text" id="setupDisplayName" placeholder="Cómo quieres que te vean" maxlength="30">
+
+            <label class="setup-label">Bio (opcional)</label>
+            <textarea id="setupBio" placeholder="Cuéntanos sobre ti... 🐭" maxlength="150"></textarea>
+
+            <div id="setupError" class="setup-error"></div>
+            <button class="btn-primary" id="setupSubmitBtn" onclick="submitSetup()">Crear mi perfil 🐾</button>
+        </div>
+    </div>
+
+    <!-- ========== APP PRINCIPAL ========== -->
+    <header id="appHeader" style="display:none;">
         <div class="logo-text">RatWeb</div>
         <div class="search-bar">
             <input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch()">
         </div>
         <div class="user-header-profile">
-            <div class="notification-wrapper">
-                <button class="notif-btn" onclick="toggleNotificationDropdown()">
-                    🔔
-                    <span id="notificationBadge" class="notif-badge" style="display:none;">0</span>
-                </button>
-                <div id="notificationDropdown" class="notif-dropdown">
-                    <div class="notif-header">
-                        <span>Notificaciones</span>
-                        <button class="notif-mark-all" onclick="markAllAsRead()">Marcar todas como leídas</button>
-                    </div>
-                    <div id="notificationList" class="notif-list">
-                        <div class="notif-empty">🎉 No hay notificaciones</div>
-                    </div>
-                </div>
-            </div>
             <img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
+            <button class="btn-logout-top" onclick="logoutUser()">Salir</button>
         </div>
     </header>
 
-    <div class="layout">
+    <div class="layout" id="appLayout" style="display:none;">
         <nav>
             <div class="nav-btn active" id="btn-menu" onclick="showSection('menu')">Menú</div>
             <div class="nav-btn" id="btn-foros" onclick="showSection('foros')">Foros</div>
             <div class="nav-btn" id="btn-galeria" onclick="showSection('galeria')">Galería</div>
-            <div class="nav-btn" id="btn-social" onclick="showSection('social')">Social</div>
         </nav>
 
         <main>
+            <!-- MENÚ / FEED -->
             <div id="menu" class="section active">
                 <div class="create-box">
                     <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
@@ -282,19 +221,21 @@
                 <div id="feedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- FOROS -->
             <div id="foros" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🧀 Nuevo Foro</span>
                     <span id="forumCounter" class="forum-limit-counter"></span>
                     <input type="text" id="forumTitle" placeholder="Título">
                     <input type="text" id="forumCategory" placeholder="Categoría">
-                    <input type="text" id="forumTags" placeholder="Etiquetas (ej: comida, queso, snacks)">
+                    <input type="text" id="forumTags" placeholder="Etiquetas (separadas por coma)">
                     <textarea id="forumDesc" placeholder="Descripción..."></textarea>
                     <button class="btn-publish" id="createForumBtn" onclick="createForum()">Crear</button>
                 </div>
                 <div id="forumsList" style="display: flex; flex-direction: column; gap: 8px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- VISTA DE FORO INDIVIDUAL -->
             <div id="forumView" class="section">
                 <button class="btn-back" onclick="showSection('foros')">⬅ Volver</button>
                 <div id="forumHeader" class="forum-card" style="cursor: default; flex-shrink:0;"></div>
@@ -311,6 +252,7 @@
                 <div id="forumFeedList" style="display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
+            <!-- GALERÍA -->
             <div id="galeria" class="section">
                 <div class="create-box">
                     <span style="font-weight: bold; font-size: 11px;">🖼️ Subir a la Galería</span>
@@ -336,90 +278,38 @@
                 <div id="galleryContainer" class="gallery-grid" style="flex:1; overflow-y:auto; padding-bottom:8px;"></div>
             </div>
 
-            <div id="social" class="section">
-                <div class="chat-container">
-                    <div class="chat-toggle-bar">
-                        <span>💬 Chat con: <strong id="chatWithUser">@RatBot</strong></span>
-                        <div class="chat-toggle-actions">
-                            <button class="chat-icon-btn" onclick="addContact()" title="Agregar amigo">➕</button>
-                            <button class="chat-icon-btn" id="searchToggleBtn" onclick="toggleChatSearch()" title="Buscar">🔍</button>
-                            <button class="chat-icon-btn" id="muteToggleBtn" onclick="toggleMuteContact()" title="Silenciar">🔔</button>
-                            <button class="chat-icon-btn" onclick="openWallpaperPicker()" title="Fondo">🖼️</button>
-                            <button class="chat-icon-btn" onclick="toggleContacts()">👥 Contactos ▾</button>
-                        </div>
-                    </div>
-                    <div id="chatSearchBar" class="chat-search-bar">
-                        <input type="text" id="chatSearchInput" placeholder="Buscar en esta conversación..." oninput="handleChatSearch()">
-                    </div>
-                    <div id="contactsDrawer" class="contacts-drawer">
-                        <div class="contact-item active" onclick="switchChat('RatBot')">
-                            <span class="active-dot"></span> RatBot
-                        </div>
-                    </div>
-                    <div class="chat-main" id="chatMain">
-                        <div id="chatMessages" class="chat-messages"></div>
-                        <div id="chatReplyPreview" class="chat-reply-preview">
-                            <span id="chatReplyText"></span>
-                            <span style="cursor:pointer;" onclick="clearChatReplyTarget()">✕</span>
-                        </div>
-                        <div class="chat-input-bar">
-                            <label class="file-label" style="padding:2px 6px;">
-                                📷
-                                <input type="file" id="chatMedia" accept="image/*,video/*" style="display: none;">
-                            </label>
-                            <button class="mic-btn" id="micBtn" onclick="toggleVoiceRecording()" title="Mensaje de voz">🎤</button>
-                            <input type="text" id="chatMsgInput" placeholder="Escribe un mensaje..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-                            <button class="btn-publish" id="chatSendBtn" onclick="sendChatMessage()">Enviar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            <!-- PERFIL -->
             <div id="perfil" class="section">
                 <button class="btn-back" onclick="showSection('menu')">⬅ Volver</button>
                 <div class="profile-card">
                     <div class="profile-banner" id="profileBanner">
                         <label class="profile-edit-banner-btn" title="Cambiar banner">
                             🖼️
-                            <input type="file" id="bannerFile" accept="image/*,image/gif" style="display:none;" onchange="changeBanner(event)">
+                            <input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)">
                         </label>
                     </div>
                     <div class="profile-avatar-row">
                         <div class="profile-avatar-wrap">
                             <img id="profileAvatarImg" class="profile-avatar">
-                            <label class="profile-edit-avatar-btn" title="Cambiar foto de perfil">
+                            <label class="profile-edit-avatar-btn" title="Cambiar foto">
                                 🖼️
-                                <input type="file" id="profileAvatarFile" accept="image/*,image/gif" style="display:none;" onchange="changeProfileAvatar(event)">
+                                <input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)">
                             </label>
                         </div>
                     </div>
                     <div class="profile-info">
                         <div class="profile-name-row">
                             <span id="profileDisplayName" class="profile-display-name"></span>
-                            <span class="profile-edit-pencil" onclick="startEditName()" id="editNamePencil">✏️</span>
                         </div>
-                        <div id="editNameBox" class="profile-edit-box">
-                            <input type="text" id="editNameInput" maxlength="30">
-                            <button class="btn-publish" onclick="saveName()">Guardar</button>
-                            <button class="btn-back" onclick="cancelEditName()">Cancelar</button>
-                        </div>
-                        <div id="nameCooldownNote" class="profile-cooldown-note"></div>
                         <div class="profile-name-row">
                             <span id="profileUsername" class="profile-username"></span>
-                            <span class="profile-edit-pencil" onclick="startEditUsername()" id="editUsernamePencil">✏️</span>
                         </div>
-                        <div id="editUsernameBox" class="profile-edit-box">
-                            <input type="text" id="editUsernameInput" maxlength="20">
-                            <button class="btn-publish" onclick="saveUsername()">Guardar</button>
-                            <button class="btn-back" onclick="cancelEditUsername()">Cancelar</button>
-                        </div>
-                        <div id="usernameCooldownNote" class="profile-cooldown-note"></div>
                         <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
                         <div class="profile-stats-row">
-                            <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Publicaciones</span></div>
-                            <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
+                            <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
+                            <div class="stat-item profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
                             <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
-                            <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Quesitos</span></div>
+                            <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
                         </div>
                         <button class="btn-logout" onclick="logoutUser()">🚪 Cerrar Sesión</button>
                         <button class="btn-delete-account" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
@@ -430,657 +320,403 @@
         </main>
     </div>
 
+    <!-- MODAL VISOR DE IMÁGENES -->
     <div id="imageModal" class="modal-viewer" onclick="closeModal()">
         <span class="close-modal">&times;</span>
         <div id="modalContent"></div>
     </div>
 
-    <div id="wallpaperModal" class="modal-viewer" onclick="if(event.target===this) closeWallpaperPicker()">
-        <div style="background:#fff; border:3px solid #000; border-radius:14px; padding:14px; width:90%; max-width:360px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; gap:8px;" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong style="font-size:13px; color:#8c4a4a;">🖼️ Fondo del chat</strong>
-                <span style="cursor:pointer; font-weight:bold;" onclick="closeWallpaperPicker()">✕</span>
-            </div>
-            <p style="font-size:10px; color:#777;">Elige una imagen de tu galería como fondo de esta conversación.</p>
-            <div id="wallpaperGrid" class="wallpaper-modal-grid"></div>
-        </div>
-    </div>
-
     <script>
         // ============================================================
-        // CONFIGURACIÓN DE FIREBASE
+        // CONFIGURACIÓN DE SUPABASE
         // ============================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyB7Xpqlf5YdwHhrcpohoSJV0QDGBpMZIPk",
-            authDomain: "ratweb-431ce.firebaseapp.com",
-            databaseURL: "https://ratweb-431ce-default-rtdb.firebaseio.com",
-            projectId: "ratweb-431ce",
-            storageBucket: "ratweb-431ce.firebasestorage.app",
-            messagingSenderId: "134049153537",
-            appId: "1:134049153537:web:072dbc3c48b2337fc37600",
-            measurementId: "G-JRBPSPTZQN"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const auth = firebase.auth();
-
-        // ✅ PERSISTENCIA LOCAL
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-            .then(() => console.log('✅ Persistencia LOCAL configurada'))
-            .catch(err => console.error('❌ Error persistencia:', err));
+        const SUPABASE_URL = 'https://lpewvyxwkooqzkkzkrgy.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_kEiaZfFInSjVt4D-ZGGjfQ_EdXGxF96';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const BUCKET = 'ratweb-assets';
 
         // ============================================================
-        // 🔧 FIX BUG #1: GATILLO DE "AUTH LISTO"
-        // Antes, muchas funciones leían auth.currentUser directamente.
-        // Al recargar la pestaña (muy común en Chrome Android cuando la
-        // app la descarga en segundo plano), Firebase tarda unos
-        // milisegundos en restaurar la sesión desde el almacenamiento
-        // local. Si el usuario tocaba "like"/"publicar" en ese instante,
-        // auth.currentUser todavía era null y saltaba el alert de
-        // "inicia sesión" aunque la sesión sí existía.
-        // waitForAuth() espera a que onAuthStateChanged dispare al
-        // menos una vez antes de decidir si hay o no usuario.
+        // ESTADO GLOBAL
         // ============================================================
-        let authReady = false;
-        let authReadyResolve;
-        const authReadyPromise = new Promise((resolve) => { authReadyResolve = resolve; });
-
-        function markAuthReady() {
-            if (!authReady) {
-                authReady = true;
-                authReadyResolve();
-            }
-        }
-
-        function waitForAuth() {
-            if (authReady) return Promise.resolve(auth.currentUser);
-            return authReadyPromise.then(() => auth.currentUser);
-        }
-
-        // ============================================================
-        // VARIABLES GLOBALES
-        // ============================================================
-        let currentUser = null;
-        let currentAuthUser = null;
-        let chatListeners = {};
-        let chatId = '';
-        let activeChatContact = 'RatBot';
+        let session = null;
+        let profile = null;
         let posts = [];
         let forums = [];
         let gallery = [];
-        let usersPresence = JSON.parse(localStorage.getItem('ratweb_presence')) || {};
-        let openRepliesBoxes = {};
-        let chats = JSON.parse(localStorage.getItem('ratweb_chats')) || {};
-        let activeReplyTargets = {};
-        let tempAvatarData = null;
         let currentForumId = null;
-        let editingMessageId = null;
-        let chatSearchQuery = '';
-        let mutedContacts = JSON.parse(localStorage.getItem('ratweb_muted_contacts')) || {};
-        let chatWallpapers = JSON.parse(localStorage.getItem('ratweb_chat_wallpapers')) || {};
-        let isTypingIndicatorOn = false;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let isRecording = false;
-        let chatReplyTargets = {};
-        let isRegistering = false;
-        let contacts = [];
-        let notificationListener = null;
-
-        const NAME_COOLDOWN_DAYS = 15;
-        const USERNAME_COOLDOWN_DAYS = 30;
-        const DAY_MS = 24 * 60 * 60 * 1000;
+        let openRepliesBoxes = {};
+        let activeReplyTargets = {};
+        let allComments = {};
+        let tempAvatarFile = null;
+        let tempAvatarPreviewUrl = null;
+        let realtimeChannel = null;
         const MAX_FORUMS_PER_USER = 3;
-        const QUICK_REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏','🔥','🎉','😍','😭','😡','🤔','👏','🐾','🧀','✨','💯','😴','🥳','👀'];
-        const BOT_REPLIES = ['¡Miau- digo, squeak! 🐭', 'Interesante, cuéntame más 🧀', '¡Jaja me encanta! 🐾', 'Estoy pensando en queso ahora mismo 🧀', '¡Genial! Sigue así 💗'];
 
         // ============================================================
         // UTILIDADES
         // ============================================================
-        function saveUserToLocalStorage(user) {
-            try {
-                const lightUser = { ...user };
-                delete lightUser.avatar;
-                delete lightUser.banner;
-                localStorage.setItem('ratweb_user', JSON.stringify(lightUser));
-            } catch (e) {
-                console.warn('⚠️ localStorage lleno:', e.message);
-            }
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         }
 
-        // Usada para fotos normales (posts, comentarios, chat, galería):
-        // si es GIF, lo aplana a un frame estático en PNG para no
-        // disparar el peso de la base de datos en cada mensaje/post.
-        function convertImageToStatic(file) {
-            return new Promise((resolve) => {
-                if (file.type !== 'image/gif') {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(file);
-                    return;
-                }
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = function() {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(file);
-                };
-                img.src = URL.createObjectURL(file);
+        function timeAgo(ts) {
+            if (!ts) return 'ahora';
+            const s = Math.floor((Date.now() - ts) / 1000);
+            if (s < 60) return 'hace ' + s + 's';
+            if (s < 3600) return 'hace ' + Math.floor(s / 60) + 'm';
+            if (s < 86400) return 'hace ' + Math.floor(s / 3600) + 'h';
+            return 'hace ' + Math.floor(s / 86400) + 'd';
+        }
+
+        function showError(elId, msg) {
+            const el = document.getElementById(elId);
+            if (el) { el.textContent = '⚠️ ' + msg; el.classList.add('show'); }
+        }
+        function hideError(elId) {
+            const el = document.getElementById(elId);
+            if (el) el.classList.remove('show');
+        }
+
+        // ============================================================
+        // SUBIR ARCHIVO A SUPABASE STORAGE
+        // ============================================================
+        async function uploadFile(file, folder) {
+            if (!file) return null;
+            const ext = file.name.split('.').pop() || 'bin';
+            const fileName = `${folder}/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            const { data, error } = await supabase.storage.from(BUCKET).upload(fileName, file, {
+                cacheControl: '31536000',
+                upsert: false
             });
+            if (error) throw error;
+            const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
+            return urlData.publicUrl;
         }
 
         // ============================================================
-        // 🔧 FIX BUG #2: SOPORTE DE GIFs ANIMADOS PARA AVATAR/BANNER
-        // A diferencia de convertImageToStatic, esta función NUNCA
-        // dibuja en <canvas>, así que un GIF conserva su animación.
-        // Se usa solo para avatar y banner de perfil.
-        // Nota: los GIFs pesan más que una foto normal. Como se
-        // guardan como base64 dentro de Realtime Database, un GIF muy
-        // pesado puede tardar más en subir en conexiones lentas. Si
-        // notas lentitud, lo ideal a futuro es subir estos archivos a
-        // Firebase Storage y guardar solo la URL (puedo ayudarte con
-        // eso cuando quieras).
+        // LOGIN CON GOOGLE
         // ============================================================
-        function convertImagePreserveGif(file) {
-            return new Promise((resolve, reject) => {
-                const MAX_BYTES = 4 * 1024 * 1024; // 4MB de margen para RTDB
-                if (file.size > MAX_BYTES) {
-                    reject(new Error('El archivo es muy pesado (máx. 4MB). Prueba con un GIF más liviano.'));
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
-                reader.readAsDataURL(file);
+        async function loginWithGoogle() {
+            hideError('loginError');
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin + window.location.pathname }
             });
+            if (error) showError('loginError', error.message);
         }
 
-        // ✅ ASYNC: Carga de Firebase si currentUser es null
-        async function ensureAuth() {
-            const user = await waitForAuth();
-            if (!user) return false;
-            currentAuthUser = user;
-            
-            if (!currentUser || currentUser.uid !== user.uid) {
-                try {
-                    const snapshot = await database.ref(`users/${user.uid}`).once('value');
-                    if (snapshot.exists()) {
-                        currentUser = { ...snapshot.val(), uid: user.uid };
-                        saveUserToLocalStorage(currentUser);
-                    } else {
-                        return false;
-                    }
-                } catch (e) {
-                    console.error('Error al cargar usuario:', e);
-                    return false;
-                }
-            }
-            return true;
+        async function logoutUser() {
+            if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
+            if (realtimeChannel) { supabase.removeChannel(realtimeChannel); realtimeChannel = null; }
+            await supabase.auth.signOut();
+            window.location.reload();
         }
 
         // ============================================================
-        // NOTIFICACIONES
+        // COMPROBAR SESIÓN Y MOSTRAR UI
         // ============================================================
-        function sendNotification(targetUid, type, fromUid, fromHandle, message, link) {
-            if (!targetUid || !fromUid || targetUid === fromUid) return;
-            const notificationData = {
-                type: type, from: fromHandle, fromUid: fromUid,
-                message: message, link: link || '', read: false,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-            if (type === 'friend_request') {
-                notificationData.action = 'accept_friend';
-                notificationData.actionText = 'Aceptar';
+        async function checkSessionAndProfile() {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            session = currentSession;
+
+            if (!session) {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('appHeader').style.display = 'none';
+                document.getElementById('appLayout').style.display = 'none';
+                document.getElementById('setupOverlay').classList.remove('show');
+                return;
             }
-            return database.ref(`notifications/${targetUid}`).push().set(notificationData)
-                .catch(err => console.error('Error notificación:', err));
-        }
 
-        function markNotificationAsRead(notificationId) {
-            if (!currentUser) return;
-            database.ref(`notifications/${currentUser.uid}/${notificationId}/read`).set(true)
-                .catch(err => console.error(err));
-        }
+            // Hay sesión → buscar perfil
+            const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
-        function markAllAsRead() {
-            if (!currentUser) return;
-            database.ref(`notifications/${currentUser.uid}`).once('value')
-                .then(snapshot => {
-                    const notifs = snapshot.val();
-                    if (notifs) {
-                        const updates = {};
-                        Object.keys(notifs).forEach(key => {
-                            if (!notifs[key].read) updates[`${key}/read`] = true;
-                        });
-                        if (Object.keys(updates).length > 0) {
-                            database.ref(`notifications/${currentUser.uid}`).update(updates);
-                        }
-                    }
-                })
-                .catch(err => console.error(err));
-        }
+            if (error || !profileData || !profileData.is_setup_complete) {
+                // No tiene perfil completo → mostrar modal de setup
+                profile = profileData || null;
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appHeader').style.display = 'none';
+                document.getElementById('appLayout').style.display = 'none';
+                document.getElementById('setupOverlay').classList.add('show');
 
-        function listenNotifications() {
-            if (!currentUser) return;
-            if (notificationListener) {
-                notificationListener();
-                notificationListener = null;
-            }
-            const notifRef = database.ref(`notifications/${currentUser.uid}`);
-            const listener = notifRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const notifs = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-                    notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    const unreadCount = notifs.filter(n => !n.read).length;
-                    updateNotificationBadge(unreadCount, notifs);
-                } else {
-                    updateNotificationBadge(0, []);
+                // Pre-rellenar con datos de Google
+                const meta = session.user.user_metadata || {};
+                if (meta.full_name) document.getElementById('setupDisplayName').value = meta.full_name;
+                if (meta.avatar_url) {
+                    document.getElementById('setupAvatarPreview').src = meta.avatar_url;
                 }
-            });
-            notificationListener = () => notifRef.off('value', listener);
-        }
-
-        function updateNotificationBadge(count, notifs) {
-            const badge = document.getElementById('notificationBadge');
-            const list = document.getElementById('notificationList');
-            if (badge) {
-                badge.innerText = count > 0 ? count : '';
-                badge.style.display = count > 0 ? 'flex' : 'none';
+                return;
             }
-            if (list) {
-                if (notifs && notifs.length > 0) {
-                    list.innerHTML = notifs.slice(0, 10).map(n => {
-                        let actionBtn = '';
-                        if (n.type === 'friend_request' && !n.read) {
-                            actionBtn = `<button class="notif-action-btn" onclick="event.stopPropagation(); acceptFriendRequest('${n.fromUid}', '${n.from}', '${n.id}')">✅ Aceptar</button>`;
-                        }
-                        return `
-                        <div class="notif-item ${n.read ? 'read' : 'unread'}" onclick="handleNotificationClick('${n.id}', '${n.link || ''}')">
-                            <div class="notif-icon">${getNotifIcon(n.type)}</div>
-                            <div class="notif-content">
-                                <div class="notif-message">${n.message}</div>
-                                <div class="notif-time">${timeAgo(n.timestamp)}</div>
-                                ${actionBtn}
-                            </div>
-                        </div>`;
-                    }).join('');
-                } else {
-                    list.innerHTML = '<div class="notif-empty">🎉 No hay notificaciones</div>';
-                }
-            }
-        }
 
-        function getNotifIcon(type) {
-            const icons = {
-                'friend_request': '🤝', 'friend_accepted': '✅',
-                'post_reply': '💬', 'post_like': '❤️', 'forum_mention': '📢'
-            };
-            return icons[type] || '🔔';
-        }
+            // Perfil completo → mostrar app
+            profile = profileData;
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('setupOverlay').classList.remove('show');
+            document.getElementById('appHeader').style.display = 'flex';
+            document.getElementById('appLayout').style.display = 'flex';
+            document.getElementById('headerAvatar').src = profile.avatar_url || '';
 
-        function timeAgo(timestamp) {
-            if (!timestamp) return 'hace un momento';
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return 'hace ' + seconds + 's';
-            if (seconds < 3600) return 'hace ' + Math.floor(seconds / 60) + 'm';
-            if (seconds < 86400) return 'hace ' + Math.floor(seconds / 3600) + 'h';
-            return 'hace ' + Math.floor(seconds / 86400) + 'd';
-        }
-
-        function handleNotificationClick(notifId, link) {
-            markNotificationAsRead(notifId);
-            if (link) {
-                const cleanLink = link.replace('#', '');
-                if (['social','menu','foros','galeria','perfil'].includes(cleanLink)) {
-                    showSection(cleanLink);
-                }
-            }
-            toggleNotificationDropdown();
-        }
-
-        function toggleNotificationDropdown() {
-            const dropdown = document.getElementById('notificationDropdown');
-            dropdown.classList.toggle('open');
-            if (dropdown.classList.contains('open')) {
-                document.addEventListener('click', function closeDropdown(e) {
-                    if (!dropdown.contains(e.target) && !e.target.closest('.notif-btn')) {
-                        dropdown.classList.remove('open');
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                });
-            }
-        }
-
-        function acceptFriendRequest(fromUid, fromHandle, notifId) {
-            if (!auth.currentUser) { alert('Debes iniciar sesión'); return; }
-            markNotificationAsRead(notifId);
-            database.ref(`contacts/${currentUser.uid}/${fromHandle}`).set({
-                addedAt: firebase.database.ServerValue.TIMESTAMP,
-                displayName: fromHandle,
-                targetUid: fromUid
-            }).then(() => {
-                alert(`✅ ${fromHandle} ahora es tu amigo!`);
-                loadContacts();
-                sendNotification(fromUid, 'friend_accepted', auth.currentUser.uid, currentUser.username,
-                    `${currentUser.username} aceptó tu solicitud de amistad ✅`, '#social');
-                document.getElementById('notificationDropdown').classList.remove('open');
-            }).catch(err => { console.error(err); alert('Error al aceptar'); });
+            await loadAllData();
+            setupRealtime();
         }
 
         // ============================================================
-        // REGISTRO
+        // SETUP DE PERFIL (primera vez)
         // ============================================================
-        async function previewAvatar(event) {
+        function previewSetupAvatar(event) {
             const file = event.target.files[0];
-            if (file) {
-                tempAvatarData = await convertImagePreserveGif(file).catch(err => {
-                    alert('❌ ' + err.message);
-                    return null;
-                });
-                if (tempAvatarData) document.getElementById('avatarPreview').src = tempAvatarData;
-            }
+            if (!file) return;
+            tempAvatarFile = file;
+            if (tempAvatarPreviewUrl) URL.revokeObjectURL(tempAvatarPreviewUrl);
+            tempAvatarPreviewUrl = URL.createObjectURL(file);
+            document.getElementById('setupAvatarPreview').src = tempAvatarPreviewUrl;
         }
 
-        async function checkUsernameAvailability(username) {
-            const snapshot = await database.ref('usernames').child(username).once('value');
-            return !snapshot.exists();
-        }
+        async function submitSetup() {
+            hideError('setupError');
+            const usernameRaw = document.getElementById('setupUsername').value.trim();
+            const displayName = document.getElementById('setupDisplayName').value.trim();
+            const bio = document.getElementById('setupBio').value.trim();
+            const btn = document.getElementById('setupSubmitBtn');
 
-        async function registerUser() {
-            if (isRegistering) return;
-            const username = document.getElementById('regUsername').value.trim();
-            const displayName = document.getElementById('regDisplayName').value.trim();
-            const bio = document.getElementById('regBio').value.trim();
-            const errorEl = document.getElementById('regError');
-            const registerBtn = document.getElementById('registerBtn');
+            if (!tempAvatarFile) { showError('setupError', 'Debes elegir una foto de perfil'); return; }
+            if (!usernameRaw) { showError('setupError', 'Debes elegir un @username'); return; }
+            if (!displayName) { showError('setupError', 'Debes poner un nombre visible'); return; }
 
-            errorEl.classList.remove('show');
+            let username = usernameRaw.startsWith('@') ? usernameRaw : '@' + usernameRaw;
+            username = username.toLowerCase().replace(/\s+/g, '_');
+            if (username.length < 3) { showError('setupError', 'El username debe tener al menos 3 caracteres'); return; }
 
-            if (!username || !displayName) {
-                errorEl.textContent = "⚠️ Por favor ingresa un nombre de usuario y un nombre visible.";
-                errorEl.classList.add('show'); return;
-            }
-            if (!username.startsWith('@')) {
-                errorEl.textContent = "⚠️ El nombre de usuario debe comenzar con @";
-                errorEl.classList.add('show'); return;
-            }
-            if (username.length < 3) {
-                errorEl.textContent = "⚠️ El nombre debe tener al menos 3 caracteres";
-                errorEl.classList.add('show'); return;
-            }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Subiendo foto...';
 
-            isRegistering = true;
-            registerBtn.disabled = true;
-            registerBtn.textContent = 'Verificando...';
-            
             try {
-                let authUser = auth.currentUser;
-                if (!authUser) {
-                    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-                    const userCredential = await auth.signInAnonymously();
-                    authUser = userCredential.user;
-                }
+                // Verificar username disponible
+                const { data: existing } = await supabase
+                    .from('usernames')
+                    .select('username')
+                    .eq('username', username)
+                    .maybeSingle();
 
-                const isAvailable = await checkUsernameAvailability(username);
-                if (!isAvailable) {
-                    errorEl.textContent = `⚠️ Ya hay un usuario con el nombre ${username}. Elige otro.`;
-                    errorEl.classList.add('show');
-                    isRegistering = false;
-                    registerBtn.disabled = false;
-                    registerBtn.textContent = 'Entrar a RatWeb';
+                if (existing) {
+                    showError('setupError', `El username ${username} ya está ocupado`);
+                    btn.disabled = false;
+                    btn.textContent = 'Crear mi perfil 🐾';
                     return;
                 }
-                
-                const avatarData = tempAvatarData || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="%23b56565"/></svg>';
 
-                const userData = {
-                    uid: authUser.uid, username: username, displayName: displayName,
-                    bio: bio || '', banner: null, joinedAt: Date.now(),
-                    lastNameChange: 0, lastUsernameChange: 0,
-                    avatar: avatarData
-                };
-                
-                const updates = {};
-                updates[`users/${authUser.uid}`] = userData;
-                updates[`usernames/${username}`] = { uid: authUser.uid, displayName: displayName };
-                await database.ref().update(updates);
-                
-                currentUser = userData;
-                currentAuthUser = authUser;
-                saveUserToLocalStorage(currentUser);
-                
-                document.getElementById('headerAvatar').src = currentUser.avatar;
-                document.getElementById('authOverlay').style.display = 'none';
-                
-                loadPostsFromFirebase();
-                loadForumsFromFirebase();
-                loadGalleryFromFirebase();
-                loadContacts();
-                pingUserPresence();
-                listenNotifications();
-                
-                const initialChatId = getChatId(currentUser.username, 'RatBot');
-                loadChatMessages(initialChatId);
-                
-                setTimeout(() => renderProfile(), 500);
-            } catch (error) {
-                console.error('Error al registrar:', error);
-                errorEl.textContent = `❌ Error: ${error.message}`;
-                errorEl.classList.add('show');
-            } finally {
-                isRegistering = false;
-                registerBtn.disabled = false;
-                registerBtn.textContent = 'Entrar a RatWeb';
+                btn.innerHTML = '<span class="loading-spinner"></span> Subiendo...';
+                const avatarUrl = await uploadFile(tempAvatarFile, 'avatars');
+
+                btn.innerHTML = '<span class="loading-spinner"></span> Creando perfil...';
+
+                // Actualizar perfil (ya existe por el trigger)
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({
+                        username: username,
+                        display_name: displayName,
+                        bio: bio,
+                        avatar_url: avatarUrl,
+                        is_setup_complete: true,
+                        joined_at: Date.now()
+                    })
+                    .eq('id', session.user.id);
+
+                if (updateError) throw updateError;
+
+                // Registrar username en tabla usernames
+                const { error: unError } = await supabase
+                    .from('usernames')
+                    .insert([{ username: username, user_id: session.user.id }]);
+
+                if (unError) throw unError;
+
+                // Recargar
+                window.location.reload();
+            } catch (err) {
+                console.error(err);
+                showError('setupError', err.message || 'Error al crear el perfil');
+                btn.disabled = false;
+                btn.textContent = 'Crear mi perfil 🐾';
             }
         }
 
         // ============================================================
-        // ELIMINAR CUENTA
+        // CARGAR TODOS LOS DATOS
         // ============================================================
-        async function deleteAccount() {
-            const user = await waitForAuth();
-            if (!user || !currentUser) { alert('No hay usuario logueado'); return; }
-            if (!confirm('⚠️ ¿Estás seguro que quieres eliminar tu cuenta?')) return;
-            if (!confirm('⚠️ ⚠️ ¿REALMENTE quieres eliminar tu cuenta?')) return;
+        async function loadAllData() {
+            await Promise.all([loadPosts(), loadForums(), loadGallery()]);
+            await loadAllComments();
+            renderPosts();
+            renderForums();
+            renderGallery();
+            renderProfile();
+        }
 
-            try {
-                const userUid = user.uid;
-                const username = currentUser.username;
+        async function loadPosts() {
+            const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
+            posts = data || [];
+        }
 
-                try {
-                    const snap = await database.ref('posts').orderByChild('authorUid').equalTo(userUid).once('value');
-                    const data = snap.val();
-                    if (data) await Promise.all(Object.keys(data).map(id => database.ref(`posts/${id}`).remove()));
-                } catch (e) { console.warn(e); }
-                try {
-                    const snap = await database.ref('forums').orderByChild('creatorUid').equalTo(userUid).once('value');
-                    const data = snap.val();
-                    if (data) await Promise.all(Object.keys(data).map(id => database.ref(`forums/${id}`).remove()));
-                } catch (e) { console.warn(e); }
-                try {
-                    const snap = await database.ref('gallery').orderByChild('uploaderUid').equalTo(userUid).once('value');
-                    const data = snap.val();
-                    if (data) await Promise.all(Object.keys(data).map(id => database.ref(`gallery/${id}`).remove()));
-                } catch (e) { console.warn(e); }
+        async function loadAllComments() {
+            const postIds = posts.map(p => p.id);
+            if (postIds.length === 0) { allComments = {}; return; }
+            const { data, error } = await supabase.from('comments').select('*').in('post_id', postIds).order('created_at', { ascending: true });
+            if (error) { console.error(error); return; }
+            allComments = {};
+            (data || []).forEach(c => {
+                if (!allComments[c.post_id]) allComments[c.post_id] = [];
+                allComments[c.post_id].push(c);
+            });
+        }
 
-                if (username) try { await database.ref(`usernames/${username}`).remove(); } catch (e) {}
-                try { await database.ref(`users/${userUid}`).remove(); } catch (e) {}
-                try { await database.ref(`contacts/${userUid}`).remove(); } catch (e) {}
-                try { await database.ref(`notifications/${userUid}`).remove(); } catch (e) {}
+        async function loadForums() {
+            const { data, error } = await supabase.from('forums').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
+            forums = data || [];
+        }
 
-                localStorage.clear();
+        async function loadGallery() {
+            const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
+            gallery = data || [];
+        }
 
-                try { await user.delete(); }
-                catch (e) { await auth.signOut(); }
-
-                alert('✅ Cuenta eliminada');
-                window.location.reload();
-            } catch (error) {
-                console.error(error);
-                alert(`❌ Error: ${error.message}`);
-            }
+        // ============================================================
+        // REALTIME: escuchar cambios
+        // ============================================================
+        function setupRealtime() {
+            if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+            realtimeChannel = supabase
+                .channel('ratweb-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => loadPosts().then(renderPosts))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => loadAllComments().then(renderPosts))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'forums' }, () => loadForums().then(renderForums))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, () => loadGallery().then(renderGallery))
+                .subscribe();
         }
 
         // ============================================================
         // POSTS
         // ============================================================
-        function loadPostsFromFirebase() {
-            database.ref('posts').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    posts = Object.keys(data).map(key => ({ id: key, firebaseKey: key, ...data[key] }));
-                    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                } else posts = [];
-                renderPostsBasedOnActiveSection();
-                if (document.getElementById('perfil').classList.contains('active')) renderProfile();
-            });
-        }
-
-        function renderPostsBasedOnActiveSection() {
-            const isForumActive = document.getElementById('forumView').classList.contains('active');
-            if (isForumActive && currentForumId) renderPosts('forum');
-            else renderPosts('main');
-        }
-
-        function savePostToFirebase(postData) {
-            const newPostRef = database.ref('posts').push();
-            return newPostRef.set({ ...postData, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        }
-
-        function deletePostFromFirebase(postId) { return database.ref(`posts/${postId}`).remove(); }
-        function updatePostInFirebase(postId, data) { return database.ref(`posts/${postId}`).update(data); }
-
         async function createPost(target) {
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión primero'); return; }
+            const isForum = target === 'forum';
+            const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
+            const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
+            const text = textInput.value.trim();
+            const file = fileInput.files[0];
+
+            if (!text && !file) { alert('Escribe algo o adjunta un archivo'); return; }
+
+            const btn = event?.target;
+            if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
 
             try {
-                const snapshot = await database.ref(`users/${user.uid}`).once('value');
-                if (!snapshot.exists()) { alert('Usuario no registrado'); return; }
-                const userData = snapshot.val();
-                currentUser = { ...userData, uid: user.uid };
-                currentAuthUser = user;
-                saveUserToLocalStorage(currentUser);
-                
-                const isForum = target === 'forum';
-                const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
-                const fileInput = document.getElementById(isForum ? 'forumPostMedia' : 'postMedia');
-                const userText = textInput.value.trim();
-
-                if (userText === "" && fileInput.files.length === 0) {
-                    alert('Escribe algo o adjunta un archivo'); return;
-                }
-
-                const postData = {
-                    authorUid: user.uid, authorName: userData.displayName,
-                    authorHandle: userData.username, avatar: userData.avatar || '',
-                    text: userText, mediaSrc: null, mediaType: null,
-                    forumId: isForum ? (currentForumId || '') : '',
-                    likedBy: [], replies: [],
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                };
-
-                const file = fileInput.files[0];
+                let mediaUrl = null;
+                let mediaType = null;
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        postData.mediaSrc = e.target.result;
-                        postData.mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                        savePostToFirebase(postData)
-                            .then(() => { textInput.value = ''; fileInput.value = ''; renderPostsBasedOnActiveSection(); })
-                            .catch(err => { console.error(err); alert('Error al publicar: ' + err.message); });
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    savePostToFirebase(postData)
-                        .then(() => { textInput.value = ''; fileInput.value = ''; renderPostsBasedOnActiveSection(); })
-                        .catch(err => { console.error(err); alert('Error al publicar: ' + err.message); });
+                    mediaUrl = await uploadFile(file, 'posts');
+                    mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                 }
+
+                const { error } = await supabase.from('posts').insert([{
+                    user_id: session.user.id,
+                    author_handle: profile.username,
+                    author_name: profile.display_name,
+                    avatar_url: profile.avatar_url,
+                    content: text,
+                    media_url: mediaUrl,
+                    media_type: mediaType,
+                    forum_id: isForum ? currentForumId : null,
+                    liked_by: [],
+                    created_at: Date.now()
+                }]);
+
+                if (error) throw error;
+                textInput.value = '';
+                fileInput.value = '';
+                await loadPosts();
+                renderPosts();
             } catch (err) {
                 console.error(err);
-                alert('Error al verificar tu cuenta');
+                alert('Error al publicar: ' + err.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Publicar'; }
             }
         }
 
-        function renderPosts(target) {
-            const isForum = target === 'forum';
-            const listContainer = document.getElementById(isForum ? 'forumFeedList' : 'feedList');
-            if (!listContainer) return;
-            const filteredPosts = isForum ? posts.filter(p => p.forumId === currentForumId) : posts;
-            const myHandle = currentUser ? currentUser.username : null;
+        function renderPosts() {
+            const isForumView = document.getElementById('forumView').classList.contains('active');
+            const listEl = document.getElementById(isForumView ? 'forumFeedList' : 'feedList');
+            if (!listEl) return;
 
-            if (filteredPosts.length === 0) {
-                listContainer.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún. ¡Sé el primero!</p>`;
+            const filtered = isForumView
+                ? posts.filter(p => p.forum_id === currentForumId)
+                : posts;
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún.</p>`;
                 return;
             }
 
-            listContainer.innerHTML = filteredPosts.map(post => {
-                const isLiked = post.likedBy && post.likedBy.includes(myHandle);
-                const isMyPost = currentAuthUser && post.authorUid === currentAuthUser.uid;
+            listEl.innerHTML = filtered.map(post => {
+                const isMine = post.user_id === session.user.id;
+                const isLiked = (post.liked_by || []).includes(profile.username);
+                const comments = allComments[post.id] || [];
                 const isRepliesOpen = !!openRepliesBoxes[post.id];
-                const replyCount = (post.replies && post.replies.length) || 0;
-                const replyBtnLabel = isRepliesOpen ? `💬 Ocultar comentarios` : `💬 ${replyCount === 0 ? 'Comentar' : replyCount + ' comentarios'}`;
 
                 return `
                 <div class="post-card">
-                    <img class="avatar-circle" src="${post.avatar || ''}">
+                    <img class="avatar-circle" src="${escapeHtml(post.avatar_url || '')}">
                     <div class="post-bubble">
                         <div class="post-header">
-                            <span class="post-author">${post.authorName} (${post.authorHandle}) ${post.forumId ? '🧀' : ''}</span>
-                            ${isMyPost ? `
+                            <span class="post-author">${escapeHtml(post.author_name)} (${escapeHtml(post.author_handle)}) ${post.forum_id ? '🧀' : ''}</span>
+                            ${isMine ? `
                                 <button class="post-options-btn" onclick="toggleMenu('${post.id}')">⋮</button>
                                 <div id="menu-${post.id}" class="options-menu">
-                                    <button onclick="deletePost('${post.id}', '${target}')">🗑️ Borrar</button>
+                                    <button onclick="deletePost('${post.id}')">🗑️ Borrar</button>
                                 </div>` : ''}
                         </div>
-                        <div class="post-content">${post.text}</div>
-                        ${post.mediaSrc ? (post.mediaType === 'image' 
-                            ? `<img class="post-media" src="${post.mediaSrc}" onclick="openModal('${post.mediaSrc}', 'image')">`
-                            : `<video class="post-media" src="${post.mediaSrc}" controls></video>`) : ''}
+                        <div class="post-content">${escapeHtml(post.content)}</div>
+                        ${post.media_url ? (post.media_type === 'image'
+                            ? `<img class="post-media" src="${post.media_url}" onclick="openModal('${post.media_url}', 'image')">`
+                            : `<video class="post-media" src="${post.media_url}" controls></video>`) : ''}
                         <div class="post-actions">
-                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}', '${target}')">
-                                🐾 ${(post.likedBy && post.likedBy.length) || 0}
-                            </span>
-                            <span class="action-btn" id="reply-btn-text-${post.id}" onclick="toggleReplies('${post.id}')">
-                                ${replyBtnLabel}
-                            </span>
+                            <span class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">🐾 ${(post.liked_by || []).length}</span>
+                            <span class="action-btn" onclick="toggleReplies('${post.id}')">💬 ${comments.length === 0 ? 'Comentar' : comments.length}</span>
                         </div>
                         <div id="replies-${post.id}" class="replies-box ${isRepliesOpen ? 'open' : ''}">
-                            ${(post.replies || []).map((r, index) => `
+                            ${comments.map(c => `
                                 <div class="reply-item">
                                     <div class="reply-header">
-                                        <div class="reply-user-info">
-                                            <span class="reply-author">${r.authorName} (${r.authorHandle})</span>
-                                            ${r.replyTo ? `<span class="reply-tag">de ${r.authorHandle} para ${r.replyTo}</span>` : ''}
+                                        <div>
+                                            <span class="reply-author">${escapeHtml(c.author_name)} (${escapeHtml(c.author_handle)})</span>
+                                            ${c.reply_to_handle ? `<span class="reply-tag"> → ${escapeHtml(c.reply_to_handle)}</span>` : ''}
                                         </div>
-                                        <div class="reply-actions-right">
-                                            <span class="reply-action-btn" onclick="setReplyTarget('${post.id}', '${r.authorHandle}')">Responder</span>
-                                            ${(currentAuthUser && r.authorUid === currentAuthUser.uid) ? 
-                                                `<button class="delete-comment-btn" onclick="deleteComment('${post.id}', ${index}, '${target}')">🗑️</button>` : ''}
+                                        <div style="display:flex; gap:6px;">
+                                            <span class="reply-action-btn" onclick="setReplyTarget('${post.id}', '${escapeHtml(c.author_handle)}')">Responder</span>
+                                            ${c.user_id === session.user.id ? `<button class="delete-comment-btn" onclick="deleteComment('${c.id}')">🗑️</button>` : ''}
                                         </div>
                                     </div>
-                                    <div>${r.text}</div>
-                                    ${r.mediaSrc ? `<img class="comment-media" src="${r.mediaSrc}" onclick="openModal('${r.mediaSrc}', 'image')">` : ''}
-                                </div>`).join('')}
-                            <div class="reply-input-wrapper">
-                                <div id="target-indicator-${post.id}" class="reply-target-indicator ${activeReplyTargets[post.id] ? 'active' : ''}">
-                                    <span id="target-text-${post.id}">${activeReplyTargets[post.id] ? 'Respondiendo a ' + activeReplyTargets[post.id] : ''}</span>
-                                    <span style="cursor:pointer;" onclick="clearReplyTarget('${post.id}')">✕</span>
+                                    <div>${escapeHtml(c.content)}</div>
+                                    ${c.media_url ? `<img class="comment-media" src="${c.media_url}" onclick="openModal('${c.media_url}', 'image')">` : ''}
                                 </div>
+                            `).join('')}
+                            <div class="reply-input-wrapper">
+                                ${activeReplyTargets[post.id] ? `<div style="font-size:9.5px; font-weight:bold; background:#ffd8df; border:1px solid #000; border-radius:6px; padding:2px 6px; display:flex; justify-content:space-between;">
+                                    <span>Respondiendo a ${escapeHtml(activeReplyTargets[post.id])}</span>
+                                    <span style="cursor:pointer;" onclick="clearReplyTarget('${post.id}')">✕</span>
+                                </div>` : ''}
                                 <div class="reply-input-row">
-                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply('${post.id}', '${target}')">
-                                    <label class="file-label">📷<input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;"></label>
-                                    <button class="btn-publish" onclick="addReply('${post.id}', '${target}')">Enviar</button>
+                                    <input type="text" id="reply-input-${post.id}" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') addReply('${post.id}')">
+                                    <label class="file-label" style="padding:2px 6px;">📷<input type="file" id="reply-media-${post.id}" accept="image/*" style="display:none;"></label>
+                                    <button class="btn-publish" onclick="addReply('${post.id}')">Enviar</button>
                                 </div>
                             </div>
                         </div>
@@ -1089,30 +725,32 @@
             }).join('');
         }
 
-        async function toggleLike(postId, target) {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión para dar like'); return; }
-            
-            const user = auth.currentUser;
-            const post = posts.find(p => p.id === postId);
+        async function toggleLike(postId) {
+            const post = posts.find(p => p.id == postId);
             if (!post) return;
-            const myHandle = currentUser.username;
-            
-            const wasLiked = post.likedBy && post.likedBy.includes(myHandle);
-            if (!post.likedBy) post.likedBy = [];
-            const index = post.likedBy.indexOf(myHandle);
-            if (index === -1) post.likedBy.push(myHandle);
-            else post.likedBy.splice(index, 1);
+            const likedBy = post.liked_by || [];
+            const idx = likedBy.indexOf(profile.username);
+            if (idx === -1) likedBy.push(profile.username);
+            else likedBy.splice(idx, 1);
 
-            updatePostInFirebase(postId, { likedBy: post.likedBy })
-                .then(() => {
-                    renderPosts(target);
-                    if (!wasLiked && post.authorUid !== user.uid) {
-                        sendNotification(post.authorUid, 'post_like', user.uid, myHandle,
-                            `${myHandle} le dio like a tu publicación 🐾`, '#menu');
-                    }
-                })
-                .catch(err => { console.error(err); alert('Error al dar like'); });
+            const { error } = await supabase.from('posts').update({ liked_by: likedBy }).eq('id', postId);
+            if (error) { console.error(error); return; }
+
+            // Notificación si es de otro
+            if (idx === -1 && post.user_id !== session.user.id) {
+                await supabase.from('notifications').insert([{
+                    user_id: post.user_id,
+                    type: 'post_like',
+                    from_handle: profile.username,
+                    message: `${profile.username} le dio like a tu post 🐾`,
+                    link: '#menu',
+                    is_read: false,
+                    created_at: Date.now()
+                }]);
+            }
+
+            await loadPosts();
+            renderPosts();
         }
 
         function toggleMenu(postId) {
@@ -1120,133 +758,90 @@
             if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
         }
 
-        async function deletePost(postId, target) {
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            const post = posts.find(p => p.id === postId);
-            if (!post) { alert('El post ya no existe'); return; }
-            if (post.authorUid !== user.uid) { alert('No puedes eliminar este post'); return; }
+        async function deletePost(postId) {
             if (!confirm('¿Borrar esta publicación?')) return;
-            deletePostFromFirebase(postId)
-                .then(() => renderPosts(target))
-                .catch(err => { console.error(err); alert('Error al eliminar'); });
+            const { error } = await supabase.from('posts').delete().eq('id', postId);
+            if (error) { alert('Error: ' + error.message); return; }
+            await loadPosts();
+            await loadAllComments();
+            renderPosts();
         }
 
         function toggleReplies(postId) {
             openRepliesBoxes[postId] = !openRepliesBoxes[postId];
-            const box = document.getElementById(`replies-${postId}`);
-            const btnText = document.getElementById(`reply-btn-text-${postId}`);
-            if (box) box.classList.toggle('open', openRepliesBoxes[postId]);
-            if (btnText) {
-                const post = posts.find(p => p.id === postId);
-                const count = post && post.replies ? post.replies.length : 0;
-                btnText.innerText = openRepliesBoxes[postId] ? `💬 Ocultar comentarios` : `💬 ${count === 0 ? 'Comentar' : count + ' comentarios'}`;
-            }
+            renderPosts();
         }
 
-        function setReplyTarget(postId, authorHandle) {
-            activeReplyTargets[postId] = authorHandle;
-            const indicator = document.getElementById(`target-indicator-${postId}`);
-            const textSpan = document.getElementById(`target-text-${postId}`);
-            if (indicator && textSpan) {
-                textSpan.innerText = `Respondiendo a ${authorHandle}`;
-                indicator.classList.add('active');
-            }
+        function setReplyTarget(postId, handle) {
+            activeReplyTargets[postId] = handle;
+            renderPosts();
         }
 
         function clearReplyTarget(postId) {
             delete activeReplyTargets[postId];
-            const indicator = document.getElementById(`target-indicator-${postId}`);
-            if (indicator) indicator.classList.remove('active');
+            renderPosts();
         }
 
-        async function addReply(postId, target) {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión para comentar'); return; }
-            const user = auth.currentUser;
-            
+        async function addReply(postId) {
             const input = document.getElementById(`reply-input-${postId}`);
             const mediaInput = document.getElementById(`reply-media-${postId}`);
             const text = input.value.trim();
-            const file = mediaInput ? mediaInput.files[0] : null;
-            if (text === "" && !file) { alert('Escribe algo para comentar'); return; }
+            const file = mediaInput?.files[0];
+            if (!text && !file) { alert('Escribe algo'); return; }
 
-            const post = posts.find(p => p.id === postId);
-            if (!post) { alert('El post ya no existe'); return; }
+            try {
+                let mediaUrl = null;
+                if (file) mediaUrl = await uploadFile(file, 'comments');
 
-            const myHandle = currentUser.username;
-            const myName = currentUser.displayName;
+                const { error } = await supabase.from('comments').insert([{
+                    post_id: postId,
+                    user_id: session.user.id,
+                    author_handle: profile.username,
+                    author_name: profile.display_name,
+                    content: text,
+                    media_url: mediaUrl,
+                    reply_to_handle: activeReplyTargets[postId] || null,
+                    created_at: Date.now()
+                }]);
+                if (error) throw error;
 
-            const replyTarget = activeReplyTargets[postId] || null;
-            const replyData = {
-                id: Date.now(), authorUid: user.uid, authorName: myName,
-                authorHandle: myHandle, replyTo: replyTarget, text: text, mediaSrc: null
-            };
+                clearReplyTarget(postId);
 
-            openRepliesBoxes[postId] = true;
+                // Notificar al autor del post
+                const post = posts.find(p => p.id == postId);
+                if (post && post.user_id !== session.user.id) {
+                    await supabase.from('notifications').insert([{
+                        user_id: post.user_id,
+                        type: 'post_reply',
+                        from_handle: profile.username,
+                        message: `${profile.username} comentó tu post: "${post.content.slice(0, 30)}"`,
+                        link: '#menu',
+                        is_read: false,
+                        created_at: Date.now()
+                    }]);
+                }
 
-            const processReply = () => {
-                post.replies = post.replies || [];
-                post.replies.push(replyData);
-                updatePostInFirebase(postId, { replies: post.replies })
-                    .then(() => {
-                        clearReplyTarget(postId);
-                        if (mediaInput) mediaInput.value = '';
-                        renderPosts(target);
-                        if (post.authorUid !== user.uid) {
-                            sendNotification(post.authorUid, 'post_reply', user.uid, myHandle,
-                                `${myHandle} comentó tu publicación: "${post.text.slice(0, 30)}..."`, '#menu');
-                        }
-                    })
-                    .catch(err => { console.error(err); alert('Error al comentar'); });
-            };
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    replyData.mediaSrc = e.target.result;
-                    processReply();
-                };
-                reader.readAsDataURL(file);
-            } else processReply();
+                await loadAllComments();
+                renderPosts();
+            } catch (err) {
+                console.error(err);
+                alert('Error: ' + err.message);
+            }
         }
 
-        function deleteComment(postId, commentIndex, target) {
-            const post = posts.find(p => p.id === postId);
-            if (post && post.replies) {
-                post.replies.splice(commentIndex, 1);
-                updatePostInFirebase(postId, { replies: post.replies })
-                    .then(() => { openRepliesBoxes[postId] = true; renderPosts(target); })
-                    .catch(err => console.error(err));
-            }
+        async function deleteComment(commentId) {
+            if (!confirm('¿Borrar comentario?')) return;
+            const { error } = await supabase.from('comments').delete().eq('id', commentId);
+            if (error) { alert('Error: ' + error.message); return; }
+            await loadAllComments();
+            renderPosts();
         }
 
         // ============================================================
         // FOROS
         // ============================================================
-        function loadForumsFromFirebase() {
-            database.ref('forums').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    forums = Object.keys(data).map(key => ({ id: key, firebaseKey: key, ...data[key] }));
-                    forums.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                } else forums = [];
-                renderForums();
-                if (document.getElementById('perfil').classList.contains('active')) renderProfile();
-            });
-        }
-
-        function saveForumToFirebase(forumData) {
-            const newForumRef = database.ref('forums').push();
-            return newForumRef.set({ ...forumData, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        }
-
-        function deleteForumFromFirebase(forumId) { return database.ref(`forums/${forumId}`).remove(); }
-        function updateForumInFirebase(forumId, data) { return database.ref(`forums/${forumId}`).update(data); }
-
         function getMyForumsCount() {
-            const myUid = auth.currentUser ? auth.currentUser.uid : null;
-            return forums.filter(f => f.creatorUid === myUid).length;
+            return forums.filter(f => f.creator_id === session.user.id).length;
         }
 
         function updateForumCounter() {
@@ -1255,1037 +850,364 @@
             const count = getMyForumsCount();
             const limitReached = count >= MAX_FORUMS_PER_USER;
             if (counterEl) {
-                counterEl.innerText = `📋 Foros creados: ${count}/${MAX_FORUMS_PER_USER}${limitReached ? ' (límite alcanzado)' : ''}`;
+                counterEl.textContent = `📋 Foros creados: ${count}/${MAX_FORUMS_PER_USER}${limitReached ? ' (límite)' : ''}`;
                 counterEl.classList.toggle('limit-reached', limitReached);
             }
             if (createBtn) createBtn.disabled = limitReached;
         }
 
         async function createForum() {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión'); return; }
-            const user = auth.currentUser;
-            
-            if (getMyForumsCount() >= MAX_FORUMS_PER_USER) {
-                alert(`Solo puedes tener ${MAX_FORUMS_PER_USER} foros.`); return;
-            }
+            if (getMyForumsCount() >= MAX_FORUMS_PER_USER) { alert(`Máximo ${MAX_FORUMS_PER_USER} foros`); return; }
             const title = document.getElementById('forumTitle').value.trim();
             const category = document.getElementById('forumCategory').value.trim();
-            const tags = document.getElementById('forumTags').value.trim();
+            const tagsRaw = document.getElementById('forumTags').value.trim();
             const desc = document.getElementById('forumDesc').value.trim();
-            if (!title) return;
+            if (!title) { alert('Pon un título'); return; }
 
-            const forumData = {
-                creatorUid: user.uid, title: title, category: category || 'GENERAL',
-                tags: tags ? tags.split(',').map(t => t.trim()) : [], desc: desc,
-                creatorHandle: currentUser.username, members: [currentUser.username],
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
+            const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-            saveForumToFirebase(forumData).then(() => {
-                document.getElementById('forumTitle').value = '';
-                document.getElementById('forumCategory').value = '';
-                document.getElementById('forumTags').value = '';
-                document.getElementById('forumDesc').value = '';
-            }).catch(err => { console.error(err); alert('Error al crear foro'); });
-        }
+            const { error } = await supabase.from('forums').insert([{
+                creator_id: session.user.id,
+                creator_handle: profile.username,
+                title: title,
+                category: category || 'GENERAL',
+                tags: tags,
+                description: desc,
+                members: [profile.username],
+                created_at: Date.now()
+            }]);
 
-        function deleteForum(forumId, event) {
-            event.stopPropagation();
-            if (!confirm("¿Seguro que quieres borrar este foro?")) return;
-            deleteForumFromFirebase(forumId).then(() => {
-                posts.filter(p => p.forumId === forumId).forEach(p => deletePostFromFirebase(p.id));
-                if (currentForumId === forumId) showSection('foros');
-            }).catch(err => { console.error(err); alert('Error al borrar foro'); });
-        }
+            if (error) { alert('Error: ' + error.message); return; }
 
-        async function toggleJoinForum(forumId, event) {
-            event.stopPropagation();
-            const forum = forums.find(f => f.id === forumId);
-            if (!forum) return;
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión'); return; }
-            
-            const myHandle = currentUser.username;
-            const index = forum.members ? forum.members.indexOf(myHandle) : -1;
-            if (index === -1) forum.members.push(myHandle);
-            else forum.members.splice(index, 1);
-
-            updateForumInFirebase(forumId, { members: forum.members })
-                .then(() => {
-                    if (currentForumId === forumId) openForum(forumId);
-                    else renderForums();
-                })
-                .catch(err => { console.error(err); alert('Error al unirse al foro'); });
-        }
-
-        function getActiveForumMembersCount(forumMembers) {
-            const now = Date.now();
-            let activeCount = 0;
-            if (!forumMembers) return 0;
-            for (let memberHandle of forumMembers) {
-                if (usersPresence[memberHandle] && (now - usersPresence[memberHandle] < 60000)) activeCount++;
-            }
-            return activeCount;
+            document.getElementById('forumTitle').value = '';
+            document.getElementById('forumCategory').value = '';
+            document.getElementById('forumTags').value = '';
+            document.getElementById('forumDesc').value = '';
+            await loadForums();
+            renderForums();
         }
 
         function renderForums(filteredList) {
             const container = document.getElementById('forumsList');
-            updateForumCounter();
             if (!container) return;
-            const sourceForums = filteredList || forums;
-            const myHandle = currentUser ? currentUser.username : null;
-            if (sourceForums.length === 0) {
+            updateForumCounter();
+            const list = filteredList || forums;
+            if (list.length === 0) {
                 container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay foros.</p>`;
                 return;
             }
-            container.innerHTML = sourceForums.map(f => {
-                const isJoined = f.members && f.members.includes(myHandle);
-                const isCreator = f.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
-                const activeCount = getActiveForumMembersCount(f.members);
+            container.innerHTML = list.map(f => {
+                const isJoined = (f.members || []).includes(profile.username);
+                const isCreator = f.creator_id === session.user.id;
                 return `
                 <div class="forum-card" onclick="openForum('${f.id}')">
                     <div class="forum-header-container">
                         <div>
-                            <div class="forum-category">${f.category}</div>
-                            <div class="forum-title">${f.title}</div>
+                            <div class="forum-category">${escapeHtml(f.category)}</div>
+                            <div class="forum-title">${escapeHtml(f.title)}</div>
                         </div>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${f.id}', event)">
-                                ${isJoined ? 'Unido' : 'Unirme'}
-                            </button>
-                            ${isCreator ? `<button class="btn-delete-forum" onclick="deleteForum('${f.id}', event)">🗑️ Borrar</button>` : ''}
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${f.id}', event)">${isJoined ? 'Unido' : 'Unirme'}</button>
+                            ${isCreator ? `<button class="btn-delete-forum" onclick="deleteForum('${f.id}', event)">🗑️</button>` : ''}
                         </div>
                     </div>
-                    <div class="forum-desc">${f.desc}</div>
-                    <div class="forum-tags-container">${(f.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}</div>
-                    <div class="forum-stats-box">
-                        <span>👥 ${(f.members && f.members.length) || 0} Miembro${(f.members && f.members.length) === 1 ? '' : 's'}</span>
-                        <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
-                    </div>
+                    <div class="forum-desc">${escapeHtml(f.description)}</div>
+                    <div class="forum-tags-container">${(f.tags || []).map(t => `<span class="forum-tag-badge">#${escapeHtml(t)}</span>`).join('')}</div>
+                    <div class="forum-stats-box"><span>👥 ${(f.members || []).length} Miembros</span></div>
                 </div>`;
             }).join('');
         }
 
-        function openForum(forumId) {
-            currentForumId = forumId;
-            const forum = forums.find(f => f.id === forumId);
+        async function toggleJoinForum(forumId, event) {
+            event.stopPropagation();
+            const forum = forums.find(f => f.id == forumId);
             if (!forum) return;
-            const header = document.getElementById('forumHeader');
-            const myHandle = currentUser ? currentUser.username : null;
-            const isJoined = forum.members && forum.members.includes(myHandle);
-            const isCreator = forum.creatorUid === (currentAuthUser ? currentAuthUser.uid : null);
-            const activeCount = getActiveForumMembersCount(forum.members);
+            const members = forum.members || [];
+            const idx = members.indexOf(profile.username);
+            if (idx === -1) members.push(profile.username);
+            else members.splice(idx, 1);
+            const { error } = await supabase.from('forums').update({ members: members }).eq('id', forumId);
+            if (error) { alert('Error: ' + error.message); return; }
+            await loadForums();
+            if (currentForumId == forumId) openForum(forumId);
+            else renderForums();
+        }
 
-            header.innerHTML = `
+        async function deleteForum(forumId, event) {
+            event.stopPropagation();
+            if (!confirm('¿Borrar este foro y todos sus posts?')) return;
+            // Borrar posts del foro
+            await supabase.from('posts').delete().eq('forum_id', forumId);
+            // Borrar foro
+            const { error } = await supabase.from('forums').delete().eq('id', forumId);
+            if (error) { alert('Error: ' + error.message); return; }
+            if (currentForumId == forumId) showSection('foros');
+            await loadForums();
+            await loadPosts();
+            renderForums();
+        }
+
+        async function openForum(forumId) {
+            currentForumId = forumId;
+            const forum = forums.find(f => f.id == forumId);
+            if (!forum) return;
+            const isJoined = (forum.members || []).includes(profile.username);
+            const isCreator = forum.creator_id === session.user.id;
+
+            document.getElementById('forumHeader').innerHTML = `
                 <div class="forum-header-container">
                     <div>
-                        <div class="forum-category">${forum.category}</div>
-                        <div class="forum-title">${forum.title}</div>
+                        <div class="forum-category">${escapeHtml(forum.category)}</div>
+                        <div class="forum-title">${escapeHtml(forum.title)}</div>
                     </div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${forum.id}', event)">
-                            ${isJoined ? 'Unido' : 'Unirme'}
-                        </button>
-                        ${isCreator ? `<button class="btn-delete-forum" onclick="deleteForum('${forum.id}', event)">🗑️ Borrar</button>` : ''}
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-join-forum ${isJoined ? 'joined' : ''}" onclick="toggleJoinForum('${forum.id}', event)">${isJoined ? 'Unido' : 'Unirme'}</button>
+                        ${isCreator ? `<button class="btn-delete-forum" onclick="deleteForum('${forum.id}', event)">🗑️</button>` : ''}
                     </div>
                 </div>
-                <div class="forum-desc">${forum.desc}</div>
-                <div class="forum-tags-container">${(forum.tags || []).map(t => `<span class="forum-tag-badge">#${t}</span>`).join('')}</div>
-                <div class="forum-stats-box">
-                    <span>👥 ${(forum.members && forum.members.length) || 0} Miembro${(forum.members && forum.members.length) === 1 ? '' : 's'}</span>
-                    <span>🟢 ${activeCount} Activo${activeCount === 1 ? '' : 's'}</span>
-                </div>`;
+                <div class="forum-desc">${escapeHtml(forum.description)}</div>
+                <div class="forum-tags-container">${(forum.tags || []).map(t => `<span class="forum-tag-badge">#${escapeHtml(t)}</span>`).join('')}</div>
+                <div class="forum-stats-box"><span>👥 ${(forum.members || []).length} Miembros</span></div>`;
             showSection('forumView');
-            renderPosts('forum');
+            renderPosts();
         }
 
         // ============================================================
         // GALERÍA
         // ============================================================
-        function loadGalleryFromFirebase() {
-            database.ref('gallery').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    gallery = Object.keys(data).map(key => ({ id: key, firebaseKey: key, ...data[key] }));
-                    gallery.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                } else gallery = [];
-                renderGallery();
-                if (document.getElementById('perfil').classList.contains('active')) renderProfile();
-            });
-        }
-
         async function uploadToGallery() {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión'); return; }
-            const user = auth.currentUser;
-            
             const title = document.getElementById('galleryTitle').value.trim();
             const category = document.getElementById('galleryCategory').value;
             const fileInput = document.getElementById('galleryFile');
-            const visibilityInput = document.querySelector('input[name="galleryVisibility"]:checked');
-            const visibility = visibilityInput ? visibilityInput.value : 'public';
-            if (!fileInput.files[0]) return;
+            const visibility = document.querySelector('input[name="galleryVisibility"]:checked').value;
+            const file = fileInput.files[0];
+            if (!file) { alert('Elige un archivo'); return; }
 
-            convertImageToStatic(fileInput.files[0]).then((src) => {
-                const galleryData = {
-                    title: title || 'Sin título', category: category,
-                    src: src, uploaderHandle: currentUser.username,
-                    uploaderUid: user.uid, visibility: visibility, likedBy: [],
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                };
-                database.ref('gallery').push().set(galleryData)
-                    .then(() => { document.getElementById('galleryTitle').value = ''; fileInput.value = ''; })
-                    .catch(err => { console.error(err); alert('Error al subir imagen'); });
-            });
-        }
+            const btn = event?.target;
+            if (btn) { btn.disabled = true; btn.textContent = 'Subiendo...'; }
 
-        function getVisibleGalleryItems() {
-            const myHandle = currentUser ? currentUser.username : null;
-            return gallery.filter(item => item.visibility !== 'private' || item.uploaderHandle === myHandle);
+            try {
+                const url = await uploadFile(file, 'gallery');
+                const { error } = await supabase.from('gallery').insert([{
+                    user_id: session.user.id,
+                    uploader_handle: profile.username,
+                    title: title || 'Sin título',
+                    category: category,
+                    image_url: url,
+                    visibility: visibility,
+                    liked_by: [],
+                    created_at: Date.now()
+                }]);
+                if (error) throw error;
+                document.getElementById('galleryTitle').value = '';
+                fileInput.value = '';
+                await loadGallery();
+                renderGallery();
+            } catch (err) {
+                console.error(err);
+                alert('Error: ' + err.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Subir'; }
+            }
         }
 
         function renderGallery() {
             const container = document.getElementById('galleryContainer');
             if (!container) return;
-            const myHandle = currentUser ? currentUser.username : null;
-            const visibleItems = getVisibleGalleryItems();
-            if (visibleItems.length === 0) {
+            const visible = gallery.filter(g => g.visibility !== 'private' || g.user_id === session.user.id);
+            if (visible.length === 0) {
                 container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px; grid-column:1/-1;">🐭 No hay imágenes.</p>`;
                 return;
             }
-            container.innerHTML = visibleItems.map(item => {
-                const isMine = currentAuthUser && item.uploaderUid === currentAuthUser.uid;
-                const likedBy = item.likedBy || [];
-                const isLiked = likedBy.includes(myHandle);
+            container.innerHTML = visible.map(item => {
+                const isMine = item.user_id === session.user.id;
+                const isLiked = (item.liked_by || []).includes(profile.username);
                 const isPrivate = item.visibility === 'private';
                 return `
                 <div class="polaroid-card">
                     ${isMine ? `<button class="polaroid-delete-btn" onclick="deleteGalleryItem('${item.id}', event)">🗑️</button>` : ''}
-                    <img class="polaroid-img" src="${item.src}" onclick="openModal('${item.src}', 'image')">
-                    <div class="polaroid-caption">${item.title}</div>
-                    <span class="polaroid-tag">${item.category}</span>
-                    <span class="polaroid-tag" style="background:${isPrivate ? '#dbe2e6' : '#e2f0d9'};">${isPrivate ? '🔒 Privada' : '🌍 Pública'}</span>
-                    <span class="polaroid-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleGalleryLike('${item.id}', event)">
-                        🐾 ${likedBy.length}
-                    </span>
+                    <img class="polaroid-img" src="${item.image_url}" onclick="openModal('${item.image_url}', 'image')">
+                    <div class="polaroid-caption">${escapeHtml(item.title)}</div>
+                    <span class="polaroid-tag">${escapeHtml(item.category)}</span>
+                    <span class="polaroid-tag" style="background:${isPrivate ? '#dbe2e6' : '#e2f0d9'};">${isPrivate ? '🔒' : '🌍'}</span>
+                    <span class="polaroid-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleGalleryLike('${item.id}', event)">🐾 ${(item.liked_by || []).length}</span>
                 </div>`;
             }).join('');
         }
 
-        function deleteGalleryItem(id, event) {
+        async function toggleGalleryLike(id, event) {
             event.stopPropagation();
-            const user = auth.currentUser;
-            if (!user) return;
-            const item = gallery.find(g => g.id === id || g.firebaseKey === id);
+            const item = gallery.find(g => g.id == id);
             if (!item) return;
-            if (item.uploaderUid !== user.uid) { alert('No tienes permiso'); return; }
-            if (confirm('¿Eliminar esta imagen?')) {
-                database.ref(`gallery/${item.firebaseKey || item.id}`).remove()
-                    .catch(err => { console.error(err); alert('Error'); });
-            }
+            const likedBy = item.liked_by || [];
+            const idx = likedBy.indexOf(profile.username);
+            if (idx === -1) likedBy.push(profile.username);
+            else likedBy.splice(idx, 1);
+            await supabase.from('gallery').update({ liked_by: likedBy }).eq('id', id);
+            await loadGallery();
+            renderGallery();
         }
 
-        function toggleGalleryLike(id, event) {
+        async function deleteGalleryItem(id, event) {
             event.stopPropagation();
-            const user = auth.currentUser;
-            if (!user) return;
-            const item = gallery.find(g => g.id === id || g.firebaseKey === id);
-            if (!item) return;
-            if (!item.likedBy) item.likedBy = [];
-            const myHandle = currentUser.username;
-            const idx = item.likedBy.indexOf(myHandle);
-            if (idx === -1) item.likedBy.push(myHandle);
-            else item.likedBy.splice(idx, 1);
-            database.ref(`gallery/${item.firebaseKey || item.id}/likedBy`).set(item.likedBy)
-                .catch(err => console.error(err));
-        }
-
-        // ============================================================
-        // CONTACTOS
-        // ============================================================
-        function loadContacts() {
-            if (!currentUser) return;
-            database.ref(`contacts/${currentUser.uid}`).on('value', (snapshot) => {
-                const data = snapshot.val();
-                contacts = data ? Object.keys(data) : [];
-                updateContactsList();
-            });
-        }
-
-        async function addContact() {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión'); return; }
-            const user = auth.currentUser;
-            
-            const username = prompt('🔍 Ingresa el @usuario:');
-            if (!username) return;
-            const cleanUsername = username.startsWith('@') ? username : '@' + username;
-            if (cleanUsername === currentUser.username) { alert('❌ No puedes agregarte a ti mismo'); return; }
-
-            database.ref('usernames').child(cleanUsername).once('value')
-                .then(snapshot => {
-                    if (snapshot.exists()) {
-                        const userData = snapshot.val();
-                        const targetUid = userData.uid;
-                        return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).once('value')
-                            .then(contactSnap => {
-                                if (contactSnap.exists()) { alert('⚠️ Ya tienes este contacto'); return; }
-                                return database.ref(`contacts/${currentUser.uid}/${cleanUsername}`).set({
-                                    addedAt: firebase.database.ServerValue.TIMESTAMP,
-                                    displayName: userData.displayName || cleanUsername,
-                                    targetUid: targetUid
-                                }).then(() => {
-                                    alert(`✅ Solicitud enviada a ${cleanUsername}`);
-                                    sendNotification(targetUid, 'friend_request', user.uid, currentUser.username,
-                                        `${currentUser.username} te ha enviado una solicitud de amistad 🤝`, '#social');
-                                    loadContacts();
-                                });
-                            });
-                    } else alert('❌ Usuario no encontrado');
-                })
-                .catch(error => { console.error(error); alert('❌ Error al buscar'); });
-        }
-
-        function removeContact(username) {
-            if (!confirm(`¿Eliminar a ${username}?`)) return;
-            database.ref(`contacts/${currentUser.uid}/${username}`).remove()
-                .then(() => {
-                    alert(`✅ ${username} eliminado`);
-                    loadContacts();
-                    if (activeChatContact === username) switchChat('RatBot');
-                })
-                .catch(error => console.error(error));
-        }
-
-        function updateContactsList() {
-            const drawer = document.getElementById('contactsDrawer');
-            if (!drawer) return;
-            const currentContact = activeChatContact;
-            let html = `<div class="contact-item ${'RatBot' === currentContact ? 'active' : ''}" onclick="switchChat('RatBot')">
-                <span class="active-dot"></span> RatBot
-            </div>`;
-            contacts.forEach(handle => {
-                html += `<div class="contact-item ${handle === currentContact ? 'active' : ''}" onclick="switchChat('${handle}')">
-                    <span class="active-dot"></span> ${handle}
-                    <span class="remove-contact" onclick="event.stopPropagation(); removeContact('${handle}')">✕</span>
-                </div>`;
-            });
-            drawer.innerHTML = html;
-        }
-
-        // ============================================================
-        // CHAT
-        // ============================================================
-        function getChatId(user1, user2) { return [user1, user2].sort().join('_'); }
-
-        function switchChat(contact) {
-            if (!currentUser) return;
-            if (contact !== 'RatBot' && !contacts.includes(contact)) {
-                alert(`❌ ${contact} no está en tus contactos`); return;
-            }
-            if (chatListeners[activeChatContact]) {
-                chatListeners[activeChatContact]();
-                delete chatListeners[activeChatContact];
-            }
-            activeChatContact = contact;
-            chatId = getChatId(currentUser.username, contact);
-            document.getElementById('chatWithUser').innerText = '@' + contact;
-            clearChatReplyTarget();
-            cancelEditMessage();
-            document.getElementById('chatSearchInput').value = '';
-            chatSearchQuery = '';
-            document.getElementById('chatSearchBar').classList.remove('open');
-            document.getElementById('searchToggleBtn').classList.remove('active-toggle');
-            toggleContacts();
-            updateMuteButtonUI();
-            applyChatWallpaper();
-            loadChatMessages(chatId);
-        }
-
-        function loadChatMessages(chatId) {
-            const messagesRef = database.ref(`chats/${chatId}`);
-            if (chatListeners[activeChatContact]) chatListeners[activeChatContact]();
-            const listener = messagesRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                const messages = [];
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        messages.push({ id: key, firebaseKey: key, ...data[key] });
-                    });
-                    messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-                }
-                chats[activeChatContact] = messages;
-                localStorage.setItem('ratweb_chats', JSON.stringify(chats));
-                renderChat();
-            });
-            chatListeners[activeChatContact] = () => messagesRef.off('value', listener);
-        }
-
-        function sendChatMessageToFirebase(text, mediaSrc, mediaType, replyTo) {
-            const user = auth.currentUser;
-            if (!user || !currentUser) return;
-            const chatId = getChatId(currentUser.username, activeChatContact);
-            const newMessageRef = database.ref(`chats/${chatId}`).push();
-            const messageData = {
-                senderUid: user.uid, sender: currentUser.username,
-                text: text || '', mediaSrc: mediaSrc || null,
-                mediaType: mediaType || null, replyTo: replyTo || null,
-                reactions: {}, edited: false,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-            newMessageRef.set(messageData)
-                .then(() => {
-                    document.getElementById('chatMsgInput').value = '';
-                    document.getElementById('chatMedia').value = '';
-                    clearChatReplyTarget();
-                    if (activeChatContact === 'RatBot') maybeTriggerBotReply('RatBot');
-                })
-                .catch(error => { console.error(error); alert('Error al enviar'); });
-        }
-
-        async function sendChatMessage() {
-            const ok = await ensureAuth();
-            if (!ok) { alert('Debes iniciar sesión'); return; }
-            const input = document.getElementById('chatMsgInput');
-            const mediaInput = document.getElementById('chatMedia');
-            const text = input.value.trim();
-            const file = mediaInput ? mediaInput.files[0] : null;
-            if (editingMessageId !== null) { saveEditMessage(); return; }
-            if (text === "" && !file) return;
-            const replyTarget = chatReplyTargets[activeChatContact] || null;
-            if (file) {
-                convertImageToStatic(file).then((src) => {
-                    sendChatMessageToFirebase(text, src, 
-                        file.type.startsWith('video/') ? 'video' : 'image', replyTarget);
-                    mediaInput.value = '';
-                });
-            } else sendChatMessageToFirebase(text, null, null, replyTarget);
-        }
-
-        function saveEditMessage() {
-            const input = document.getElementById('chatMsgInput');
-            const newText = input.value.trim();
-            if (newText === '') { cancelEditMessage(); return; }
-            const chatId = getChatId(currentUser.username, activeChatContact);
-            database.ref(`chats/${chatId}/${editingMessageId}`).update({ text: newText, edited: true })
-                .catch(error => console.error(error));
-            cancelEditMessage();
-        }
-
-        function deleteChatMessage(msgId) {
-            if (!confirm('¿Borrar este mensaje?')) return;
-            const chatId = getChatId(currentUser.username, activeChatContact);
-            database.ref(`chats/${chatId}/${msgId}`).remove()
-                .catch(error => { console.error(error); alert('No tienes permiso'); });
-        }
-
-        function toggleReaction(msgId, emoji) {
-            const chatId = getChatId(currentUser.username, activeChatContact);
-            const messageRef = database.ref(`chats/${chatId}/${msgId}/reactions/${emoji}`);
-            const myHandle = currentUser ? currentUser.username : null;
-            messageRef.once('value').then((snapshot) => {
-                const users = snapshot.val() || [];
-                const idx = users.indexOf(myHandle);
-                if (idx === -1) users.push(myHandle);
-                else users.splice(idx, 1);
-                if (users.length === 0) return messageRef.remove();
-                else return messageRef.set(users);
-            }).catch(error => console.error(error));
-        }
-
-        function setChatReplyTarget(msgId) {
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === msgId);
-            if (!msg) return;
-            chatReplyTargets[activeChatContact] = {
-                id: msg.id, sender: msg.sender,
-                text: msg.text || (msg.mediaType === 'audio' ? '🎤 Mensaje de voz' : '📷 Archivo adjunto')
-            };
-            const preview = document.getElementById('chatReplyPreview');
-            const textEl = document.getElementById('chatReplyText');
-            textEl.innerText = `Respondiendo a ${msg.sender}: ${chatReplyTargets[activeChatContact].text.slice(0, 40)}`;
-            preview.classList.add('active');
-            document.getElementById('chatMsgInput').focus();
-        }
-
-        function clearChatReplyTarget() {
-            delete chatReplyTargets[activeChatContact];
-            const preview = document.getElementById('chatReplyPreview');
-            if (preview) preview.classList.remove('active');
-        }
-
-        function toggleMsgOptions(msgId) {
-            const menu = document.getElementById(`msg-options-${msgId}`);
-            if (!menu) return;
-            const isOpen = menu.classList.contains('open');
-            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
-            if (!isOpen) menu.classList.add('open');
-        }
-
-        function startEditMessage(msgId) {
-            const list = chats[activeChatContact] || [];
-            const msg = list.find(m => m.id === msgId);
-            if (!msg) return;
-            editingMessageId = msgId;
-            const input = document.getElementById('chatMsgInput');
-            input.value = msg.text || '';
-            input.focus();
-            document.getElementById('chatSendBtn').innerText = 'Guardar';
-            document.querySelectorAll('.msg-options-menu.open').forEach(m => m.classList.remove('open'));
-        }
-
-        function cancelEditMessage() {
-            editingMessageId = null;
-            const sendBtn = document.getElementById('chatSendBtn');
-            if (sendBtn) sendBtn.innerText = 'Enviar';
-            const input = document.getElementById('chatMsgInput');
-            if (input) input.value = '';
-        }
-
-        function toggleReactionPicker(msgId) {
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (!picker) return;
-            const isOpen = picker.classList.contains('open');
-            document.querySelectorAll('.reaction-picker.open').forEach(p => p.classList.remove('open'));
-            if (!isOpen) picker.classList.add('open');
-        }
-
-        function addCustomReaction(msgId) {
-            const input = document.getElementById(`custom-emoji-${msgId}`);
-            if (!input) return;
-            const value = input.value.trim();
-            if (!value) return;
-            toggleReaction(msgId, value);
-            input.value = '';
-            const picker = document.getElementById(`reaction-picker-${msgId}`);
-            if (picker) picker.classList.remove('open');
-        }
-
-        function maybeTriggerBotReply(contact) {
-            if (contact !== 'RatBot') return;
-            setTimeout(() => {
-                showTypingIndicator();
-                setTimeout(() => {
-                    hideTypingIndicator();
-                    const reply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
-                    const chatId = getChatId(currentUser.username, 'RatBot');
-                    database.ref(`chats/${chatId}`).push().set({
-                        senderUid: 'RatBot', sender: 'RatBot', text: reply,
-                        mediaSrc: null, mediaType: null, replyTo: null,
-                        reactions: {}, edited: false,
-                        timestamp: firebase.database.ServerValue.TIMESTAMP
-                    }).catch(error => console.error(error));
-                }, 1400);
-            }, 500);
-        }
-
-        function showTypingIndicator() { isTypingIndicatorOn = true; renderChat(); }
-        function hideTypingIndicator() { isTypingIndicatorOn = false; renderChat(); }
-
-        async function toggleVoiceRecording() {
-            const micBtn = document.getElementById('micBtn');
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = () => {
-                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const replyTarget = chatReplyTargets[activeChatContact] || null;
-                            sendChatMessageToFirebase('', e.target.result, 'audio', replyTarget);
-                        };
-                        reader.readAsDataURL(blob);
-                        stream.getTracks().forEach(t => t.stop());
-                    };
-                    mediaRecorder.start();
-                    isRecording = true;
-                    micBtn.classList.add('recording');
-                    micBtn.innerText = '⏹️';
-                } catch (err) { alert('No se pudo acceder al micrófono'); }
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('recording');
-                micBtn.innerText = '🎤';
-            }
-        }
-
-        function toggleChatSearch() {
-            const bar = document.getElementById('chatSearchBar');
-            const btn = document.getElementById('searchToggleBtn');
-            bar.classList.toggle('open');
-            btn.classList.toggle('active-toggle');
-            if (!bar.classList.contains('open')) {
-                document.getElementById('chatSearchInput').value = '';
-                chatSearchQuery = '';
-                renderChat();
-            }
-        }
-
-        function handleChatSearch() {
-            chatSearchQuery = document.getElementById('chatSearchInput').value.toLowerCase().trim();
-            renderChat();
-        }
-
-        function toggleMuteContact() {
-            mutedContacts[activeChatContact] = !mutedContacts[activeChatContact];
-            localStorage.setItem('ratweb_muted_contacts', JSON.stringify(mutedContacts));
-            updateMuteButtonUI();
-        }
-
-        function updateMuteButtonUI() {
-            const btn = document.getElementById('muteToggleBtn');
-            if (!btn) return;
-            const isMuted = !!mutedContacts[activeChatContact];
-            btn.innerText = isMuted ? '🔕' : '🔔';
-            btn.classList.toggle('active-toggle', isMuted);
-        }
-
-        function toggleContacts() {
-            const drawer = document.getElementById('contactsDrawer');
-            if (drawer) drawer.classList.toggle('open');
-        }
-
-        function renderChat() {
-            const container = document.getElementById('chatMessages');
-            if (!container) return;
-            let list = chats[activeChatContact] || [];
-            const myHandle = currentUser ? currentUser.username : null;
-
-            if (chatSearchQuery) list = list.filter(m => (m.text || '').toLowerCase().includes(chatSearchQuery));
-
-            if (list.length === 0) {
-                container.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 ${chatSearchQuery ? 'No se encontraron mensajes.' : 'Comienza la conversación con ' + activeChatContact + ' 🧀'}</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map(msg => {
-                const isSent = msg.sender === myHandle;
-                const reactions = msg.reactions || {};
-                const reactionEntries = Object.entries(reactions).filter(([_, users]) => users.length > 0);
-                let mediaHtml = '';
-                if (msg.mediaType === 'image') mediaHtml = `<img class="msg-media" src="${msg.mediaSrc}" onclick="openModal('${msg.mediaSrc}', 'image')">`;
-                else if (msg.mediaType === 'video') mediaHtml = `<video class="msg-media" src="${msg.mediaSrc}" controls></video>`;
-                else if (msg.mediaType === 'audio') mediaHtml = `<div class="voice-msg">🎤<audio src="${msg.mediaSrc}" controls></audio></div>`;
-
-                return `
-                <div class="msg-row ${isSent ? 'sent' : 'received'}">
-                    <div class="msg-bubble ${isSent ? 'sent' : 'received'}">
-                        ${msg.replyTo ? `<div class="msg-quote"><strong>${msg.replyTo.sender}</strong>: ${msg.replyTo.text}</div>` : ''}
-                        ${msg.text ? `<div>${msg.text}</div>` : ''}
-                        ${mediaHtml}
-                        ${reactionEntries.length > 0 ? `<div class="msg-reactions">
-                            ${reactionEntries.map(([emoji, users]) => 
-                                `<span class="reaction-badge ${users.includes(myHandle) ? 'mine' : ''}" onclick="toggleReaction('${msg.id}', '${emoji}')">${emoji} ${users.length}</span>`
-                            ).join('')}</div>` : ''}
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                            <span class="edited-tag">${msg.edited ? '(editado)' : ''}</span>
-                            ${isSent ? `<span class="read-status">Leído</span>` : ''}
-                        </div>
-                        ${isSent ? `
-                        <div class="msg-options-wrapper" style="position:absolute; top:2px; right:4px;">
-                            <span style="cursor:pointer; font-weight:bold; font-size:12px;" onclick="toggleMsgOptions('${msg.id}')">⋮</span>
-                            <div id="msg-options-${msg.id}" class="msg-options-menu">
-                                ${msg.mediaType ? '' : `<button onclick="startEditMessage('${msg.id}')">✏️ Editar</button>`}
-                                <button onclick="deleteChatMessage('${msg.id}')">🗑️ Borrar</button>
-                            </div>
-                        </div>` : ''}
-                        <div class="reaction-picker" id="reaction-picker-${msg.id}">
-                            <div class="reaction-picker-grid">
-                                ${QUICK_REACTION_EMOJIS.map(e => `<span onclick="toggleReaction('${msg.id}', '${e}')">${e}</span>`).join('')}
-                            </div>
-                            <div class="reaction-picker-custom">
-                                <input type="text" id="custom-emoji-${msg.id}" placeholder="Otro emoji 😊" maxlength="8" onkeypress="if(event.key==='Enter') addCustomReaction('${msg.id}')">
-                                <button onclick="addCustomReaction('${msg.id}')">OK</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="msg-actions-row">
-                        <span class="msg-action-link" onclick="toggleReactionPicker('${msg.id}')">Reaccionar</span>
-                        <span class="msg-action-link" onclick="setChatReplyTarget('${msg.id}')">Responder</span>
-                    </div>
-                </div>`;
-            }).join('');
-
-            if (isTypingIndicatorOn && !chatSearchQuery) {
-                container.innerHTML += `<div class="typing-indicator">${activeChatContact} está escribiendo...</div>`;
-            }
-            setTimeout(() => container.scrollTop = container.scrollHeight, 50);
-        }
-
-        // ============================================================
-        // WALLPAPER
-        // ============================================================
-        function openWallpaperPicker() {
-            const grid = document.getElementById('wallpaperGrid');
-            const visibleItems = getVisibleGalleryItems();
-            if (visibleItems.length === 0) {
-                grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#777; text-align:center; padding:10px;">Aún no tienes imágenes. ¡Sube alguna! 🖼️</p>`;
-            } else {
-                grid.innerHTML = `
-                    <div class="wallpaper-none-thumb" onclick="removeWallpaper()">✕ Quitar fondo</div>
-                    ${visibleItems.map(item => `<img class="wallpaper-thumb" src="${item.src}" onclick="selectWallpaper('${item.src}')">`).join('')}`;
-            }
-            document.getElementById('wallpaperModal').style.display = 'flex';
-        }
-
-        function closeWallpaperPicker() { document.getElementById('wallpaperModal').style.display = 'none'; }
-
-        function selectWallpaper(src) {
-            chatWallpapers[activeChatContact] = src;
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function removeWallpaper() {
-            delete chatWallpapers[activeChatContact];
-            localStorage.setItem('ratweb_chat_wallpapers', JSON.stringify(chatWallpapers));
-            applyChatWallpaper();
-            closeWallpaperPicker();
-        }
-
-        function applyChatWallpaper() {
-            const chatMain = document.getElementById('chatMain');
-            if (!chatMain) return;
-            const wallpaper = chatWallpapers[activeChatContact];
-            if (wallpaper) chatMain.style.backgroundImage = `linear-gradient(rgba(255,246,248,0.82), rgba(255,246,248,0.82)), url('${wallpaper}')`;
-            else chatMain.style.backgroundImage = 'none';
+            if (!confirm('¿Borrar esta imagen?')) return;
+            const { error } = await supabase.from('gallery').delete().eq('id', id);
+            if (error) { alert('Error: ' + error.message); return; }
+            await loadGallery();
+            renderGallery();
         }
 
         // ============================================================
         // PERFIL
         // ============================================================
         function renderProfile() {
-            const user = auth.currentUser;
-            if (!user) return;
-            database.ref(`users/${user.uid}`).once('value')
-                .then(snapshot => {
-                    if (!snapshot.exists()) return;
-                    const freshData = snapshot.val();
-                    currentUser = { ...freshData, uid: user.uid };
-                    saveUserToLocalStorage(currentUser);
-                    
-                    const banner = document.getElementById('profileBanner');
-                    banner.style.backgroundImage = freshData.banner ? `url('${freshData.banner}')` : 'none';
-                    document.getElementById('profileAvatarImg').src = freshData.avatar || '';
-                    document.getElementById('headerAvatar').src = freshData.avatar || '';
-                    document.getElementById('profileDisplayName').innerText = freshData.displayName;
-                    document.getElementById('profileUsername').innerText = freshData.username;
-                    document.getElementById('profileBioInput').value = freshData.bio || '';
-                    updateNameCooldownUI();
-                    updateUsernameCooldownUI();
-                    const myUid = user.uid;
-                    document.getElementById('statPosts').innerText = posts.filter(p => p.authorUid === myUid).length;
-                    document.getElementById('statGallery').innerText = gallery.filter(g => g.uploaderUid === myUid).length;
-                    document.getElementById('statForums').innerText = forums.filter(f => f.members && f.members.includes(freshData.username)).length;
-                    const myPostsLikes = posts.filter(p => p.authorUid === myUid).reduce((sum, p) => sum + (p.likedBy ? p.likedBy.length : 0), 0);
-                    const myGalleryLikes = gallery.filter(g => g.uploaderUid === myUid).reduce((sum, g) => sum + (g.likedBy ? g.likedBy.length : 0), 0);
-                    document.getElementById('statCheese').innerText = myPostsLikes + myGalleryLikes;
-                    const joinedDate = freshData.joinedAt ? new Date(freshData.joinedAt) : new Date();
-                    if (isNaN(joinedDate.getTime())) {
-                        document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
-                    } else {
-                        document.getElementById('profileJoinedNote').innerText = `🐭 Miembro desde ${joinedDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
-                    }
-                })
-                .catch(err => console.error(err));
+            if (!profile) return;
+            document.getElementById('profileBanner').style.backgroundImage = profile.banner_url ? `url('${profile.banner_url}')` : 'none';
+            document.getElementById('profileAvatarImg').src = profile.avatar_url || '';
+            document.getElementById('headerAvatar').src = profile.avatar_url || '';
+            document.getElementById('profileDisplayName').textContent = profile.display_name;
+            document.getElementById('profileUsername').textContent = profile.username;
+            document.getElementById('profileBioInput').value = profile.bio || '';
+
+            document.getElementById('statPosts').textContent = posts.filter(p => p.user_id === session.user.id).length;
+            document.getElementById('statGallery').textContent = gallery.filter(g => g.user_id === session.user.id).length;
+            document.getElementById('statForums').textContent = forums.filter(f => (f.members || []).includes(profile.username)).length;
+            const likes = posts.filter(p => p.user_id === session.user.id).reduce((s, p) => s + (p.liked_by || []).length, 0)
+                        + gallery.filter(g => g.user_id === session.user.id).reduce((s, g) => s + (g.liked_by || []).length, 0);
+            document.getElementById('statCheese').textContent = likes;
+
+            const d = profile.joined_at ? new Date(profile.joined_at) : new Date();
+            document.getElementById('profileJoinedNote').textContent = `🐭 Miembro desde ${d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })}`;
         }
 
-        // 🔧 FIX: ahora espera a waitForAuth() en vez de leer auth.currentUser
-        // directo, y usa convertImagePreserveGif para no romper la animación.
-        async function changeBanner(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión'); event.target.value = ''; return; }
-            try {
-                const bannerData = await convertImagePreserveGif(file);
-                await database.ref(`users/${user.uid}/banner`).set(bannerData);
-                if (currentUser) currentUser.banner = bannerData;
-                renderProfile();
-                alert('✅ Banner actualizado');
-            } catch (err) {
-                console.error(err);
-                alert('❌ ' + err.message);
-            } finally {
-                event.target.value = '';
-            }
-        }
-
-        // 🔧 FIX: mismo cambio que changeBanner (waitForAuth + preserva GIF)
         async function changeProfileAvatar(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión'); event.target.value = ''; return; }
             try {
-                const avatarData = await convertImagePreserveGif(file);
-                await database.ref(`users/${user.uid}/avatar`).set(avatarData);
-                if (currentUser) currentUser.avatar = avatarData;
-                document.getElementById('headerAvatar').src = avatarData;
+                const url = await uploadFile(file, 'avatars');
+                const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', session.user.id);
+                if (error) throw error;
+                profile.avatar_url = url;
                 renderProfile();
-                alert('✅ Foto de perfil actualizada');
-            } catch (err) {
-                console.error(err);
-                alert('❌ ' + err.message);
-            } finally {
-                event.target.value = '';
-            }
+                alert('✅ Foto actualizada');
+            } catch (err) { alert('Error: ' + err.message); }
+            event.target.value = '';
         }
 
-        function getDaysRemaining(lastChangeTs, cooldownDays) {
-            const elapsed = Date.now() - (lastChangeTs || 0);
-            return Math.ceil(((cooldownDays * DAY_MS) - elapsed) / DAY_MS);
+        async function changeBanner(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const url = await uploadFile(file, 'banners');
+                const { error } = await supabase.from('profiles').update({ banner_url: url }).eq('id', session.user.id);
+                if (error) throw error;
+                profile.banner_url = url;
+                renderProfile();
+                alert('✅ Banner actualizado');
+            } catch (err) { alert('Error: ' + err.message); }
+            event.target.value = '';
         }
 
-        function updateNameCooldownUI() {
-            const pencil = document.getElementById('editNamePencil');
-            const note = document.getElementById('nameCooldownNote');
-            const daysLeft = getDaysRemaining(currentUser.lastNameChange, NAME_COOLDOWN_DAYS);
-            if (daysLeft > 0) {
-                pencil.style.opacity = '0.3';
-                pencil.style.pointerEvents = 'none';
-                note.innerText = `Podrás cambiar tu nombre en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`;
-            } else {
-                pencil.style.opacity = '1';
-                pencil.style.pointerEvents = 'auto';
-                note.innerText = '';
-            }
-        }
-
-        function updateUsernameCooldownUI() {
-            const pencil = document.getElementById('editUsernamePencil');
-            const note = document.getElementById('usernameCooldownNote');
-            const daysLeft = getDaysRemaining(currentUser.lastUsernameChange, USERNAME_COOLDOWN_DAYS);
-            if (daysLeft > 0) {
-                pencil.style.opacity = '0.3';
-                pencil.style.pointerEvents = 'none';
-                note.innerText = `Podrás cambiar tu @usuario en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`;
-            } else {
-                pencil.style.opacity = '1';
-                pencil.style.pointerEvents = 'auto';
-                note.innerText = '';
-            }
-        }
-
-        function startEditName() {
-            const daysLeft = getDaysRemaining(currentUser.lastNameChange, NAME_COOLDOWN_DAYS);
-            if (daysLeft > 0) return;
-            document.getElementById('editNameInput').value = currentUser.displayName;
-            document.getElementById('editNameBox').style.display = 'flex';
-        }
-
-        function cancelEditName() { document.getElementById('editNameBox').style.display = 'none'; }
-
-        async function saveName() {
-            const newName = document.getElementById('editNameInput').value.trim();
-            if (!newName) return;
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            currentUser.displayName = newName;
-            currentUser.lastNameChange = Date.now();
-            saveUserToLocalStorage(currentUser);
-            database.ref(`users/${user.uid}`).update({ displayName: newName, lastNameChange: Date.now() });
-            cancelEditName();
-            renderProfile();
-        }
-
-        function startEditUsername() {
-            const daysLeft = getDaysRemaining(currentUser.lastUsernameChange, USERNAME_COOLDOWN_DAYS);
-            if (daysLeft > 0) return;
-            document.getElementById('editUsernameInput').value = currentUser.username.replace('@', '');
-            document.getElementById('editUsernameBox').style.display = 'flex';
-        }
-
-        function cancelEditUsername() { document.getElementById('editUsernameBox').style.display = 'none'; }
-
-        async function saveUsername() {
-            let newUsername = document.getElementById('editUsernameInput').value.trim();
-            if (!newUsername) return;
-            if (!newUsername.startsWith('@')) newUsername = '@' + newUsername;
-            const user = await waitForAuth();
-            if (!user) { alert('Debes iniciar sesión'); return; }
-            database.ref(`usernames/${currentUser.username}`).remove()
-                .then(() => database.ref(`usernames/${newUsername}`).set({ uid: user.uid, displayName: currentUser.displayName }))
-                .then(() => {
-                    currentUser.username = newUsername;
-                    currentUser.lastUsernameChange = Date.now();
-                    saveUserToLocalStorage(currentUser);
-                    database.ref(`users/${user.uid}`).update({ username: newUsername, lastUsernameChange: Date.now() });
-                    cancelEditUsername();
-                    renderProfile();
-                })
-                .catch(err => { console.error(err); alert('Error al cambiar username'); });
-        }
-
-        function saveBio() {
-            if (!currentUser) return;
-            const user = auth.currentUser;
-            if (!user) return;
+        async function saveBio() {
             const bio = document.getElementById('profileBioInput').value.trim();
-            currentUser.bio = bio;
-            saveUserToLocalStorage(currentUser);
-            database.ref(`users/${user.uid}/bio`).set(bio).catch(err => console.error(err));
+            if (bio === profile.bio) return;
+            const { error } = await supabase.from('profiles').update({ bio: bio }).eq('id', session.user.id);
+            if (error) { console.error(error); return; }
+            profile.bio = bio;
+        }
+
+        async function deleteAccount() {
+            if (!confirm('⚠️ ¿Eliminar tu cuenta y TODOS tus datos?')) return;
+            if (!confirm('⚠️⚠️ ¿Estás 100% seguro?')) return;
+            try {
+                await supabase.from('posts').delete().eq('user_id', session.user.id);
+                await supabase.from('comments').delete().eq('user_id', session.user.id);
+                await supabase.from('forums').delete().eq('creator_id', session.user.id);
+                await supabase.from('gallery').delete().eq('user_id', session.user.id);
+                await supabase.from('notifications').delete().eq('user_id', session.user.id);
+                await supabase.from('usernames').delete().eq('user_id', session.user.id);
+                await supabase.from('profiles').delete().eq('id', session.user.id);
+                await supabase.auth.signOut();
+                alert('✅ Cuenta eliminada');
+                window.location.reload();
+            } catch (err) { alert('Error: ' + err.message); }
         }
 
         // ============================================================
-        // PRESENCIA Y NAVEGACIÓN
+        // NAVEGACIÓN
         // ============================================================
-        function pingUserPresence() {
-            if (!currentUser) return;
-            usersPresence[currentUser.username] = Date.now();
-            localStorage.setItem('ratweb_presence', JSON.stringify(usersPresence));
-            if (document.getElementById('foros').classList.contains('active')) renderForums();
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            const btn = document.getElementById('btn-' + id);
+            if (btn) btn.classList.add('active');
+            else if (id === 'forumView') document.getElementById('btn-foros').classList.add('active');
+            if (id === 'perfil') renderProfile();
+            if (id === 'menu') renderPosts();
+            if (id === 'foros') renderForums();
+            if (id === 'galeria') renderGallery();
         }
-        setInterval(pingUserPresence, 10000);
 
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            const targetSec = document.getElementById(sectionId);
-            if (targetSec) targetSec.classList.add('active');
-            const navBtn = document.getElementById(`btn-${sectionId}`);
-            if (navBtn) navBtn.classList.add('active');
-            else if (sectionId === 'forumView') document.getElementById('btn-foros').classList.add('active');
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.placeholder = sectionId === 'foros' ? 'Buscar por #tag...' : 'Buscar...';
-                searchInput.value = '';
+        function handleSearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!q) { renderPosts(); renderForums(); return; }
+            const isForos = document.getElementById('foros').classList.contains('active');
+            if (isForos) {
+                const filtered = forums.filter(f =>
+                    f.title.toLowerCase().includes(q) ||
+                    f.category.toLowerCase().includes(q) ||
+                    (f.tags || []).some(t => t.toLowerCase().includes(q)));
+                renderForums(filtered);
+            } else {
+                const filtered = posts.filter(p =>
+                    p.content?.toLowerCase().includes(q) ||
+                    p.author_name?.toLowerCase().includes(q) ||
+                    p.author_handle?.toLowerCase().includes(q));
+                const listEl = document.getElementById('feedList');
+                if (filtered.length === 0) {
+                    listEl.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">Sin resultados.</p>`;
+                } else {
+                    const backup = posts;
+                    posts = filtered;
+                    renderPosts();
+                    posts = backup;
+                }
             }
-            if (sectionId === 'perfil') renderProfile();
-            handleSearch();
-        }
-
-        function logoutUser() {
-            if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
-            Object.values(chatListeners).forEach(unsub => unsub());
-            chatListeners = {};
-            if (notificationListener) { notificationListener(); notificationListener = null; }
-            localStorage.removeItem('ratweb_user');
-            localStorage.removeItem('ratweb_chats');
-            localStorage.removeItem('ratweb_presence');
-            localStorage.removeItem('ratweb_muted_contacts');
-            localStorage.removeItem('ratweb_chat_wallpapers');
-            auth.signOut()
-                .then(() => {
-                    currentUser = null;
-                    currentAuthUser = null;
-                    document.getElementById('authOverlay').style.display = 'flex';
-                    document.getElementById('authOverlay').style.position = 'fixed';
-                    window.location.reload();
-                })
-                .catch(err => { console.error(err); alert('Error al cerrar sesión'); });
         }
 
         function openModal(src, type) {
             const modal = document.getElementById('imageModal');
             const content = document.getElementById('modalContent');
-            if (!modal || !content) return;
-            if (type === 'image') content.innerHTML = `<img src="${src}" style="max-width: 95vw; max-height: 90vh; object-fit: contain;">`;
-            else content.innerHTML = `<video src="${src}" controls autoplay style="max-width: 95vw; max-height: 90vh;"></video>`;
+            if (type === 'image') content.innerHTML = `<img src="${src}">`;
+            else content.innerHTML = `<video src="${src}" controls autoplay></video>`;
             modal.style.display = 'flex';
         }
-
-        function closeModal() {
-            const modal = document.getElementById('imageModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function handleSearch() {
-            const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-            const query = rawQuery.startsWith('#') ? rawQuery.slice(1) : rawQuery;
-            const isForosActive = document.getElementById('foros').classList.contains('active');
-            const isMenuActive = document.getElementById('menu').classList.contains('active');
-            if (!query) { renderPosts('main'); renderForums(); return; }
-            if (isForosActive) {
-                const filtered = forums.filter(f =>
-                    (f.tags || []).some(t => t.toLowerCase().includes(query)) ||
-                    f.title.toLowerCase().includes(query) ||
-                    f.category.toLowerCase().includes(query));
-                renderForums(filtered);
-                return;
-            }
-            if (isMenuActive) {
-                const mainList = document.getElementById('feedList');
-                if (!mainList) return;
-                const filtered = posts.filter(p =>
-                    p.text.toLowerCase().includes(query) ||
-                    p.authorName.toLowerCase().includes(query) ||
-                    p.authorHandle.toLowerCase().includes(query));
-                if (filtered.length === 0) {
-                    mainList.innerHTML = `<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No se encontraron publicaciones.</p>`;
-                    return;
-                }
-                mainList.innerHTML = filtered.map(p => `
-                    <div class="post-card">
-                        <img class="avatar-circle" src="${p.avatar || ''}">
-                        <div class="post-bubble">
-                            <div class="post-header"><span class="post-author">${p.authorName} (${p.authorHandle})</span></div>
-                            <div class="post-content">${p.text}</div>
-                        </div>
-                    </div>`).join('');
-            }
-        }
+        function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
 
         // ============================================================
         // INICIALIZACIÓN
         // ============================================================
-        window.onload = function() {
-            console.log('🔥 Iniciando RatWeb...');
-            
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    console.log('✅ Usuario autenticado:', user.uid);
-                    currentAuthUser = user;
-                    database.ref(`users/${user.uid}`).once('value')
-                        .then(snapshot => {
-                            if (snapshot.exists()) {
-                                const userData = snapshot.val();
-                                currentUser = { ...userData, uid: user.uid };
-                                saveUserToLocalStorage(currentUser);
-                                document.getElementById('authOverlay').style.display = 'none';
-                                document.getElementById('headerAvatar').src = currentUser.avatar || '';
-                                loadPostsFromFirebase();
-                                loadForumsFromFirebase();
-                                loadGalleryFromFirebase();
-                                loadContacts();
-                                pingUserPresence();
-                                listenNotifications();
-                                const initialChatId = getChatId(currentUser.username, 'RatBot');
-                                loadChatMessages(initialChatId);
-                                setTimeout(() => renderProfile(), 500);
-                            } else {
-                                console.warn('⚠️ Usuario sin registro');
-                                auth.signOut();
-                                localStorage.removeItem('ratweb_user');
-                                document.getElementById('authOverlay').style.display = 'flex';
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            document.getElementById('authOverlay').style.display = 'flex';
-                        })
-                        .finally(() => {
-                            markAuthReady();
-                        });
-                } else {
-                    console.warn('⚠️ No hay usuario, mostrando login');
-                    document.getElementById('authOverlay').style.display = 'flex';
-                    localStorage.removeItem('ratweb_user');
-                    currentUser = null;
-                    currentAuthUser = null;
-                    markAuthReady();
+        window.addEventListener('load', async () => {
+            // Detectar error de OAuth en la URL
+            const hash = window.location.hash;
+            if (hash.includes('error=')) {
+                showError('loginError', 'Error al iniciar sesión: ' + decodeURIComponent(hash));
+            }
+            await checkSessionAndProfile();
+        });
+
+        // Escuchar cambios de sesión
+        supabase.auth.onAuthStateChange((event, newSession) => {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (!session || session.user.id !== newSession?.user?.id) {
+                    session = newSession;
+                    checkSessionAndProfile();
                 }
-            });
-            updateMuteButtonUI();
-            applyChatWallpaper();
-            console.log('✅ RatWeb iniciado');
-        };
+            } else if (event === 'SIGNED_OUT') {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
     </html>
