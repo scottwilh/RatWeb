@@ -373,7 +373,6 @@ Iniciar sesión con Google
 <div id="modalContent"></div>
 </div>
 
-<!-- MODAL EDITAR FORO -->
 <div id="editForumOverlay" class="edit-forum-overlay">
   <div class="edit-forum-card">
     <div class="edit-forum-title">✏️ Editar Foro</div>
@@ -1119,7 +1118,7 @@ async function deleteGalleryItem(id, event) {
 // ======================== PERFIL ========================
 async function openUserProfile(userId) {
   if (!userId) return;
-  if (userId === session.user.id) { goToMyProfile(); return; }
+  if (String(userId) === String(session.user.id)) { goToMyProfile(); return; }
   viewingUserId = userId;
   await renderProfile(userId);
   showSection('perfil');
@@ -1136,7 +1135,9 @@ function backFromUserProfile() {
 async function renderProfile(userId) {
   const targetId = userId || (session && session.user.id);
   if (!targetId) return;
-  const isOwn = targetId === session.user.id;
+  // FIX: compara siempre como string para evitar bugs de tipo
+  const isOwn = String(targetId) === String(session && session.user.id);
+
   let profileData;
   if (isOwn && profile) { profileData = profile; }
   else {
@@ -1165,8 +1166,8 @@ async function renderProfile(userId) {
   document.getElementById('deleteAccountBtn').classList.toggle('hidden', !isOwn);
   document.getElementById('profileBackBtn').classList.toggle('hidden', isOwn);
   if (isOwn) document.getElementById('headerAvatar').src = profileData.avatar_url || '';
-  const userPosts = posts.filter(function(p){ return p.user_id === targetId; });
-  const userGallery = gallery.filter(function(g){ return g.user_id === targetId && (g.visibility !== 'private' || isOwn); });
+  const userPosts = posts.filter(function(p){ return String(p.user_id) === String(targetId); });
+  const userGallery = gallery.filter(function(g){ return String(g.user_id) === String(targetId) && (g.visibility !== 'private' || isOwn); });
   document.getElementById('statPosts').textContent = userPosts.length;
   document.getElementById('statGallery').textContent = userGallery.length;
   document.getElementById('statForums').textContent = forums.filter(function(f){ return (f.members || []).indexOf(profileData.username) !== -1; }).length;
@@ -1281,4 +1282,4 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
 });
 </script>
 </body>
-</html>
+  </html>
