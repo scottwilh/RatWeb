@@ -6,122 +6,190 @@
 <title>RatWeb</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root {
+  --bg: #fcebe6;
+  --bg-header: #fbeee8;
+  --bg-nav: #dbe2e6;
+  --bg-nav-active: #cbd4d9;
+  --bg-card: #ffffff;
+  --bg-bubble: #ffd8df;
+  --bg-input: #ffffff;
+  --bg-reply: #fdf5f6;
+  --bg-forum: #e2f0d9;
+  --bg-tag: #ffd8df;
+  --text: #000000;
+  --text-soft: #555555;
+  --text-muted: #777777;
+  --text-accent: #8c4a4a;
+  --border: #000000;
+  --border-soft: #cccccc;
+  --shadow: rgba(0,0,0,0.15);
+  --primary: #b56565;
+  --primary-hover: #9a5050;
+  --danger: #e74c3c;
+  --success: #4a7c59;
+  --stat-bg: #fdf5f6;
+}
+[data-theme="dark"] {
+  --bg: #1a1418;
+  --bg-header: #241a1f;
+  --bg-nav: #2a1f24;
+  --bg-nav-active: #3a2a30;
+  --bg-card: #241a1f;
+  --bg-bubble: #3a2530;
+  --bg-input: #2a1f24;
+  --bg-reply: #2a1f24;
+  --bg-forum: #2a3528;
+  --bg-tag: #3a2530;
+  --text: #f5e6e8;
+  --text-soft: #c9b5b9;
+  --text-muted: #8a757a;
+  --text-accent: #e8a8a8;
+  --border: #4a3a40;
+  --border-soft: #3a2a30;
+  --shadow: rgba(0,0,0,0.5);
+  --primary: #c47575;
+  --primary-hover: #d48585;
+  --danger: #e74c3c;
+  --success: #6b9c78;
+  --stat-bg: #2a1f24;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
 html { height: 100%; overflow: hidden; }
-body { background-color: #fcebe6; display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; }
-.login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: #fcebe6; z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
-.login-card { background-color: #fff; border: 3px solid #000; border-radius: 16px; padding: 30px 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; box-shadow: 4px 4px 0px #000; text-align: center; }
-.login-title { font-size: 32px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
-.login-sub { font-size: 12px; color: #666; margin-bottom: 10px; }
-.btn-google { background: #fff; color: #000; border: 2px solid #000; border-radius: 10px; padding: 12px; font-weight: bold; font-size: 14px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.btn-google:hover { background: #f5f5f5; }
+body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; position: fixed; top: 0; left: 0; transition: background-color 0.3s, color 0.3s; }
+
+.login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: var(--bg); z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 16px; }
+.login-card { background-color: var(--bg-card); border: 3px solid var(--border); border-radius: 16px; padding: 30px 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; box-shadow: 4px 4px 0px var(--border); text-align: center; }
+.login-title { font-size: 32px; font-weight: bold; color: var(--text-accent); font-family: 'Georgia', serif; font-style: italic; }
+.login-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.btn-google { background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 10px; padding: 12px; font-weight: bold; font-size: 14px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-google:hover { background: var(--stat-bg); }
 .btn-google img { width: 20px; height: 20px; }
-.login-error { color: #e74c3c; font-size: 12px; font-weight: bold; background: #fde8e8; padding: 8px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
+.login-error { color: var(--danger); font-size: 12px; font-weight: bold; background: rgba(231,76,60,0.15); padding: 8px; border-radius: 6px; border: 1px solid var(--danger); display: none; }
 .login-error.show { display: block; }
+
 .setup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.85); z-index: 10001; display: none; justify-content: center; align-items: center; padding: 16px; overflow-y: auto; }
 .setup-overlay.show { display: flex; }
-.setup-card { background: #fff; border: 3px solid #000; border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px #000; max-height: 95vh; overflow-y: auto; }
-.setup-title { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; text-align: center; }
-.setup-sub { font-size: 11px; color: #666; text-align: center; margin-bottom: 6px; }
-.setup-label { font-size: 11px; font-weight: bold; color: #333; }
-.setup-card input, .setup-card textarea { width: 100%; border: 2px solid #000; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; }
+.setup-card { background: var(--bg-card); border: 3px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 12px; box-shadow: 4px 4px 0px var(--border); max-height: 95vh; overflow-y: auto; }
+.setup-title { font-size: 20px; font-weight: bold; color: var(--text-accent); font-family: 'Georgia', serif; font-style: italic; text-align: center; }
+.setup-sub { font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 6px; }
+.setup-label { font-size: 11px; font-weight: bold; color: var(--text); }
+.setup-card input, .setup-card textarea { width: 100%; border: 2px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; outline: none; font-family: inherit; background: var(--bg-input); color: var(--text); }
 .setup-card textarea { height: 55px; resize: none; }
 .avatar-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.avatar-preview { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #000; object-fit: cover; background: #b56565; }
-.setup-error { color: #e74c3c; font-size: 12px; text-align: center; font-weight: bold; background: #fde8e8; padding: 6px; border-radius: 6px; border: 1px solid #e74c3c; display: none; }
+.avatar-preview { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--border); object-fit: cover; background: var(--primary); }
+.setup-error { color: var(--danger); font-size: 12px; text-align: center; font-weight: bold; background: rgba(231,76,60,0.15); padding: 6px; border-radius: 6px; border: 1px solid var(--danger); display: none; }
 .setup-error.show { display: block; }
-.btn-primary { background: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
+.btn-primary { background: var(--primary); color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-header { background-color: #fbeee8; border-bottom: 4px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; }
-.logo-text { font-size: 20px; font-weight: bold; color: #8c4a4a; font-family: 'Georgia', serif; font-style: italic; }
-.search-bar { background-color: #fff; border: 2px solid #000; border-radius: 16px; padding: 2px 8px; width: 45%; }
-.search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; }
-.user-header-profile { display: flex; align-items: center; gap: 8px; }
-.avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; cursor: pointer; }
-.btn-logout-top { background: #666; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; font-family: inherit; }
+
+header { background-color: var(--bg-header); border-bottom: 4px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; height: 55px; flex-shrink: 0; gap: 8px; }
+.logo-text { font-size: 20px; font-weight: bold; color: var(--text-accent); font-family: 'Georgia', serif; font-style: italic; }
+.search-bar { background-color: var(--bg-input); border: 2px solid var(--border); border-radius: 16px; padding: 2px 8px; flex: 1; min-width: 80px; }
+.search-bar input { border: none; outline: none; width: 100%; font-size: 11px; background: transparent; font-family: inherit; color: var(--text); }
+.user-header-profile { display: flex; align-items: center; gap: 6px; }
+.avatar-top { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); object-fit: cover; background-color: var(--primary); cursor: pointer; }
+.btn-icon-header { background: var(--bg-input); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; line-height: 1; }
+.btn-icon-header:hover { background: var(--stat-bg); }
+.btn-logout-top { background: #666; color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; font-family: inherit; }
+
 .layout { display: flex; flex: 1; height: calc(100vh - 55px); height: calc(100dvh - 55px); min-height: 0; }
-nav { width: 75px; background-color: #dbe2e6; border-right: 3px solid #000; display: flex; flex-direction: column; flex-shrink: 0; }
-.nav-btn { padding: 12px 4px; border-bottom: 2px solid #c0c8cc; font-weight: bold; font-size: 11px; color: #000; cursor: pointer; text-align: center; word-break: break-word; }
-.nav-btn.active { background-color: #cbd4d9; }
+nav { width: 75px; background-color: var(--bg-nav); border-right: 3px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+.nav-btn { padding: 12px 4px; border-bottom: 2px solid var(--border-soft); font-weight: bold; font-size: 11px; color: var(--text); cursor: pointer; text-align: center; word-break: break-word; }
+.nav-btn.active { background-color: var(--bg-nav-active); }
 main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-height: 0; -webkit-overflow-scrolling: touch; }
 .section { display: none; flex-direction: column; gap: 10px; height: 100%; }
 .section.active { display: flex; min-height: 0; }
-.create-box { background-color: #fff; border: 2px solid #000; border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-.create-box input, .create-box textarea, .create-box select { width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; outline: none; font-family: inherit; }
+
+.create-box { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.create-box input, .create-box textarea, .create-box select { width: 100%; border: 2px solid var(--border-soft); border-radius: 8px; padding: 6px; font-size: 11px; outline: none; font-family: inherit; background: var(--bg-input); color: var(--text); }
 .create-box textarea { height: 45px; resize: none; }
-.btn-publish { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
-.btn-publish:disabled { background-color: #ccc; color: #777; border-color: #999; cursor: not-allowed; }
-.file-label { background-color: #ffd8df; border: 2px solid #000; border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; display: inline-block; }
-.btn-back { background-color: #dbe2e6; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
+.btn-publish { background-color: var(--primary); color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 6px 12px; font-weight: bold; font-size: 11px; cursor: pointer; font-family: inherit; }
+.btn-publish:disabled { background-color: #666; color: #aaa; border-color: #444; cursor: not-allowed; }
+.file-label { background-color: var(--bg-tag); color: var(--text); border: 2px solid var(--border); border-radius: 10px; padding: 4px 8px; font-size: 10px; font-weight: bold; cursor: pointer; display: inline-block; }
+.btn-back { background-color: var(--bg-nav); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; align-self: flex-start; flex-shrink: 0; }
+
+.preview-attachment { display: none; position: relative; margin-top: 4px; padding: 4px; background: var(--bg-reply); border: 1.5px dashed var(--border); border-radius: 8px; }
+.preview-attachment.show { display: block; }
+.preview-attachment img, .preview-attachment video { max-width: 100%; max-height: 120px; border-radius: 6px; display: block; margin: 0 auto; }
+.preview-attachment .preview-info { font-size: 9.5px; color: var(--text-muted); text-align: center; margin-top: 2px; word-break: break-all; }
+.preview-attachment .preview-remove { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: 1.5px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; line-height: 1; }
+
 .post-card { display: flex; gap: 6px; align-items: flex-start; position: relative; }
-.avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; object-fit: cover; background-color: #b56565; flex-shrink: 0; }
-.post-bubble { background-color: #ffd8df; border: 2px solid #000; border-radius: 14px; padding: 8px; flex: 1; position: relative; }
+.avatar-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); object-fit: cover; background-color: var(--primary); flex-shrink: 0; }
+.post-bubble { background-color: var(--bg-bubble); border: 2px solid var(--border); border-radius: 14px; padding: 8px; flex: 1; position: relative; }
 .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.post-author { font-size: 11px; color: #555; font-weight: bold; }
-.post-options-btn { background: none; border: none; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 4px; line-height: 1; }
-.options-menu { display: none; position: absolute; right: 8px; top: 25px; background: #fff; border: 2px solid #000; border-radius: 6px; z-index: 10; }
-.options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 11px; cursor: pointer; font-family: inherit; }
-.post-content { font-size: 12px; color: #000; line-height: 1.3; word-break: break-word; }
-.post-media { margin-top: 6px; max-width: 100%; max-height: 400px; border: 2px solid #000; border-radius: 8px; display: block; cursor: pointer; object-fit: contain; }
-.post-actions { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; font-weight: bold; }
+.post-author { font-size: 11px; color: var(--text-soft); font-weight: bold; }
+.post-options-btn { background: none; border: none; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 4px; line-height: 1; color: var(--text); }
+.options-menu { display: none; position: absolute; right: 8px; top: 25px; background: var(--bg-card); border: 2px solid var(--border); border-radius: 6px; z-index: 10; }
+.options-menu button { display: block; width: 100%; padding: 6px 10px; border: none; background: none; text-align: left; font-size: 11px; cursor: pointer; font-family: inherit; color: var(--text); }
+.post-content { font-size: 12px; color: var(--text); line-height: 1.3; word-break: break-word; }
+.post-media { margin-top: 6px; max-width: 100%; max-height: 400px; border: 2px solid var(--border); border-radius: 8px; display: block; cursor: pointer; object-fit: contain; }
+.post-actions { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; font-weight: bold; color: var(--text); }
 .action-btn { cursor: pointer; user-select: none; }
-.action-btn.liked { color: #b56565; }
-.replies-box { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #000; flex-direction: column; gap: 6px; }
+.action-btn.liked { color: var(--primary); }
+
+.replies-box { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); flex-direction: column; gap: 6px; }
 .replies-box.open { display: flex; }
-.reply-item { background-color: #fff; border: 1.5px solid #000; border-radius: 10px; padding: 6px 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+.reply-item { background-color: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; padding: 6px 8px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: var(--text); }
 .reply-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.reply-author { font-weight: bold; font-size: 11px; color: #000; }
-.reply-tag { font-size: 9.5px; color: #8c4a4a; font-weight: bold; }
-.reply-action-btn { font-size: 10px; color: #000; cursor: pointer; text-decoration: underline; font-weight: bold; }
-.delete-comment-btn { color: #b56565; cursor: pointer; font-size: 12px; background: none; border: none; }
-.comment-media { max-width: 100%; max-height: 140px; border: 1px solid #000; border-radius: 6px; margin-top: 4px; display: block; cursor: pointer; }
-.reply-input-wrapper { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 6px; }
+.reply-author { font-weight: bold; font-size: 11px; color: var(--text); }
+.reply-tag { font-size: 9.5px; color: var(--text-accent); font-weight: bold; }
+.reply-action-btn { font-size: 10px; color: var(--text); cursor: pointer; text-decoration: underline; font-weight: bold; }
+.delete-comment-btn { color: var(--primary); cursor: pointer; font-size: 12px; background: none; border: none; }
+.comment-media { max-width: 100%; max-height: 140px; border: 1px solid var(--border); border-radius: 6px; margin-top: 4px; display: block; cursor: pointer; }
+.reply-input-wrapper { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; background: var(--bg-reply); border: 1.5px solid var(--border); border-radius: 10px; padding: 6px; }
 .reply-input-row { display: flex; gap: 4px; align-items: center; }
-.reply-input-row input[type="text"] { flex: 1; border: 1px solid #000; border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; }
-.forum-card { background-color: #e2f0d9; border: 2px solid #000; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+.reply-input-row input[type="text"] { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; font-size: 11px; outline: none; font-family: inherit; background: var(--bg-input); color: var(--text); }
+
+.forum-card { background-color: var(--bg-forum); border: 2px solid var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
 .forum-header-container { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.forum-stats-box { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; font-weight: bold; color: #2b5735; background: rgba(255,255,255,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid #000; align-self: flex-start; }
-.btn-join-forum { background-color: #b56565; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 10px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
-.btn-join-forum.joined { background-color: #dbe2e6; color: #000; }
-.btn-delete-forum { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 8px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
-.forum-category { font-size: 10px; font-weight: bold; color: #4a7c59; text-transform: uppercase; }
-.forum-title { font-size: 14px; font-weight: bold; color: #000; }
-.forum-desc { font-size: 11px; color: #333; }
+.forum-stats-box { display: flex; flex-wrap: wrap; gap: 10px; font-size: 10px; font-weight: bold; color: var(--text); background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); align-self: flex-start; }
+.btn-join-forum { background-color: var(--primary); color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.btn-join-forum.joined { background-color: var(--bg-nav); color: var(--text); }
+.btn-delete-forum { background-color: var(--danger); color: #fff; border: 2px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 10.5px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.forum-category { font-size: 10px; font-weight: bold; color: var(--success); text-transform: uppercase; }
+.forum-title { font-size: 14px; font-weight: bold; color: var(--text); }
+.forum-desc { font-size: 11px; color: var(--text); }
 .forum-tags-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
-.forum-tag-badge { font-size: 9px; font-weight: bold; background-color: #fff; color: #2b5735; border: 1px solid #000; border-radius: 6px; padding: 1px 5px; }
-.forum-limit-counter { font-size: 10px; font-weight: bold; color: #4a7c59; }
-.forum-limit-counter.limit-reached { color: #b56565; }
+.forum-tag-badge { font-size: 9px; font-weight: bold; background-color: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px; }
+.forum-limit-counter { font-size: 10px; font-weight: bold; color: var(--success); }
+.forum-limit-counter.limit-reached { color: var(--primary); }
+
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 6px; }
-.polaroid-card { background-color: #fff; border: 2px solid #000; border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; position: relative; }
-.polaroid-img { width: 100%; height: 90px; object-fit: cover; border: 1px solid #000; border-radius: 4px; cursor: pointer; }
-.polaroid-caption { font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center; word-break: break-word; }
-.polaroid-tag { font-size: 8px; background: #ffd8df; border: 1px solid #000; border-radius: 4px; padding: 1px 4px; margin-top: 2px; }
-.polaroid-delete-btn { position: absolute; top: 4px; right: 4px; background: #e74c3c; color: #fff; border: 1.5px solid #000; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 2; }
-.polaroid-like-btn { font-size: 10px; font-weight: bold; margin-top: 4px; cursor: pointer; user-select: none; }
-.polaroid-like-btn.liked { color: #b56565; }
-.visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; }
+.polaroid-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; align-items: center; position: relative; color: var(--text); }
+.polaroid-img { width: 100%; height: 90px; object-fit: cover; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; }
+.polaroid-caption { font-size: 10px; font-weight: bold; margin-top: 4px; text-align: center; word-break: break-word; color: var(--text); }
+.polaroid-tag { font-size: 8px; background: var(--bg-tag); border: 1px solid var(--border); border-radius: 4px; padding: 1px 4px; margin-top: 2px; color: var(--text); }
+.polaroid-delete-btn { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; border: 1.5px solid var(--border); border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 2; }
+.polaroid-like-btn { font-size: 10px; font-weight: bold; margin-top: 4px; cursor: pointer; user-select: none; color: var(--text); }
+.polaroid-like-btn.liked { color: var(--primary); }
+.visibility-selector { display: flex; gap: 10px; font-size: 11px; font-weight: bold; align-items: center; color: var(--text); }
 .visibility-selector label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-.profile-card { background-color: #fff; border: 2px solid #000; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
-.profile-banner { height: 100px; background-color: #b56565; background-size: cover; background-position: center; border-bottom: 2px solid #000; position: relative; }
-.profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: #fff; border: 2px solid #000; border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
+
+.profile-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+.profile-banner { height: 100px; background-color: var(--primary); background-size: cover; background-position: center; border-bottom: 2px solid var(--border); position: relative; }
+.profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
 .profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; }
 .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
-.profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #fff; outline: 2px solid #000; object-fit: cover; background-color: #b56565; }
-.profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: #fff; border: 2px solid #000; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--bg-card); outline: 2px solid var(--border); object-fit: cover; background-color: var(--primary); }
+.profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .profile-info { padding: 10px 12px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
 .profile-name-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.profile-display-name { font-weight: bold; font-size: 14px; color: #000; }
-.profile-username { font-size: 11px; color: #8c4a4a; font-weight: bold; }
-.profile-bio-input { margin-top: 6px; width: 100%; border: 2px solid #ccc; border-radius: 8px; padding: 6px; font-size: 11px; font-family: inherit; height: 55px; resize: none; outline: none; }
-.profile-stats-row { display: flex; justify-content: space-between; margin-top: 10px; background: #fdf5f6; border: 1.5px solid #000; border-radius: 10px; padding: 8px 4px; }
-.profile-stat-item { display: flex; flex-direction: column; align-items: center; font-size: 9.5px; font-weight: bold; gap: 2px; flex: 1; }
-.profile-stat-item strong { font-size: 14px; color: #8c4a4a; }
-.profile-joined-note { font-size: 10px; color: #777; margin-top: 8px; text-align: center; font-style: italic; }
-.btn-logout { background-color: #666; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
-.btn-delete-account { background-color: #e74c3c; color: #fff; border: 2px solid #000; border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; }
+.profile-display-name { font-weight: bold; font-size: 14px; color: var(--text); }
+.profile-username { font-size: 11px; color: var(--text-accent); font-weight: bold; }
+.profile-bio-input { margin-top: 6px; width: 100%; border: 2px solid var(--border-soft); border-radius: 8px; padding: 6px; font-size: 11px; font-family: inherit; height: 55px; resize: none; outline: none; background: var(--bg-input); color: var(--text); }
+.profile-stats-row { display: flex; justify-content: space-between; margin-top: 10px; background: var(--stat-bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 4px; }
+.profile-stat-item { display: flex; flex-direction: column; align-items: center; font-size: 9.5px; font-weight: bold; gap: 2px; flex: 1; color: var(--text); }
+.profile-stat-item strong { font-size: 14px; color: var(--text-accent); }
+.profile-joined-note { font-size: 10px; color: var(--text-muted); margin-top: 8px; text-align: center; font-style: italic; }
+.btn-logout { background-color: #666; color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+.btn-delete-account { background-color: var(--danger); color: #fff; border: 2px solid var(--border); border-radius: 10px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; }
+
 .modal-viewer { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background-color: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
 .modal-viewer img, .modal-viewer video { max-width: 95vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
 .close-modal { position: absolute; top: 15px; right: 20px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; }
+
 .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -130,6 +198,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 
 <div id="loginOverlay" class="login-overlay">
 <div class="login-card">
+<button class="btn-icon-header" onclick="toggleTheme()" style="align-self: flex-end; margin-bottom: -10px;" title="Cambiar tema">🌙</button>
 <div class="login-title">RatWeb 🐾</div>
 <p class="login-sub">Entra con tu cuenta de Google para empezar</p>
 <button class="btn-google" id="googleLoginBtn" onclick="loginWithGoogle()">
@@ -163,6 +232,7 @@ Iniciar sesión con Google
 <div class="logo-text">RatWeb</div>
 <div class="search-bar"><input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch()"></div>
 <div class="user-header-profile">
+<button class="btn-icon-header" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
 <img id="headerAvatar" class="avatar-top" onclick="showSection('perfil')" title="Ver mi perfil">
 <button class="btn-logout-top" onclick="logoutUser()">Salir</button>
 </div>
@@ -178,8 +248,13 @@ Iniciar sesión con Google
 <div id="menu" class="section active">
 <div class="create-box">
 <textarea id="postText" placeholder="¿Qué estás pensando? 🐾"></textarea>
+<div id="postPreview" class="preview-attachment">
+<button class="preview-remove" onclick="clearPostPreview()">✕</button>
+<div id="postPreviewContent"></div>
+<div class="preview-info" id="postPreviewInfo"></div>
+</div>
 <div style="display: flex; justify-content: space-between; align-items: center;">
-<label class="file-label">📷 Adjuntar<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;"></label>
+<label class="file-label" id="postFileLabel">📷 Adjuntar<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;" onchange="previewPostMedia(event)"></label>
 <button class="btn-publish" id="publishBtn" onclick="createPost('main')">Publicar</button>
 </div>
 </div>
@@ -204,8 +279,13 @@ Iniciar sesión con Google
 <div id="forumHeader" class="forum-card" style="cursor: default; flex-shrink:0;"></div>
 <div class="create-box" style="flex-shrink:0;">
 <textarea id="forumPostText" placeholder="Publica en este foro... 🧀"></textarea>
+<div id="forumPostPreview" class="preview-attachment">
+<button class="preview-remove" onclick="clearForumPostPreview()">✕</button>
+<div id="forumPostPreviewContent"></div>
+<div class="preview-info" id="forumPostPreviewInfo"></div>
+</div>
 <div style="display: flex; justify-content: space-between; align-items: center;">
-<label class="file-label">📷 Adjuntar<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;"></label>
+<label class="file-label" id="forumFileLabel">📷 Adjuntar<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;" onchange="previewForumPostMedia(event)"></label>
 <button class="btn-publish" onclick="createPost('forum')">Publicar</button>
 </div>
 </div>
@@ -226,8 +306,13 @@ Iniciar sesión con Google
 <label><input type="radio" name="galleryVisibility" value="public" checked> 🌍 Pública</label>
 <label><input type="radio" name="galleryVisibility" value="private"> 🔒 Privada</label>
 </div>
+<div id="galleryPreview" class="preview-attachment">
+<button class="preview-remove" onclick="clearGalleryPreview()">✕</button>
+<div id="galleryPreviewContent"></div>
+<div class="preview-info" id="galleryPreviewInfo"></div>
+</div>
 <div style="display: flex; justify-content: space-between; align-items: center;">
-<label class="file-label">📁 Archivo<input type="file" id="galleryFile" accept="image/*" style="display: none;"></label>
+<label class="file-label" id="galleryFileLabel">📁 Archivo<input type="file" id="galleryFile" accept="image/*" style="display: none;" onchange="previewGalleryFile(event)"></label>
 <button class="btn-publish" onclick="uploadToGallery()">Subir</button>
 </div>
 </div>
@@ -291,6 +376,29 @@ let tempAvatarFile = null;
 let tempAvatarPreviewUrl = null;
 let realtimeChannel = null;
 
+// ======================== TEMA ========================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.btn-icon-header').forEach(function(btn){
+    if (btn.title === 'Cambiar tema' || btn.title === 'Theme') {
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+  });
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('ratweb-theme', next);
+  applyTheme(next);
+}
+function initTheme() {
+  const saved = localStorage.getItem('ratweb-theme');
+  if (saved) applyTheme(saved);
+  else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
+  else applyTheme('light');
+}
+
+// ======================== UTILIDADES ========================
 function escapeHtml(text) {
   if (!text) return '';
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -303,7 +411,78 @@ function hideError(elId) {
   const el = document.getElementById(elId);
   if (el) el.classList.remove('show');
 }
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
 
+// ======================== PREVIEW DE ARCHIVOS ========================
+function showAttachmentPreview(previewId, contentId, infoId, file) {
+  const previewEl = document.getElementById(previewId);
+  const contentEl = document.getElementById(contentId);
+  const infoEl = document.getElementById(infoId);
+  if (!previewEl || !contentEl || !infoEl) return;
+  contentEl.innerHTML = '';
+  const url = URL.createObjectURL(file);
+  if (file.type.startsWith('video/')) {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.style.maxHeight = '120px';
+    contentEl.appendChild(video);
+  } else {
+    const img = document.createElement('img');
+    img.src = url;
+    contentEl.appendChild(img);
+  }
+  infoEl.textContent = file.name + ' (' + formatBytes(file.size) + ')';
+  previewEl.classList.add('show');
+}
+function hideAttachmentPreview(previewId, inputId, labelId, defaultText) {
+  const previewEl = document.getElementById(previewId);
+  if (previewEl) previewEl.classList.remove('show');
+  const input = document.getElementById(inputId);
+  if (input) input.value = '';
+  const label = document.getElementById(labelId);
+  if (label) label.innerHTML = defaultText + '<input type="file" id="' + inputId + '" accept="' + (inputId === 'galleryFile' ? 'image/*' : 'image/*,video/*') + '" style="display: none;" onchange="' + (inputId === 'postMedia' ? 'previewPostMedia' : inputId === 'forumPostMedia' ? 'previewForumPostMedia' : 'previewGalleryFile') + '(event)">';
+}
+
+function previewPostMedia(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showAttachmentPreview('postPreview', 'postPreviewContent', 'postPreviewInfo', file);
+  document.getElementById('postFileLabel').innerHTML = '📷 1 archivo ✓<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;" onchange="previewPostMedia(event)">';
+}
+function clearPostPreview() {
+  document.getElementById('postPreview').classList.remove('show');
+  document.getElementById('postMedia').value = '';
+  document.getElementById('postFileLabel').innerHTML = '📷 Adjuntar<input type="file" id="postMedia" accept="image/*,video/*" style="display: none;" onchange="previewPostMedia(event)">';
+}
+function previewForumPostMedia(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showAttachmentPreview('forumPostPreview', 'forumPostPreviewContent', 'forumPostPreviewInfo', file);
+  document.getElementById('forumFileLabel').innerHTML = '📷 1 archivo ✓<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;" onchange="previewForumPostMedia(event)">';
+}
+function clearForumPostPreview() {
+  document.getElementById('forumPostPreview').classList.remove('show');
+  document.getElementById('forumPostMedia').value = '';
+  document.getElementById('forumFileLabel').innerHTML = '📷 Adjuntar<input type="file" id="forumPostMedia" accept="image/*,video/*" style="display: none;" onchange="previewForumPostMedia(event)">';
+}
+function previewGalleryFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showAttachmentPreview('galleryPreview', 'galleryPreviewContent', 'galleryPreviewInfo', file);
+  document.getElementById('galleryFileLabel').innerHTML = '📁 1 archivo ✓<input type="file" id="galleryFile" accept="image/*" style="display: none;" onchange="previewGalleryFile(event)">';
+}
+function clearGalleryPreview() {
+  document.getElementById('galleryPreview').classList.remove('show');
+  document.getElementById('galleryFile').value = '';
+  document.getElementById('galleryFileLabel').innerHTML = '📁 Archivo<input type="file" id="galleryFile" accept="image/*" style="display: none;" onchange="previewGalleryFile(event)">';
+}
+
+// ======================== STORAGE ========================
 async function uploadFile(file, folder) {
   if (!file) return null;
   const ext = file.name.split('.').pop() || 'bin';
@@ -314,6 +493,7 @@ async function uploadFile(file, folder) {
   return urlData.publicUrl;
 }
 
+// ======================== LOGIN ========================
 async function loginWithGoogle() {
   hideError('loginError');
   try {
@@ -326,7 +506,6 @@ async function loginWithGoogle() {
     showError('loginError', err.message);
   }
 }
-
 async function logoutUser() {
   if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
   if (realtimeChannel) { supabaseClient.removeChannel(realtimeChannel); realtimeChannel = null; }
@@ -334,6 +513,7 @@ async function logoutUser() {
   window.location.reload();
 }
 
+// ======================== SESIÓN ========================
 async function checkSessionAndProfile() {
   const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
   session = currentSession;
@@ -371,6 +551,7 @@ async function checkSessionAndProfile() {
   setupRealtime();
 }
 
+// ======================== SETUP ========================
 function previewSetupAvatar(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -379,7 +560,6 @@ function previewSetupAvatar(event) {
   tempAvatarPreviewUrl = URL.createObjectURL(file);
   document.getElementById('setupAvatarPreview').src = tempAvatarPreviewUrl;
 }
-
 async function submitSetup() {
   hideError('setupError');
   const usernameRaw = document.getElementById('setupUsername').value.trim();
@@ -422,6 +602,7 @@ async function submitSetup() {
   }
 }
 
+// ======================== DATOS ========================
 async function loadAllData() {
   await Promise.all([loadPosts(), loadForums(), loadGallery()]);
   await loadAllComments();
@@ -430,7 +611,6 @@ async function loadAllData() {
   renderGallery();
   renderProfile();
 }
-
 async function loadPosts() {
   const { data, error } = await supabaseClient.from('posts').select('*').order('created_at', { ascending: false });
   if (error) { console.error(error); return; }
@@ -465,6 +645,7 @@ function setupRealtime() {
     .subscribe();
 }
 
+// ======================== POSTS ========================
 async function createPost(target) {
   const isForum = target === 'forum';
   const textInput = document.getElementById(isForum ? 'forumPostText' : 'postText');
@@ -484,7 +665,8 @@ async function createPost(target) {
       forum_id: isForum ? currentForumId : null, liked_by: [], created_at: Date.now()
     }]);
     if (error) throw error;
-    textInput.value = ''; fileInput.value = '';
+    textInput.value = '';
+    if (isForum) clearForumPostPreview(); else clearPostPreview();
     await loadPosts(); renderPosts();
   } catch (err) { alert('Error al publicar: ' + err.message); }
 }
@@ -495,7 +677,7 @@ function renderPosts() {
   if (!listEl) return;
   const filtered = isForumView ? posts.filter(function(p){ return p.forum_id === currentForumId; }) : posts;
   if (filtered.length === 0) {
-    listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay publicaciones aún.</p>';
+    listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay publicaciones aún.</p>';
     return;
   }
   listEl.innerHTML = filtered.map(function(post){
@@ -531,10 +713,11 @@ function renderPosts() {
             '</div>';
           }).join('') +
           '<div class="reply-input-wrapper">' +
-            (activeReplyTargets[post.id] ? '<div style="font-size:9.5px; font-weight:bold; background:#ffd8df; border:1px solid #000; border-radius:6px; padding:2px 6px; display:flex; justify-content:space-between;"><span>Respondiendo a ' + escapeHtml(activeReplyTargets[post.id]) + '</span><span style="cursor:pointer;" onclick="clearReplyTarget(\'' + post.id + '\')">✕</span></div>' : '') +
+            (activeReplyTargets[post.id] ? '<div style="font-size:9.5px; font-weight:bold; background:var(--bg-bubble); border:1px solid var(--border); border-radius:6px; padding:2px 6px; display:flex; justify-content:space-between; color:var(--text);"><span>Respondiendo a ' + escapeHtml(activeReplyTargets[post.id]) + '</span><span style="cursor:pointer;" onclick="clearReplyTarget(\'' + post.id + '\')">✕</span></div>' : '') +
+            '<div id="reply-preview-' + post.id + '" class="preview-attachment"><button class="preview-remove" onclick="clearReplyPreview(\'' + post.id + '\')">✕</button><div id="reply-preview-content-' + post.id + '"></div><div class="preview-info" id="reply-preview-info-' + post.id + '"></div></div>' +
             '<div class="reply-input-row">' +
               '<input type="text" id="reply-input-' + post.id + '" placeholder="Escribe un comentario..." onkeypress="if(event.key===\'Enter\') addReply(\'' + post.id + '\')">' +
-              '<label class="file-label" style="padding:2px 6px;">📷<input type="file" id="reply-media-' + post.id + '" accept="image/*" style="display:none;"></label>' +
+              '<label class="file-label" id="reply-file-label-' + post.id + '" style="padding:4px 8px;">📷<input type="file" id="reply-media-' + post.id + '" accept="image/*" style="display:none;" onchange="previewReplyMedia(\'' + post.id + '\', event)"></label>' +
               '<button class="btn-publish" onclick="addReply(\'' + post.id + '\')">Enviar</button>' +
             '</div>' +
           '</div>' +
@@ -542,6 +725,19 @@ function renderPosts() {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+function previewReplyMedia(postId, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showAttachmentPreview('reply-preview-' + postId, 'reply-preview-content-' + postId, 'reply-preview-info-' + postId, file);
+  document.getElementById('reply-file-label-' + postId).innerHTML = '📷 ✓<input type="file" id="reply-media-' + postId + '" accept="image/*" style="display:none;" onchange="previewReplyMedia(\'' + postId + '\', event)">';
+}
+function clearReplyPreview(postId) {
+  document.getElementById('reply-preview-' + postId).classList.remove('show');
+  const input = document.getElementById('reply-media-' + postId);
+  if (input) input.value = '';
+  document.getElementById('reply-file-label-' + postId).innerHTML = '📷<input type="file" id="reply-media-' + postId + '" accept="image/*" style="display:none;" onchange="previewReplyMedia(\'' + postId + '\', event)">';
 }
 
 async function toggleLike(postId) {
@@ -583,6 +779,7 @@ async function addReply(postId) {
     }]);
     if (error) throw error;
     clearReplyTarget(postId);
+    clearReplyPreview(postId);
     const post = posts.find(function(p){ return p.id == postId; });
     if (post && post.user_id !== session.user.id) {
       await supabaseClient.from('notifications').insert([{ user_id: post.user_id, type: 'post_reply', from_handle: profile.username, message: profile.username + ' comentó tu post: "' + post.content.slice(0, 30) + '"', link: '#menu', is_read: false, created_at: Date.now() }]);
@@ -597,6 +794,7 @@ async function deleteComment(commentId) {
   await loadAllComments(); renderPosts();
 }
 
+// ======================== FOROS ========================
 function getMyForumsCount() { return forums.filter(function(f){ return f.creator_id === session.user.id; }).length; }
 function updateForumCounter() {
   const counterEl = document.getElementById('forumCounter');
@@ -631,7 +829,7 @@ function renderForums(filteredList) {
   if (!container) return;
   updateForumCounter();
   const list = filteredList || forums;
-  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:#777; padding:12px;">🐭 No hay foros.</p>'; return; }
+  if (list.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">🐭 No hay foros.</p>'; return; }
   container.innerHTML = list.map(function(f){
     const isJoined = (f.members || []).indexOf(profile.username) !== -1;
     const isCreator = f.creator_id === session.user.id;
@@ -686,6 +884,7 @@ async function openForum(forumId) {
   showSection('forumView'); renderPosts();
 }
 
+// ======================== GALERÍA ========================
 async function uploadToGallery() {
   const title = document.getElementById('galleryTitle').value.trim();
   const category = document.getElementById('galleryCategory').value;
@@ -702,7 +901,7 @@ async function uploadToGallery() {
     }]);
     if (error) throw error;
     document.getElementById('galleryTitle').value = '';
-    fileInput.value = '';
+    clearGalleryPreview();
     await loadGallery(); renderGallery();
   } catch (err) { alert('Error: ' + err.message); }
 }
@@ -710,7 +909,7 @@ function renderGallery() {
   const container = document.getElementById('galleryContainer');
   if (!container) return;
   const visible = gallery.filter(function(g){ return g.visibility !== 'private' || g.user_id === session.user.id; });
-  if (visible.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:#777; padding:12px; grid-column:1/-1;">🐭 No hay imágenes.</p>'; return; }
+  if (visible.length === 0) { container.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px; grid-column:1/-1;">🐭 No hay imágenes.</p>'; return; }
   container.innerHTML = visible.map(function(item){
     const isMine = item.user_id === session.user.id;
     const isLiked = (item.liked_by || []).indexOf(profile.username) !== -1;
@@ -720,7 +919,7 @@ function renderGallery() {
       '<img class="polaroid-img" src="' + item.image_url + '" onclick="openModal(\'' + item.image_url + '\', \'image\')">' +
       '<div class="polaroid-caption">' + escapeHtml(item.title) + '</div>' +
       '<span class="polaroid-tag">' + escapeHtml(item.category) + '</span>' +
-      '<span class="polaroid-tag" style="background:' + (isPrivate ? '#dbe2e6' : '#e2f0d9') + ';">' + (isPrivate ? '🔒' : '🌍') + '</span>' +
+      '<span class="polaroid-tag" style="background:' + (isPrivate ? 'var(--bg-nav)' : 'var(--bg-forum)') + ';">' + (isPrivate ? '🔒' : '🌍') + '</span>' +
       '<span class="polaroid-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="toggleGalleryLike(\'' + item.id + '\', event)">🐾 ' + (item.liked_by || []).length + '</span>' +
     '</div>';
   }).join('');
@@ -743,6 +942,7 @@ async function deleteGalleryItem(id, event) {
   await loadGallery(); renderGallery();
 }
 
+// ======================== PERFIL ========================
 function renderProfile() {
   if (!profile) return;
   document.getElementById('profileBanner').style.backgroundImage = profile.banner_url ? "url('" + profile.banner_url + "')" : 'none';
@@ -810,6 +1010,7 @@ async function deleteAccount() {
   } catch (err) { alert('Error: ' + err.message); }
 }
 
+// ======================== NAVEGACIÓN ========================
 function showSection(id) {
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -832,7 +1033,7 @@ function handleSearch() {
   } else {
     const filtered = posts.filter(function(p){ return (p.content || '').toLowerCase().indexOf(q) !== -1 || (p.author_name || '').toLowerCase().indexOf(q) !== -1 || (p.author_handle || '').toLowerCase().indexOf(q) !== -1; });
     const listEl = document.getElementById('feedList');
-    if (filtered.length === 0) { listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:#777; padding:12px;">Sin resultados.</p>'; return; }
+    if (filtered.length === 0) { listEl.innerHTML = '<p style="font-size:11px; text-align:center; color:var(--text-muted); padding:12px;">Sin resultados.</p>'; return; }
     const backup = posts; posts = filtered; renderPosts(); posts = backup;
   }
 }
@@ -845,7 +1046,9 @@ function openModal(src, type) {
 }
 function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
 
+// ======================== INIT ========================
 window.addEventListener('load', async function(){
+  initTheme();
   const hash = window.location.hash;
   if (hash.indexOf('error=') !== -1) showError('loginError', 'Error al iniciar sesión: ' + decodeURIComponent(hash));
   await checkSessionAndProfile();
@@ -856,7 +1059,7 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
     if (!session || session.user.id !== (newSession && newSession.user ? newSession.user.id : null)) {
       session = newSession;
       checkSessionAndProfile();
-  }
+    }
   } else if (event === 'SIGNED_OUT') {
     window.location.reload();
   }
