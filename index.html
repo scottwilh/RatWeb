@@ -150,7 +150,7 @@ main { flex: 1; padding: 8px; overflow-y: auto; width: calc(100% - 75px); min-he
 .profile-card { background-color: var(--bg-card); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
 .profile-banner { height: 100px; background-color: var(--primary); background-size: cover; background-position: center; border-bottom: 2px solid var(--border); position: relative; }
 .profile-edit-banner-btn { position: absolute; bottom: 6px; right: 6px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 8px; padding: 3px 6px; font-size: 12px; cursor: pointer; }
-.profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; position: relative; z-index: 2; }
+.profile-avatar-row { display: flex; padding: 0 12px; margin-top: -34px; }
 .profile-avatar-wrap { position: relative; width: 70px; height: 70px; }
 .profile-avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--bg-card); outline: 2px solid var(--border); object-fit: cover; background-color: var(--primary); }
 .profile-edit-avatar-btn { position: absolute; bottom: -2px; right: -2px; background: var(--bg-card); color: var(--text); border: 2px solid var(--border); border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -316,34 +316,34 @@ Iniciar sesión con Google
 <div id="perfil" class="section">
 <button class="btn-back hidden" id="profileBackBtn" onclick="backFromUserProfile()">⬅ Volver</button>
 <div class="profile-card">
-<div class="profile-banner" id="profileBanner">
-<label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
-</div>
-<div class="profile-avatar-row">
-<div class="profile-avatar-wrap">
-<img id="profileAvatarImg" class="profile-avatar">
-<label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
-</div>
-</div>
-<div class="profile-info">
-<div class="profile-name-row"><span id="profileDisplayName" class="profile-display-name"></span></div>
-<div class="profile-name-row"><span id="profileUsername" class="profile-username"></span></div>
-<textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
-<div id="profileBioDisplay" class="profile-bio-display hidden"></div>
-<div class="profile-stats-row">
-<div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
-<div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
-<div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
-<div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
-</div>
-<button class="btn-logout" id="logoutBtn" onclick="logoutUser()">🚪 Cerrar Sesión</button>
-<button class="btn-delete-account" id="deleteAccountBtn" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
-<div id="profileJoinedNote" class="profile-joined-note"></div>
-</div>
+  <div class="profile-banner" id="profileBanner">
+    <label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
+  </div>
+  <div class="profile-avatar-row">
+    <div class="profile-avatar-wrap">
+      <img id="profileAvatarImg" class="profile-avatar">
+      <label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
+    </div>
+  </div>
+  <div class="profile-info">
+    <div class="profile-name-row"><span id="profileDisplayName" class="profile-display-name"></span></div>
+    <div class="profile-name-row"><span id="profileUsername" class="profile-username"></span></div>
+    <textarea id="profileBioInput" class="profile-bio-input" maxlength="150" placeholder="Cuéntanos sobre ti... 🐭" onblur="saveBio()"></textarea>
+    <div id="profileBioDisplay" class="profile-bio-display hidden"></div>
+    <div class="profile-stats-row">
+      <div class="profile-stat-item"><strong id="statPosts">0</strong><span>Posts</span></div>
+      <div class="profile-stat-item"><strong id="statGallery">0</strong><span>Fotos</span></div>
+      <div class="profile-stat-item"><strong id="statForums">0</strong><span>Foros</span></div>
+      <div class="profile-stat-item"><strong id="statCheese">0</strong><span>🧀 Likes</span></div>
+    </div>
+    <button class="btn-logout" id="logoutBtn" onclick="logoutUser()">🚪 Cerrar Sesión</button>
+    <button class="btn-delete-account" id="deleteAccountBtn" onclick="deleteAccount()">🗑️ Eliminar Cuenta</button>
+    <div id="profileJoinedNote" class="profile-joined-note"></div>
+  </div>
 </div>
 <div class="profile-posts-section">
-<div class="profile-posts-title" id="profilePostsTitle">📝 Mis posts</div>
-<div id="myProfilePosts" class="profile-posts-list"></div>
+  <div class="profile-posts-title" id="profilePostsTitle">📝 Mis posts</div>
+  <div id="myProfilePosts" class="profile-posts-list"></div>
 </div>
 </div>
 </main>
@@ -704,8 +704,8 @@ async function loadGallery() {
 function setupRealtime() {
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient.channel('ratweb-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }); })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(renderPosts); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, function(){ loadPosts().then(function(){ renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, function(){ loadAllComments().then(function(){ renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'forums' }, function(){ loadForums().then(renderForums); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery' }, function(){ loadGallery().then(renderGallery); })
     .subscribe();
@@ -730,7 +730,9 @@ async function createPost(target) {
     if (error) throw error;
     textInput.value = '';
     if (isForum) clearForumPostPreview(); else clearPostPreview();
-    await loadPosts(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
+    await loadPosts();
+    renderPosts();
+    if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
   } catch (err) { alert('Error al publicar: ' + err.message); }
 }
 
@@ -850,11 +852,12 @@ async function deletePost(postId) {
   if (!confirm('¿Borrar esta publicación?')) return;
   const { error } = await supabaseClient.from('posts').delete().eq('id', postId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadPosts(); await loadAllComments(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
+  await loadPosts(); await loadAllComments(); renderPosts();
+  if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
 }
-function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
-function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
-function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); if (viewingUserId) renderProfile(viewingUserId); }
+function toggleReplies(postId) { openRepliesBoxes[postId] = !openRepliesBoxes[postId]; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
+function setReplyTarget(postId, handle) { activeReplyTargets[postId] = handle; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
+function clearReplyTarget(postId) { delete activeReplyTargets[postId]; renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId); }
 
 async function addReply(postId) {
   const input = document.getElementById('reply-input-' + postId);
@@ -875,7 +878,7 @@ async function addReply(postId) {
     if (error) throw error;
     delete activeReplyTargets[postId];
     await loadAllComments();
-    renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
+    renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
     setTimeout(function(){ clearReplyPreview(postId); }, 100);
     const post = posts.find(function(p){ return p.id == postId; });
     if (post && post.user_id !== session.user.id) {
@@ -899,16 +902,16 @@ async function deleteComment(commentId) {
   if (!confirm('¿Borrar comentario?')) return;
   const { error } = await supabaseClient.from('comments').delete().eq('id', commentId);
   if (error) { alert('Error: ' + error.message); return; }
-  await loadAllComments(); renderPosts(); if (viewingUserId) renderProfile(viewingUserId);
+  await loadAllComments(); renderPosts(); if (document.getElementById('perfil').classList.contains('active')) renderProfile(viewingUserId);
 }
 
-// ======================== PERFIL (MISMO BLOQUE PARA AMBOS) ========================
+// ======================== PERFIL (unificado) ========================
 async function openUserProfile(userId) {
   if (!userId) return;
+  if (userId === session.user.id) { goToMyProfile(); return; }
   viewingUserId = userId;
   await renderProfile(userId);
   showSection('perfil');
-  document.getElementById('profileBackBtn').classList.remove('hidden');
 }
 
 function goToMyProfile() {
@@ -944,7 +947,7 @@ async function renderProfile(userId) {
   document.getElementById('profileDisplayName').textContent = profileData.display_name;
   document.getElementById('profileUsername').textContent = profileData.username;
 
-  // Bio: input si es mío, display si es ajeno
+  // Bio
   const bioInput = document.getElementById('profileBioInput');
   const bioDisplay = document.getElementById('profileBioDisplay');
   if (isOwn) {
@@ -957,12 +960,12 @@ async function renderProfile(userId) {
     bioDisplay.textContent = profileData.bio || 'Sin bio aún 🐭';
   }
 
-  // Botones de edición: solo visibles si es mío
+  // Botones edición (solo si es mío)
   document.getElementById('editBannerBtn').classList.toggle('hidden', !isOwn);
   document.getElementById('editAvatarBtn').classList.toggle('hidden', !isOwn);
   document.getElementById('logoutBtn').classList.toggle('hidden', !isOwn);
   document.getElementById('deleteAccountBtn').classList.toggle('hidden', !isOwn);
-  // Header avatar solo si es mío (actualizar)
+  document.getElementById('profileBackBtn').classList.toggle('hidden', isOwn);
   if (isOwn) document.getElementById('headerAvatar').src = profileData.avatar_url || '';
 
   // Stats
@@ -976,7 +979,7 @@ async function renderProfile(userId) {
   const d = profileData.joined_at ? new Date(profileData.joined_at) : new Date();
   document.getElementById('profileJoinedNote').textContent = '🐭 Miembro desde ' + d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
 
-  // Título y posts
+  // Posts
   document.getElementById('profilePostsTitle').textContent = isOwn ? '📝 Mis posts' : '📝 Posts de ' + profileData.display_name;
   const postsContainer = document.getElementById('myProfilePosts');
   if (userPosts.length === 0) {
@@ -1230,4 +1233,4 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
 });
 </script>
 </body>
-</html>
+  </html>
