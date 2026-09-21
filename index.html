@@ -373,12 +373,16 @@ Iniciar sesión con Google
 <button class="btn-back hidden" id="profileBackBtn" onclick="backFromUserProfile()">⬅ Volver</button>
 <div class="profile-card">
   <div class="profile-banner" id="profileBanner">
-    <label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️<input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)"></label>
+    <!-- CAMBIO 1: Se sacó el <input> de adentro del <label> -->
+    <label class="profile-edit-banner-btn" id="editBannerBtn" title="Cambiar banner">🖼️</label>
+    <input type="file" id="bannerFile" accept="image/*" style="display:none;" onchange="changeBanner(event)">
   </div>
   <div class="profile-avatar-row">
     <div class="profile-avatar-wrap">
       <img id="profileAvatarImg" class="profile-avatar">
-      <label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️<input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)"></label>
+      <!-- CAMBIO 2: Se sacó el <input> de adentro del <label> -->
+      <label class="profile-edit-avatar-btn" id="editAvatarBtn" title="Cambiar foto">🖼️</label>
+      <input type="file" id="profileAvatarFile" accept="image/*" style="display:none;" onchange="changeProfileAvatar(event)">
     </div>
   </div>
   <div class="profile-info">
@@ -1471,6 +1475,20 @@ supabaseClient.auth.onAuthStateChange(function(event, newSession){
     window.location.reload();
   }
 });
+
+// ======================== ARREGLO BUG BANNER Y AVATAR ========================
+// Este bloque asegura que al hacer clic en el botón de la imagen (🖼️),
+// se active el input de archivo oculto, tanto para el banner como para el avatar.
+document.getElementById('editBannerBtn').addEventListener('click', function(e) {
+    e.preventDefault(); 
+    document.getElementById('bannerFile').click();
+});
+
+document.getElementById('editAvatarBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('profileAvatarFile').click();
+});
+// ============================================================================
 </script>
 </body>
   </html>
